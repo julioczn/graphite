@@ -5,7 +5,7 @@
 <h1 align="center">Graphite</h1>
 
 <p align="center">
-  Cliente SQL desktop rápido e feito para o teclado, para <b>SQLite</b>, <b>PostgreSQL</b> e <b>MySQL/MariaDB</b><br>
+  Cliente SQL desktop rápido e feito para o teclado, para <b>SQLite</b>, <b>PostgreSQL</b>, <b>MySQL</b> e companhia<br>
   com assistente de AI e servidor MCP para os seus próprios agentes.
 </p>
 
@@ -26,7 +26,7 @@
 
 ## Recursos
 
-- **SQLite, PostgreSQL e MySQL/MariaDB** com conexões salvas (senhas cifradas pelo chaveiro do sistema), botão
+- **SQLite, PostgreSQL, MySQL, MariaDB, TiDB, CockroachDB, GreengageDB e LibSQL/Turso** ([lista completa](#bancos-suportados)) com conexões salvas (senhas cifradas pelo chaveiro do sistema), botão
   **Testar** e um banco **demo** pronto.
 - **Editor SQL** (CodeMirror 6): autocomplete de tabelas e colunas, destaque da instrução atual, vários resultados por
   execução, erros inline. `⌘/Ctrl+Enter` executa tudo ou a seleção; `⌘/Ctrl+Shift+Enter`, a instrução sob o cursor.
@@ -57,6 +57,24 @@
 | Diagrama ER | Aprovando a alteração de um agente |
 |---|---|
 | ![Diagrama ER](docs/assets/screenshots/er.png) | ![Janela de aprovação](docs/assets/screenshots/approval.png) |
+
+## Bancos suportados
+
+| Banco | Status | Observações |
+|---|---|---|
+| SQLite | ✅ | Arquivos locais |
+| PostgreSQL | ✅ | |
+| MySQL | ✅ | |
+| MariaDB | ✅ | |
+| TiDB | ✅ | A AI pede aprovação para toda consulta (o TiDB não impõe transações somente leitura) |
+| CockroachDB | ✅ | Sem o backup do Graphite (use o `BACKUP` do próprio CockroachDB) |
+| GreengageDB | ✅ | |
+| LibSQL / Turso | ✅ | URL remota + token; sem modo de transação manual |
+| Amazon Redshift | 🧪 beta | Ainda não testado contra um cluster real |
+| StarRocks | ✅ | Sem transações (grade somente leitura); a AI pede aprovação para toda consulta |
+
+Vêm mais por aí: SQL Server, Oracle, ClickHouse, DuckDB, Snowflake, BigQuery, Trino, Firebird e não relacionais como
+Redis, MongoDB, Cassandra/ScyllaDB e DynamoDB.
 
 ## AI: use o seu próprio modelo ou agente
 
@@ -146,9 +164,10 @@ electron/
   preload.cjs     window.graphite: RPC via MessagePort + IPC em whitelist
   utility.cjs     processo de banco: handlers conn/*, query/*, table/*, app/*
   ai/             hub (ferramentas, sessões dos agentes, aprovações), mcp (servidor), assistant (chat)
-  drivers/        sqlite (node:sqlite), postgres (pg), mysql (mysql2)
+  drivers/        sqlite (node:sqlite), postgres (pg), mysql (mysql2), libsql (@libsql/client)
   lib/            banco do app, demo, backup/restore/exportação, guarda de leitura das consultas da AI
 shared/
+  engines.mjs     engines de banco: família, padrões e capacidades
   sql.mjs         separador de instruções (utility e renderer)
   i18n.mjs        traduções de todos os processos + locales/en.mjs, locales/es.mjs
 src/              renderer Vue 3 (components/, lib/)

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { call } from '../lib/api'
-import { store, toast, newQueryTab, selectSql } from '../lib/store'
+import { store, toast, newQueryTab, selectSql, caps } from '../lib/store'
 import { t, i18n } from '../lib/i18n'
 import { exportRows } from '../lib/export'
 import Icon from './Icon.vue'
@@ -37,7 +37,8 @@ const applying = ref(false)
 
 const pk = computed(() => columns.value.filter((c) => c.primary).map((c) => c.name))
 const readOnly = computed(() => !!store.connection.saved?.config?.readOnly)
-const editable = computed(() => tab.kind !== 'view' && pk.value.length > 0 && !readOnly.value)
+// Edits are applied in one transaction, so engines without transactions are read-only here.
+const editable = computed(() => tab.kind !== 'view' && pk.value.length > 0 && !readOnly.value && caps().transactions !== false)
 const colEditable = computed(() => (binary.value.length ? fields.value.map((_, i) => !binary.value.includes(i)) : null))
 const insertTarget = computed(() => qualifiedName(tab.table, tab.schema))
 const pendingCount = computed(() => Object.keys(edits.value).length + Object.keys(deleted.value).length)

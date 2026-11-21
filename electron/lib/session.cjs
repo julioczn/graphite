@@ -2,9 +2,11 @@
 //
 // Auto-commit: every statement commits on its own (driver default).
 // Manual: the first statement opens a transaction that stays open until
-// commit()/rollback(). On PostgreSQL each statement runs inside a savepoint so
-// an error does not abort the whole transaction. MySQL uses `autocommit = 0`
-// so the server itself keeps a transaction open even after implicit commits.
+// commit()/rollback(). Where the engine has savepoints in the PostgreSQL sense
+// (caps.savepoints) each statement runs inside one, so an error does not abort
+// the whole transaction. MySQL uses `autocommit = 0` so the server itself keeps
+// a transaction open even after implicit commits. Engines without a manual
+// mode (caps.manualMode = false) only run in auto-commit.
 const { commandOf } = require('./sql.cjs')
 const { t } = require('../../shared/i18n.mjs')
 
@@ -55,7 +57,7 @@ class Session {
 
   // Run reads issued by the app itself, isolated from an open PG transaction.
   guarded(fn) {
-    return this.lock(() => (this.inTx && this.driver.dialect === 'postgres' ? this.savepoint('graphite_read', fn) : fn()))
+    return this.lock(() => (this.inTx && this.driver.caps.savepoints ? this.savepoint('graphite_read', fn) : fn()))
   }
 
   // Run one statement typed by the user, honouring the commit mode.
@@ -68,7 +70,7 @@ class Session {
     const exec = () => d.execute(text, [], { origins: true })
     let r
     try {
-      r = !control && this.inTx && d.dialect === 'postgres' ? await this.savepoint('graphite_stmt', exec) : await exec()
+      r = !control && this.inTx && d.caps.savepoints ? await this.savepoint('graphite_stmt', exec) : await exec()
     } catch (e) {
       // MySQL rolls back the whole transaction on deadlock.
       if (d.dialect === 'mysql' && e.errno === 1213) this.resetTx()
@@ -98,6 +100,7 @@ class Session {
   // Run fn atomically: its own transaction in auto-commit mode, a savepoint
   // inside the open transaction in manual mode.
   async atomic(fn, statements = 1) {
+    if (!this.driver.caps.transactions) throw new Error(t('Este banco não suporta transações; a edição pela grade está desativada'))
     if (this.autoCommit && !this.inTx) return this.driver.transaction(fn)
     await this.ensureTx()
     const out = await this.savepoint('graphite_apply', fn)
@@ -118,6 +121,7 @@ class Session {
   async setAutoCommit(on) {
     if (on === this.autoCommit) return
     if (on && this.inTx) throw new Error(t('Há uma transação aberta: faça commit ou rollback antes'))
+    if (!on && !this.driver.caps.manualMode) throw new Error(t('Este banco não suporta transações manuais'))
     if (this.driver.dialect === 'mysql') await this.driver.execute(`set autocommit = ${on ? 1 : 0}`)
     this.autoCommit = on
   }

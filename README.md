@@ -5,7 +5,7 @@
 <h1 align="center">Graphite</h1>
 
 <p align="center">
-  A fast, keyboard-friendly desktop SQL client for <b>SQLite</b>, <b>PostgreSQL</b> and <b>MySQL/MariaDB</b><br>
+  A fast, keyboard-friendly desktop SQL client for <b>SQLite</b>, <b>PostgreSQL</b>, <b>MySQL</b> and friends<br>
   with an AI assistant and an MCP server for your own agents.
 </p>
 
@@ -26,7 +26,7 @@
 
 ## Features
 
-- **SQLite, PostgreSQL and MySQL/MariaDB** with saved connections (passwords encrypted by the OS keychain), a
+- **SQLite, PostgreSQL, MySQL, MariaDB, TiDB, CockroachDB, GreengageDB and LibSQL/Turso** ([full list](#supported-databases)) with saved connections (passwords encrypted by the OS keychain), a
   **Test** button and a ready-to-use **demo** database.
 - **SQL editor** (CodeMirror 6): table/column autocomplete, current-statement highlight, several results per run,
   inline errors. `⌘/Ctrl+Enter` runs everything or the selection, `⌘/Ctrl+Shift+Enter` runs the statement under the cursor.
@@ -56,6 +56,24 @@
 | ER diagram | Approving an agent's change |
 |---|---|
 | ![ER diagram](docs/assets/screenshots/er.png) | ![Approval dialog](docs/assets/screenshots/approval.png) |
+
+## Supported databases
+
+| Database | Status | Notes |
+|---|---|---|
+| SQLite | ✅ | Local files |
+| PostgreSQL | ✅ | |
+| MySQL | ✅ | |
+| MariaDB | ✅ | |
+| TiDB | ✅ | AI asks for approval on every query (TiDB doesn't enforce read-only transactions) |
+| CockroachDB | ✅ | No Graphite backup (use CockroachDB's own `BACKUP`) |
+| GreengageDB | ✅ | |
+| LibSQL / Turso | ✅ | Remote URL + token; no manual transaction mode |
+| Amazon Redshift | 🧪 beta | Not yet tested against a real cluster |
+| StarRocks | ✅ | No transactions (read-only grid); AI asks for approval on every query |
+
+More are on the way: SQL Server, Oracle, ClickHouse, DuckDB, Snowflake, BigQuery, Trino, Firebird, and non-relational
+ones like Redis, MongoDB, Cassandra/ScyllaDB and DynamoDB.
 
 ## AI: bring your own model or agent
 
@@ -143,9 +161,10 @@ electron/
   preload.cjs     window.graphite: RPC over a MessagePort + whitelisted IPC
   utility.cjs     database process: handlers for conn/*, query/*, table/*, app/*
   ai/             hub (tools, agent sessions, approvals), mcp (server), assistant (chat)
-  drivers/        sqlite (node:sqlite), postgres (pg), mysql (mysql2)
+  drivers/        sqlite (node:sqlite), postgres (pg), mysql (mysql2), libsql (@libsql/client)
   lib/            app database, demo, backup/restore/export, read-only guard for AI queries
 shared/
+  engines.mjs     database engines: family, defaults and capabilities
   sql.mjs         statement splitter (utility and renderer)
   i18n.mjs        translations for every process + locales/en.mjs, locales/es.mjs
 src/              Vue 3 renderer (components/, lib/)

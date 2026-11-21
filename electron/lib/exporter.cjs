@@ -63,8 +63,7 @@ async function writeOne(d, out, job, source, o) {
 async function exportData(d, opts, job) {
   const o = { format: opts.format, delimiter: ',', header: true, nullAs: '', bom: false, ...(opts.csv || {}) }
   if (!EXT[o.format]) throw new Error(t('Formato desconhecido: {format}', { format: o.format }))
-  if (d.dialect === 'postgres') await d.client.query('begin isolation level repeatable read read only')
-  if (d.dialect === 'mysql') await d.conn.query('start transaction with consistent snapshot, read only')
+  if (d.beginSnapshot) await d.beginSnapshot()
 
   const sources = opts.query
     ? [{ name: path.basename(opts.file), sql: opts.query, target: d.quote(opts.sqlTable || 'resultado'), file: opts.file }]

@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",
+    "@libsql/client": "0.18.0",
     "@modelcontextprotocol/sdk": "1.32.2",
     "mysql2": "^3.24.6",
     "pg": "^8.23.1",
@@ -73,7 +74,11 @@
       "dist/**",
       "electron/**",
       "shared/**",
-      "package.json"
+      "package.json",
+      "!node_modules/libsql/**",
+      "!node_modules/@libsql/darwin-*/**",
+      "!node_modules/@libsql/linux-*/**",
+      "!node_modules/@libsql/win32-*/**"
     ],
     "linux": {
       "target": [

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { call } from '../lib/api'
-import { store, toast, refreshEntities, tableKey } from '../lib/store'
+import { store, toast, refreshEntities, tableKey, caps } from '../lib/store'
 import { t, i18n } from '../lib/i18n'
 import { exportRows } from '../lib/export'
 import Icon from './Icon.vue'
@@ -67,7 +67,7 @@ const canExportAll = computed(() => result.value?.kind === 'rows' && ['SELECT', 
 // primary key is also in the result (`result.edit`). Those cells can be edited
 // in place and written back with UPDATE / DELETE by primary key.
 const readOnly = computed(() => !!store.connection.saved?.config?.readOnly)
-const edit = computed(() => (result.value?.kind === 'rows' && !readOnly.value ? result.value.edit : null))
+const edit = computed(() => (result.value?.kind === 'rows' && !readOnly.value && caps().transactions !== false ? result.value.edit : null))
 const colEditable = computed(() => edit.value?.columns.map(Boolean) ?? null)
 const pkFields = computed(() => {
   if (!edit.value) return []
