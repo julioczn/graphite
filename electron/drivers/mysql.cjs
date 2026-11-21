@@ -1,7 +1,10 @@
 const mysql = require('mysql2/promise')
 const { normaliseRows, erFrom } = require('../lib/sql.cjs')
 
-const SYSTEM_DBS = new Set(['information_schema', 'mysql', 'performance_schema', 'sys'])
+const SYSTEM_DBS = new Set(['information_schema', 'mysql', 'performance_schema', 'sys', 'metrics_schema', '_statistics_'])
+
+// SQL booleans come back as 1/0, '1'/'0' (TiDB, with bigNumberStrings) or true/false.
+const truthy = (v) => v === true || v === 1 || v === '1'
 
 class MysqlDriver {
   constructor(config) {
@@ -38,6 +41,7 @@ class MysqlDriver {
       supportBigNumbers: true,
       bigNumberStrings: true,
     })
+    await this.detectFlavor()
   }
 
   async disconnect() {
@@ -46,8 +50,33 @@ class MysqlDriver {
   }
 
   async version() {
+    const v = this.serverVersion
+    if (this.flavor === 'mariadb') return 'MariaDB ' + v.replace(/-MariaDB.*$/i, '')
+    if (this.flavor === 'tidb') return 'TiDB ' + (/TiDB-(v[\d.]+)/i.exec(v)?.[1] || v)
+    if (this.flavor === 'starrocks') return 'StarRocks ' + v
+    return 'MySQL ' + v
+  }
+
+  // Backups and exports read from one consistent snapshot (on their own connection).
+  async beginSnapshot() {
+    if (this.caps?.transactions === false) return
+    // TiDB rejects the READ ONLY modifier here.
+    await this.conn.query(`start transaction with consistent snapshot${this.flavor === 'tidb' ? '' : ', read only'}`)
+  }
+
+  // Which server this really is, whatever the user picked: variable names and
+  // catalog support differ (e.g. MariaDB's max_statement_time).
+  async detectFlavor() {
     const [rows] = await this.conn.query('select version() as v')
-    return 'MySQL ' + rows[0].v
+    this.serverVersion = String(rows[0].v)
+    if (/mariadb/i.test(this.serverVersion)) this.flavor = 'mariadb'
+    else if (/tidb/i.test(this.serverVersion)) this.flavor = 'tidb'
+    else if (this.engine === 'starrocks') this.flavor = 'starrocks'
+    else this.flavor = 'mysql'
+    if (this.flavor === 'starrocks') {
+      const [sr] = await this.conn.query('select current_version() as v').catch(() => [[{ v: this.serverVersion }]])
+      this.serverVersion = String(sr[0].v).split(' ')[0]
+    }
   }
 
   async database() {
@@ -113,7 +142,7 @@ class MysqlDriver {
       fks.get(id).refColumns.push(k.ref_col)
     }
     const db = schema ?? (await this.database())
-    return erFrom(db, cols.map((c) => ({ ...c, nullable: !!c.nullable, primary: !!c.primary })), [...fks.values()])
+    return erFrom(db, cols.map((c) => ({ ...c, nullable: truthy(c.nullable), primary: truthy(c.primary) })), [...fks.values()])
   }
 
   // In MySQL a "schema" is a database; switching is a plain USE on the same connection.
@@ -142,25 +171,43 @@ class MysqlDriver {
 
   async listColumns(table, schema) {
     const [rows] = await this.conn.query(
-      `select c.column_name as name, c.column_type as type, c.is_nullable = 'YES' as nullable,
-              c.column_default as \`default\`, c.column_key = 'PRI' as \`primary\`,
-              (c.extra like '%auto_increment%' or c.extra like '%VIRTUAL GENERATED%' or c.extra like '%STORED GENERATED%') as auto,
-              (select concat(k.referenced_table_name, '(', k.referenced_column_name, ')')
-                 from information_schema.key_column_usage k
-                where k.table_schema = c.table_schema and k.table_name = c.table_name
-                  and k.column_name = c.column_name and k.referenced_table_name is not null
-                limit 1) as \`references\`,
-              (select k.referenced_table_schema
-                 from information_schema.key_column_usage k
-                where k.table_schema = c.table_schema and k.table_name = c.table_name
-                  and k.column_name = c.column_name and k.referenced_table_name is not null
-                limit 1) as refSchema
+      `select c.column_name as name, c.column_type as type, c.is_nullable as nullable,
+              c.column_default as \`default\`, c.column_key as colKey, c.extra
        from information_schema.columns c
        where c.table_schema = coalesce(?, database()) and c.table_name = ?
        order by c.ordinal_position`,
       [schema ?? null, table],
     )
-    return rows.map((r) => ({ ...r, nullable: !!r.nullable, primary: !!r.primary, auto: !!r.auto }))
+    // Foreign keys in a second, plain query: correlated subqueries and boolean
+    // expressions behave differently across MySQL, MariaDB, TiDB and StarRocks.
+    const [keys] = await this.conn
+      .query(
+        `select column_name as col, referenced_table_schema as refSchema, referenced_table_name as refTable,
+                referenced_column_name as refCol
+         from information_schema.key_column_usage
+         where table_schema = coalesce(?, database()) and table_name = ? and referenced_table_name is not null`,
+        [schema ?? null, table],
+      )
+      .catch(() => [[]])
+    // StarRocks leaves information_schema.columns.extra empty; its DDL says which columns are AUTO_INCREMENT.
+    let autoCols = null
+    if (this.flavor === 'starrocks') {
+      const ddl = await this.createScript(table, schema).catch(() => '')
+      autoCols = new Set([...ddl.matchAll(/^\s*`([^`]+)`[^\n]*\bAUTO_INCREMENT\b/gim)].map((m) => m[1]))
+    }
+    return rows.map((r) => {
+      const fk = keys.find((k) => k.col === r.name)
+      return {
+        name: r.name,
+        type: r.type,
+        nullable: r.nullable === 'YES',
+        default: r.default,
+        primary: r.colKey === 'PRI',
+        auto: /auto_increment|virtual generated|stored generated/i.test(r.extra || '') || !!autoCols?.has(r.name),
+        references: fk ? `${fk.refTable}(${fk.refCol})` : null,
+        refSchema: fk ? fk.refSchema : null,
+      }
+    })
   }
 
   async schemaMap() {
@@ -183,7 +230,7 @@ class MysqlDriver {
     )
     return rows.map((r) => ({
       name: r.name,
-      unique: !!r.unique,
+      unique: truthy(r.unique),
       primary: r.name === 'PRIMARY',
       columns: r.cols.split(','),
     }))

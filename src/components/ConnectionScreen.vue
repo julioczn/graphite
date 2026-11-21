@@ -6,12 +6,14 @@ import Icon from './Icon.vue'
 import LanguageMenu from './LanguageMenu.vue'
 import { t } from '../lib/i18n'
 import { ai } from '../lib/ai'
+import { ENGINES, engineOf } from '../../shared/engines.mjs'
 
-const TYPES = [
-  { id: 'sqlite', label: 'SQLite', port: '' },
-  { id: 'postgres', label: 'PostgreSQL', port: '5432' },
-  { id: 'mysql', label: 'MySQL', port: '3306' },
-]
+const engine = (id) => engineOf(id) || engineOf('postgres')
+const GROUPS = computed(() => [
+  { label: t('Compatíveis com MySQL'), family: 'mysql' },
+  { label: t('Compatíveis com PostgreSQL'), family: 'postgres' },
+  { label: t('SQLite e LibSQL'), family: 'sqlite' },
+].map((g) => ({ ...g, engines: ENGINES.filter((e) => e.family === g.family) })))
 
 const saved = ref([])
 const selectedId = ref(null)
@@ -20,31 +22,45 @@ const message = ref(null) // { kind, text }
 const form = reactive(blank())
 
 function blank(type = 'postgres') {
+  const e = engine(type)
   return {
     id: null, name: '', type,
-    host: 'localhost', port: TYPES.find((x) => x.id === type).port,
-    user: '', password: '', database: '', file: '',
-    ssl: false, readOnly: false, savePassword: true,
+    host: 'localhost', port: e.port,
+    user: e.user, password: '', database: '', file: '', url: '',
+    ssl: e.ssl, readOnly: false, savePassword: true,
   }
 }
 
-const isSqlite = computed(() => form.type === 'sqlite')
+const current = computed(() => engine(form.type))
+const isSqlite = computed(() => current.value.fields === 'file')
+const isUrl = computed(() => current.value.fields === 'url')
+// What the user should know before picking this engine.
+const engineHint = computed(() => [
+  current.value.status === 'beta' && t('Suporte em beta: ainda não testado contra um servidor real.'),
+  !current.value.caps.aiReadOnly && t('Este banco não garante um modo somente leitura, então a AI pede aprovação para toda consulta.'),
+  !current.value.caps.manualMode && t('Sem modo de transação manual.'),
+].filter(Boolean).join(' '))
 const title = computed(() => (form.id ? form.name || t('Conexão') : t('Nova conexão')))
 
 async function load() {
   saved.value = await call('app/connections')
 }
 
+// Switching engine keeps what the user typed, but replaces values that were
+// just the previous engine's defaults.
 function setType(type) {
   if (form.type === type) return
-  const prevDefault = TYPES.find((x) => x.id === form.type).port
+  const prev = engine(form.type)
+  const next = engine(type)
   form.type = type
-  if (!form.port || form.port === prevDefault) form.port = TYPES.find((x) => x.id === type).port
+  if (!form.port || form.port === prev.port) form.port = next.port
+  if (!form.user || form.user === prev.user) form.user = next.user
+  if (form.ssl === prev.ssl) form.ssl = next.ssl
   message.value = null
 }
 
 function newConnection() {
-  Object.assign(form, blank(form.type === 'sqlite' ? 'postgres' : form.type))
+  Object.assign(form, blank(isSqlite.value ? 'postgres' : form.type))
   selectedId.value = null
   message.value = null
 }
@@ -55,19 +71,22 @@ async function pick(c) {
   Object.assign(form, blank(c.type), c.config, {
     id: c.id, name: c.name, type: c.type,
     password: c.password ? await bridge.decrypt(c.password) : '',
-    savePassword: !!c.password || c.type === 'sqlite',
+    savePassword: !!c.password || engine(c.type).fields === 'file',
   })
 }
 
 function config() {
   const c = { type: form.type }
   if (isSqlite.value) Object.assign(c, { file: form.file, readOnly: form.readOnly })
+  // The URL engines' auth token travels (and is stored encrypted) as the password.
+  else if (isUrl.value) Object.assign(c, { url: form.url.trim(), password: form.password })
   else Object.assign(c, { host: form.host, port: form.port, user: form.user, password: form.password, database: form.database, ssl: form.ssl })
   return c
 }
 
 function defaultName() {
   if (isSqlite.value) return form.file.split(/[\\/]/).pop() || 'SQLite'
+  if (isUrl.value) return hostOf(form.url) || current.value.label
   return `${form.user ? form.user + '@' : ''}${form.host}${form.database ? '/' + form.database : ''}`
 }
 
@@ -129,12 +148,23 @@ async function remove(c) {
   await load()
 }
 
+function hostOf(url) {
+  try {
+    return new URL(url).hostname
+  } catch {
+    return ''
+  }
+}
+
 function subtitle(c) {
-  if (c.type === 'sqlite') return c.config.file
+  const fields = engine(c.type).fields
+  if (fields === 'file') return c.config.file
+  if (fields === 'url') return c.config.url
   return `${c.config.user ? c.config.user + '@' : ''}${c.config.host}:${c.config.port}${c.config.database ? '/' + c.config.database : ''}`
 }
 
-const typeLabel = (type) => TYPES.find((x) => x.id === type)?.label || type
+const typeLabel = (type) => engineOf(type)?.label || type
+const iconOf = (type) => (engine(type).fields === 'file' ? 'file' : 'server')
 
 onMounted(load)
 </script>
@@ -166,7 +196,7 @@ onMounted(load)
         <div v-if="!saved.length" class="saved-empty">{{ t('Nenhuma conexão salva ainda.') }}</div>
         <div v-for="c in saved" :key="c.id" class="saved-item" :class="{ active: selectedId === c.id }"
              @click="pick(c)" @dblclick="pick(c).then(connect)">
-          <div class="saved-icon"><Icon :name="c.type === 'sqlite' ? 'file' : 'server'" :size="15" /></div>
+          <div class="saved-icon"><Icon :name="iconOf(c.type)" :size="15" /></div>
           <div class="saved-text">
             <div class="saved-name">{{ c.name }}</div>
             <div class="saved-sub">{{ subtitle(c) }}</div>
@@ -185,14 +215,16 @@ onMounted(load)
           <p class="muted">{{ t('Escolha o tipo de banco e preencha os dados de acesso.') }}</p>
         </header>
 
-        <div class="segmented" role="tablist">
-          <button v-for="type in TYPES" :key="type.id" type="button" role="tab"
-                  :class="{ on: form.type === type.id }" :aria-selected="form.type === type.id" @click="setType(type.id)">
-            {{ type.label }}
-          </button>
-        </div>
-
         <div class="grid">
+          <div class="field span-2">
+            <label for="f-type">{{ t('Tipo de banco') }}</label>
+            <select id="f-type" class="input" :value="form.type" @change="setType($event.target.value)">
+              <optgroup v-for="g in GROUPS" :key="g.family" :label="g.label">
+                <option v-for="e in g.engines" :key="e.id" :value="e.id">{{ e.label }}{{ e.status === 'beta' ? ' (beta)' : '' }}</option>
+              </optgroup>
+            </select>
+            <div v-if="engineHint" class="hint">{{ engineHint }}</div>
+          </div>
           <div class="field span-2">
             <label for="f-name">{{ t('Nome') }}</label>
             <input id="f-name" v-model="form.name" class="input" :placeholder="defaultName() || t('Minha conexão')" />
@@ -207,6 +239,18 @@ onMounted(load)
               </div>
             </div>
             <label class="check span-2"><input v-model="form.readOnly" type="checkbox" /> {{ t('Abrir somente leitura') }}</label>
+          </template>
+
+          <template v-else-if="isUrl">
+            <div class="field span-2">
+              <label for="f-url">URL</label>
+              <input id="f-url" v-model="form.url" class="input mono" placeholder="libsql://meu-banco.turso.io" spellcheck="false" />
+            </div>
+            <div class="field span-2">
+              <label for="f-token">{{ t('Token de acesso') }} <span class="muted">({{ t('opcional em servidores locais') }})</span></label>
+              <input id="f-token" v-model="form.password" class="input mono" type="password" autocomplete="off" spellcheck="false" />
+            </div>
+            <label class="check span-2"><input v-model="form.savePassword" type="checkbox" /> {{ t('Salvar token') }}</label>
           </template>
 
           <template v-else>
@@ -228,7 +272,7 @@ onMounted(load)
             </div>
             <div class="field span-2">
               <label for="f-db">{{ t('Banco de dados') }}</label>
-              <input id="f-db" v-model="form.database" class="input" :placeholder="form.type === 'postgres' ? 'postgres' : t('opcional')" />
+              <input id="f-db" v-model="form.database" class="input" :placeholder="current.family === 'postgres' ? 'postgres' : t('opcional')" />
             </div>
             <div class="checks span-2">
               <label class="check"><input v-model="form.ssl" type="checkbox" /> {{ t('Usar SSL') }}</label>
@@ -335,17 +379,7 @@ onMounted(load)
 .card-head h1 { margin: 0 0 4px; font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .card-head p { margin: 0 0 20px; }
 
-.segmented {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  padding: 3px; margin-bottom: 20px;
-  border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-1);
-}
-.segmented button {
-  height: 30px; border: 0; border-radius: 6px; background: transparent;
-  color: var(--fg-3); cursor: pointer; font-weight: 500;
-}
-.segmented button:hover { color: var(--fg); }
-.segmented button.on { background: var(--surface-5); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-3); }
+.hint { margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--fg-4); }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 14px; }
 .span-2 { grid-column: span 2; }

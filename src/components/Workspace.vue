@@ -18,6 +18,7 @@ import RestoreDialog from './RestoreDialog.vue'
 import ExportDialog from './ExportDialog.vue'
 import AiPanel from './AiPanel.vue'
 import LanguageMenu from './LanguageMenu.vue'
+import { engineOf } from '../../shared/engines.mjs'
 import { ai } from '../lib/ai'
 
 const sidebarWidth = ref(280)
@@ -149,7 +150,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
     <footer class="statusbar">
       <span class="sb-item strong">
-        <Icon :name="conn.dialect === 'sqlite' ? 'file' : 'server'" :size="13" />
+        <Icon :name="engineOf(conn.engine)?.fields === 'file' ? 'file' : 'server'" :size="13" />
         {{ conn.saved?.name || conn.database }}
       </span>
       <span class="sb-item">{{ conn.version }}</span>

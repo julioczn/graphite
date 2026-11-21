@@ -5,6 +5,18 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- New databases: **MariaDB**, **TiDB**, **CockroachDB**, **GreengageDB**, **StarRocks** and **LibSQL / Turso**
+  (tested against real servers), plus **Amazon Redshift** in beta. The connection form now has a database type picker.
+- Each engine declares what it supports; the interface hides what an engine can't do (manual transactions, backup,
+  grid editing) and the AI asks for approval on every query where the database can't enforce a read-only mode
+  (TiDB, Redshift, StarRocks).
+- The AI tools report the exact server (e.g. "CockroachDB v24.3.5") so agents write the right SQL flavor.
+
+### Fixed
+- AI reads failed on MariaDB servers (MariaDB has no `max_execution_time`), and a failure while entering the
+  read-only mode could leave the connection stuck in read-only. Setup now always rolls back on error.
+
 ## [0.5.0] - 2026-11-21
 
 ### Added

@@ -15,10 +15,15 @@ const i18n = require("../shared/i18n.mjs");
 i18n.setLocale(process.env.GRAPHITE_LOCALE || i18n.DEFAULT_LOCALE);
 const { t } = i18n;
 
+const { engineOf } = require("../shared/engines.mjs");
+
+// Driver per engine family; engine-specific quirks live inside each driver
+// (driver.engine), capabilities come from shared/engines.mjs (driver.caps).
 const DRIVERS = {
   sqlite: () => require("./drivers/sqlite.cjs"),
   postgres: () => require("./drivers/postgres.cjs"),
   mysql: () => require("./drivers/mysql.cjs"),
+  libsql: () => require("./drivers/libsql.cjs"),
 };
 const MAX_ROWS = 5000;
 
@@ -29,10 +34,14 @@ const sessions = new Map(); // sId -> Session
 let nextSession = 1;
 
 function makeDriver(config) {
-  const load = DRIVERS[config.type];
+  const engine = engineOf(config.type);
+  const load = engine && (DRIVERS[engine.id] || DRIVERS[engine.family]);
   if (!load) throw new Error(t("Tipo de conexão não suportado: {type}", { type: config.type }));
   const Driver = load();
-  return new Driver(config);
+  const d = new Driver(config);
+  d.engine = engine.id;
+  d.caps = { ...engine.caps };
+  return d;
 }
 
 function session(sId) {
@@ -138,7 +147,8 @@ const handlers = {
     await d.connect();
     const s = new Session(d);
     try {
-      await s.setAutoCommit(autoCommit);
+      // A remembered "manual" mode doesn't apply to engines without it.
+      await s.setAutoCommit(autoCommit || !d.caps.manualMode);
     } catch (e) {
       await d.disconnect();
       throw e;
@@ -151,6 +161,8 @@ const handlers = {
       database: await d.database(),
       schema: await d.currentSchema(),
       dialect: d.dialect,
+      engine: d.engine,
+      caps: d.caps,
       tx: s.tx,
     };
   },
@@ -267,7 +279,7 @@ const handlers = {
     const s = session(sId);
     return s.lock(() => aiquery.run(s.driver, sql, { mode, maxRows }));
   },
-  "ai/classify": ({ sId, sql }) => aiquery.classify(sql, driver(sId).dialect),
+  "ai/classify": ({ sId, sql }) => aiquery.classify(sql, driver(sId).dialect, driver(sId).caps),
 
   // ER diagram model of the current database / schema.
   "er/model": async ({ sId }) => {

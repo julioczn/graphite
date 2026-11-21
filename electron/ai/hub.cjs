@@ -312,7 +312,8 @@ class AiHub extends EventEmitter {
     const p = (async () => {
       const config = await this.configOf(conn.id)
       const info = await this.util.call('conn/open', { config, autoCommit: true })
-      const s = { sId: info.sId, dialect: info.dialect, name: conn.name, readOnly: !!config.readOnly, schema: info.schema, lastUsed: Date.now() }
+      // server: e.g. "CockroachDB v24.3.5" — tells the agent which SQL flavor to write.
+      const s = { sId: info.sId, dialect: info.dialect, server: info.version, name: conn.name, readOnly: !!config.readOnly, schema: info.schema, lastUsed: Date.now() }
       this.sessions.set(conn.id, s)
       return s
     })()
@@ -432,7 +433,7 @@ class AiHub extends EventEmitter {
     this.updateLog(entry, { connection: conn.name })
     const s = await this.session(conn)
     const tables = await this.util.call('conn/listTables', { sId: s.sId, schema: schema ?? s.schema ?? null })
-    return { connection: conn.name, dialect: s.dialect, schema: schema ?? s.schema ?? null, tables: tables.map((x) => `${x.type === 'view' ? 'view' : 'table'} ${x.name}`) }
+    return { connection: conn.name, dialect: s.dialect, server: s.server, schema: schema ?? s.schema ?? null, tables: tables.map((x) => `${x.type === 'view' ? 'view' : 'table'} ${x.name}`) }
   }
 
   async tool_describe_table({ connection, table, schema }, ctx, entry) {
@@ -450,6 +451,7 @@ class AiHub extends EventEmitter {
       table,
       schema: args.schema ?? null,
       dialect: s.dialect,
+      server: s.server,
       columns: columns.map((c) => ({
         name: c.name, type: c.type, nullable: !!c.nullable,
         ...(c.default != null && { default: c.default }),
@@ -470,7 +472,7 @@ class AiHub extends EventEmitter {
     const model = await this.util.call('er/model', { sId: s.sId })
     const fk = new Map()
     for (const r of model.relations) fk.set(r.from.table, [...(fk.get(r.from.table) || []), r])
-    const lines = [`-- ${conn.name} · ${s.dialect}${model.schema ? ' · schema ' + model.schema : ''} · ${model.tables.length} tables`]
+    const lines = [`-- ${conn.name} · ${s.server || s.dialect}${model.schema ? ' · schema ' + model.schema : ''} · ${model.tables.length} tables`]
     for (const tb of model.tables) {
       const cols = tb.columns.map((c) => `${c.name} ${c.type}${c.primary ? ' PK' : ''}${c.nullable ? '' : ' NOT NULL'}`).join(', ')
       lines.push(`${tb.type === 'view' ? 'view' : 'table'} ${tb.name} (${cols})`)

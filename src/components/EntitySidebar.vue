@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { call } from '../lib/api'
-import { store, openTableTab, newQueryTab, refreshEntities, selectSql, tableKey, toast, openErTab } from '../lib/store'
+import { store, openTableTab, newQueryTab, refreshEntities, selectSql, tableKey, toast, openErTab, caps } from '../lib/store'
 import Icon from './Icon.vue'
 import SchemaPicker from './SchemaPicker.vue'
 import ContextMenu from './ContextMenu.vue'
@@ -109,10 +109,10 @@ async function refresh() {
         <span class="n">{{ store.tables.length }}</span>
       </div>
       <div class="tools">
-        <button class="btn ghost icon sm" :title="t('Diagrama ER')" :disabled="needsDatabase" @click="openErTab()"><Icon name="diagram" :size="14" /></button>
+        <button v-if="caps().er" class="btn ghost icon sm" :title="t('Diagrama ER')" :disabled="needsDatabase" @click="openErTab()"><Icon name="diagram" :size="14" /></button>
         <button class="btn ghost icon sm" :title="t('Exportar dados')" :disabled="needsDatabase" @click="store.dialog = { type: 'export', props: {} }"><Icon name="export" :size="14" /></button>
-        <button class="btn ghost icon sm" :title="t('Backup')" :disabled="needsDatabase" @click="store.dialog = { type: 'backup' }"><Icon name="archive" :size="14" /></button>
-        <button class="btn ghost icon sm" :title="t('Restaurar backup')" :disabled="needsDatabase" @click="store.dialog = { type: 'restore' }"><Icon name="upload" :size="14" /></button>
+        <button v-if="caps().backup" class="btn ghost icon sm" :title="t('Backup')" :disabled="needsDatabase" @click="store.dialog = { type: 'backup' }"><Icon name="archive" :size="14" /></button>
+        <button v-if="caps().restore" class="btn ghost icon sm" :title="t('Restaurar backup')" :disabled="needsDatabase" @click="store.dialog = { type: 'restore' }"><Icon name="upload" :size="14" /></button>
         <button class="btn ghost icon sm" :title="t('Recarregar')" :disabled="refreshing" @click="refresh">
           <Icon name="refresh" :size="14" :class="{ spin: refreshing }" />
         </button>

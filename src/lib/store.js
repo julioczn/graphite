@@ -54,6 +54,9 @@ function rememberedMode(saved) {
 
 const schemaKey = (saved) => `graphite.schema.${saved?.id ?? 'adhoc'}`
 
+// What the open connection's engine supports (shared/engines.mjs).
+export const caps = () => store.connection?.caps || {}
+
 export async function openConnection(saved, config) {
   const { tx, ...info } = await call('conn/open', { config, autoCommit: rememberedMode(saved) })
   store.connection = { saved, ...info }

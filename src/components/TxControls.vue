@@ -2,7 +2,7 @@
 // Commit mode switch plus Commit / Rollback while a transaction is open.
 // The transaction belongs to the connection, so every tab shows the same state.
 import { ref } from 'vue'
-import { store, setAutoCommit, commit, rollback } from '../lib/store'
+import { store, setAutoCommit, commit, rollback, caps } from '../lib/store'
 import { t } from '../lib/i18n'
 import Icon from './Icon.vue'
 
@@ -24,7 +24,7 @@ async function act(fn) {
   <div class="txc">
     <div class="seg" :title="t('Modo de commit da conexão')">
       <button :class="{ on: store.tx.autoCommit }" :disabled="busy" @click="act(() => setAutoCommit(true))">{{ t('Auto-commit') }}</button>
-      <button :class="{ on: !store.tx.autoCommit }" :disabled="busy" @click="act(() => setAutoCommit(false))">{{ t('Manual') }}</button>
+      <button v-if="caps().manualMode" :class="{ on: !store.tx.autoCommit }" :disabled="busy" @click="act(() => setAutoCommit(false))">{{ t('Manual') }}</button>
     </div>
     <template v-if="store.tx.open">
       <span class="open" :title="t('{n} alteração sem commit|{n} alterações sem commit', { n: store.tx.statements })">

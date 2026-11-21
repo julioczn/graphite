@@ -60,8 +60,19 @@ class PostgresDriver {
   }
 
   async version() {
-    const r = await this.client.query('show server_version')
-    return 'PostgreSQL ' + r.rows[0].server_version
+    const r = await this.client.query('select version() as v')
+    const v = String(r.rows[0].v)
+    if (/cockroachdb/i.test(v)) return 'CockroachDB ' + (/v[\d.]+/.exec(v)?.[0] || v)
+    if (/redshift/i.test(v)) return 'Amazon Redshift ' + (/Redshift ([\d.]+)/i.exec(v)?.[1] || '')
+    if (/greengage/i.test(v)) return 'GreengageDB ' + (/Greengage Database\)? ?([\d.]+)/i.exec(v)?.[1] || '')
+    if (/greenplum/i.test(v)) return 'Greenplum ' + (/Greenplum Database\)? ?([\d.]+)/i.exec(v)?.[1] || '')
+    return 'PostgreSQL ' + (/PostgreSQL ([\d.]+\w*)/.exec(v)?.[1] || v)
+  }
+
+  // Backups and exports read from one consistent snapshot (on their own connection).
+  async beginSnapshot() {
+    // CockroachDB is serializable by default; REPEATABLE READ needs a cluster setting.
+    await this.client.query(this.engine === 'cockroachdb' ? 'begin transaction read only' : 'begin isolation level repeatable read read only')
   }
 
   async database() {
@@ -149,7 +160,7 @@ class PostgresDriver {
        join pg_namespace n on n.oid = c.relnamespace
        join pg_attribute a on a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped
        left join pg_constraint pk on pk.conrelid = c.oid and pk.contype = 'p'
-       where n.nspname = $1 and c.relkind in ('r', 'p', 'v', 'm') and not c.relispartition
+       where n.nspname = $1 and c.relkind in ('r', 'p', 'v', 'm') and not coalesce(c.relispartition, false)
        order by c.relname, a.attnum`,
       [schema],
     )
@@ -194,7 +205,7 @@ class PostgresDriver {
               c.is_nullable = 'YES' as nullable,
               c.column_default as "default",
               -- filled in by the database: identity / serial / generated columns
-              (c.is_identity = 'YES' or c.is_generated = 'ALWAYS' or coalesce(c.column_default, '') like 'nextval(%') as auto,
+              (c.is_identity = 'YES' or c.is_generated = 'ALWAYS' or coalesce(c.column_default, '') like 'nextval(%' or coalesce(c.column_default, '') like 'unique_rowid()%') as auto,
               exists (
                 select 1 from information_schema.table_constraints tc
                 join information_schema.key_column_usage k

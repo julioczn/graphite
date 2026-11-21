@@ -249,7 +249,7 @@ async function dumpPostgres(d, out, opts, job) {
   const tables = (await q(
     `select c.oid, n.nspname as schema, c.relname as name, greatest(c.reltuples, 0)::bigint as estimate
      from pg_class c join pg_namespace n on n.oid = c.relnamespace
-     where n.nspname = any($1) and c.relkind in ('r', 'p') and not c.relispartition and ${notFromExtension('pg_class', 'c.oid')}
+     where n.nspname = any($1) and c.relkind in ('r', 'p') and not coalesce(c.relispartition, false) and ${notFromExtension('pg_class', 'c.oid')}
      order by n.nspname, c.relname`,
     [schemas],
   )).filter((t) => !opts.tables || opts.tables.includes(t.name))
@@ -440,10 +440,10 @@ async function backup(d, opts, job) {
     if (d.dialect === 'postgres') {
       // Like pg_dump: an empty search_path makes every pg_get_*def() schema-qualify names.
       await d.client.query("select pg_catalog.set_config('search_path', '', false)")
-      await d.client.query('begin isolation level repeatable read read only')
     }
-    if (d.dialect === 'mysql') await d.conn.query('start transaction with consistent snapshot, read only')
-    if (d.dialect === 'sqlite') d.db.exec('begin')
+    // A consistent snapshot, in each engine's own syntax.
+    if (d.beginSnapshot) await d.beginSnapshot()
+    else if (d.dialect === 'sqlite') d.db.exec('begin')
     const run = { sqlite: dumpSqlite, mysql: dumpMysql, postgres: dumpPostgres }[d.dialect]
     await run(d, out, opts, job)
     await out.write(`\n-- ${tr('Fim do backup ({n} linha)|Fim do backup ({n} linhas)', { n: job.totalRows })}\n`)
