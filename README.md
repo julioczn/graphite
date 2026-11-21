@@ -1,0 +1,172 @@
+<p align="center">
+  <img src="docs/assets/icon.svg" width="88" height="88" alt="Graphite logo">
+</p>
+
+<h1 align="center">Graphite</h1>
+
+<p align="center">
+  A fast, keyboard-friendly desktop SQL client for <b>SQLite</b>, <b>PostgreSQL</b> and <b>MySQL/MariaDB</b><br>
+  with an AI assistant and an MCP server for your own agents.
+</p>
+
+<p align="center">
+  <a href="https://github.com/julioczn/graphite/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/julioczn/graphite?label=release&color=555"></a>
+  <a href="https://github.com/julioczn/graphite/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/julioczn/graphite/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-555"></a>
+  <img alt="macOS and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-555">
+</p>
+
+<p align="center">
+  <a href="https://julioczn.github.io/graphite/">Website</a> ·
+  <a href="https://github.com/julioczn/graphite/releases/latest">Download</a> ·
+  <a href="README.pt-BR.md">Português</a>
+</p>
+
+![Graphite: SQL editor with results](docs/assets/screenshots/query.png)
+
+## Features
+
+- **SQLite, PostgreSQL and MySQL/MariaDB** with saved connections (passwords encrypted by the OS keychain), a
+  **Test** button and a ready-to-use **demo** database.
+- **SQL editor** (CodeMirror 6): table/column autocomplete, current-statement highlight, several results per run,
+  inline errors. `⌘/Ctrl+Enter` runs everything or the selection, `⌘/Ctrl+Shift+Enter` runs the statement under the cursor.
+- **SQL snippets**: type a shortcut (`sel`, `ij`, `ups`, `ct`…) and pick it from autocomplete; templates adapt to each database.
+- **Table browser**: pagination, sorting, `WHERE` filter, structure tab (columns, indexes, DDL).
+- **Inline editing** of tables and query results (when the primary key is in the result), applied in a single
+  transaction. Right-click actions on cells, headers and rows: copy as value / JSON / `INSERT`, set `NULL`, filter by value…
+- **Generate SQL** from any table: `SELECT`, `SELECT` with `JOIN`s following the foreign keys, `INSERT`, `UPDATE`, `DELETE`.
+- **Auto-commit or manual transactions** per connection, with commit/rollback (PostgreSQL uses savepoints so one error
+  doesn't abort the transaction).
+- **ER diagram** with automatic layout, inferred relations, search, keys-only mode and SVG/PNG export.
+- **Backup and restore** in `.sql` / `.sql.gz` without `pg_dump` or `mysqldump`, streamed, with progress and cancel.
+- **Export** tables or full query results to CSV, JSON, JSON Lines or SQL `INSERT`s, with no row limit.
+- History per connection, saved queries, quick search (`⌘/Ctrl+P`), tabs.
+- **English, Português (Brasil) and Español**: follows the system language, switch any time from the globe icon.
+
+<details>
+<summary>Snippet shortcuts</summary>
+
+| Query | Joins | Change data | Schema | Diagnostics |
+|---|---|---|---|---|
+| `sel` `seld` `cnt` `grp` `pag` `busca` `entre` `cte` `case` `exists` `in` `rank` `dup` | `ij` `lj` `rj` `fj` `cj` `antij` `j3` | `ins` `insm` `inss` `insr` `ups` `upd` `updj` `del` `delj` `tx` | `ct` `addcol` `dropcol` `rencol` `idx` `uidx` `fk` `view` `drop` | `exp` `cols` `tam` `proc` |
+
+`Tab` / `Shift+Tab` move between fields and `Esc` leaves. The **Snippets** toolbar button lists them all with search.
+</details>
+
+| ER diagram | Approving an agent's change |
+|---|---|
+| ![ER diagram](docs/assets/screenshots/er.png) | ![Approval dialog](docs/assets/screenshots/approval.png) |
+
+## AI: bring your own model or agent
+
+Two ways to use your own AI, sharing the same tools (list connections, schemas and tables, describe a table,
+schema summary with foreign keys, run SQL):
+
+- **Built-in assistant** (✦ in the sidebar): a chat next to the editor using the **Anthropic API** (Claude) or any
+  **OpenAI-compatible** provider, including local models (Ollama, LM Studio). It reads the schema, runs reads on its
+  own, gives you SQL with **Insert** / **New tab** buttons, and failing queries get a **Fix with AI** button. The model
+  list is loaded live from the provider. Your API key is encrypted on your machine, stored per provider, and never sent
+  back to the window or to another provider.
+- **MCP server** for external agents (Claude Code, Cursor, VS Code, Claude Desktop via `mcp-remote`): turn it on in
+  **AI and agents → External agents**, which shows ready-to-paste configs. It only listens on `127.0.0.1`, requires a
+  token, and rejects browser requests (`Origin`) or other `Host` headers.
+
+![MCP server settings](docs/assets/screenshots/mcp.png)
+
+**How your data stays safe** ([`electron/lib/aiquery.cjs`](electron/lib/aiquery.cjs)):
+
+- **Reads** (`SELECT`, `WITH`, `EXPLAIN`, `SHOW`…) run in a read-only mode **enforced by the database itself**
+  (`BEGIN READ ONLY`, `SET SESSION TRANSACTION READ ONLY`, `PRAGMA query_only`), with a 30 s timeout and only the first
+  rows fetched. A write disguised as a read (`WITH … DELETE`, `EXPLAIN ANALYZE DELETE`, `nextval()`) fails instead of running.
+- **Anything else** opens an **approval dialog** in Graphite showing who asked, the connection and every statement.
+  Approved scripts run in a transaction; rejected ones don't run and the agent is told so. Read-only connections never allow writes.
+- Agents use their **own sessions**, never your open transaction. Every call is listed in **AI → Activity**.
+
+> [!IMPORTANT]
+> Whoever has the MCP token can **read** every saved connection without asking. Treat it like a password and
+> regenerate it if it leaks.
+
+## Install
+
+Download the latest build from **[Releases](https://github.com/julioczn/graphite/releases/latest)**.
+
+### macOS (Apple Silicon and Intel)
+
+Open `Graphite-<version>-arm64.dmg` (Apple Silicon) or `-x64.dmg` (Intel) and drag Graphite to Applications.
+
+The app is ad-hoc signed but **not notarized** (no paid Apple Developer ID), so Gatekeeper blocks the first launch.
+Either go to **System Settings → Privacy & Security → Open Anyway**, or run:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Graphite.app
+```
+
+On the Mac, shortcuts use `⌘` instead of `Ctrl` (the interface already shows `⌘`), and `⌫` in the grid works as `Del`.
+
+### Linux (x64)
+
+```bash
+sudo apt install ./graphite_<version>_amd64.deb   # Debian/Ubuntu: installs to /opt/Graphite, adds the `graphite` command
+sudo apt remove graphite                          # uninstall
+```
+
+Or use the portable `Graphite-<version>.AppImage` (`chmod +x` and run). The `.deb` adds an AppArmor profile so
+Electron's sandbox works on Ubuntu 23.10+.
+
+### Where your data lives
+
+Saved connections, history and settings stay on your machine: `~/Library/Application Support/Graphite` (macOS) or
+`~/.config/Graphite` (Linux). Graphite has no telemetry; it only talks to your databases and, if you set one up, to your AI provider.
+
+## Build from source
+
+Requires **Node.js 22+**.
+
+```bash
+git clone https://github.com/julioczn/graphite.git
+cd graphite
+npm install
+npm run dev        # Vite with hot reload + Electron
+npm start          # production renderer build + Electron
+npm run dist:mac   # release/Graphite-<version>-{arm64,x64}.dmg and .zip (on a Mac)
+npm run dist       # release/Graphite-<version>.AppImage and graphite_<version>_amd64.deb
+npm run i18n:check # translation coverage
+```
+
+`GRAPHITE_PROFILE_DIR=/some/folder npm start` runs with a separate profile (settings, connections, demo), handy for testing.
+
+### Project structure
+
+```
+electron/
+  main.cjs        windows, native dialogs, safeStorage, utility process + MessagePorts
+  preload.cjs     window.graphite: RPC over a MessagePort + whitelisted IPC
+  utility.cjs     database process: handlers for conn/*, query/*, table/*, app/*
+  ai/             hub (tools, agent sessions, approvals), mcp (server), assistant (chat)
+  drivers/        sqlite (node:sqlite), postgres (pg), mysql (mysql2)
+  lib/            app database, demo, backup/restore/export, read-only guard for AI queries
+shared/
+  sql.mjs         statement splitter (utility and renderer)
+  i18n.mjs        translations for every process + locales/en.mjs, locales/es.mjs
+src/              Vue 3 renderer (components/, lib/)
+docs/             website (GitHub Pages) and screenshots
+```
+
+All database work happens in a separate utility process that talks to the window over a `MessagePort`; the window
+itself is sandboxed with context isolation and no Node.js access.
+
+## Translations
+
+The Portuguese text is the translation key: `t('Nova conexão')`, `t('Tabela {name}', { name })`, plurals with
+`t('{n} linha|{n} linhas', { n })`. English and Spanish live in [`shared/locales`](shared/locales). To add a language,
+copy `en.mjs`, translate the values and register it in [`shared/i18n.mjs`](shared/i18n.mjs);
+`npm run i18n:check` lists anything missing. Corrections from native speakers are very welcome.
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). For security issues, please follow
+[SECURITY.md](SECURITY.md) instead of opening a public issue.
+
+## License
+
+[MIT](LICENSE) © Julio Zimmermann

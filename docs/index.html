@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Graphite: SQL client for SQLite, PostgreSQL and MySQL</title>
+  <meta name="description" content="Free, open-source desktop SQL client for SQLite, PostgreSQL and MySQL/MariaDB, with an AI assistant and an MCP server for your own agents. macOS and Linux.">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Graphite: SQL client for SQLite, PostgreSQL and MySQL">
+  <meta property="og:description" content="Free, open-source desktop SQL client with an AI assistant and an MCP server for your own agents.">
+  <meta property="og:url" content="https://julioczn.github.io/graphite/">
+  <meta property="og:image" content="https://julioczn.github.io/graphite/assets/screenshots/query.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-in">
+      <a class="brand" href="#top" aria-label="Graphite">
+        <img src="assets/icon.svg" width="28" height="28" alt="">
+        <span>Graphite</span>
+      </a>
+      <nav class="links" aria-label="Sections">
+        <a href="#features" data-i18n="nav.features">Features</a>
+        <a href="#ai" data-i18n="nav.ai">AI &amp; agents</a>
+        <a href="#download" data-i18n="nav.download">Download</a>
+      </nav>
+      <div class="nav-end">
+        <label class="lang">
+          <span class="sr" data-i18n="nav.language">Language</span>
+          <select id="lang" aria-label="Language">
+            <option value="en">EN</option>
+            <option value="pt">PT</option>
+            <option value="es">ES</option>
+          </select>
+        </label>
+        <a class="gh" href="https://github.com/julioczn/graphite" aria-label="GitHub">
+          <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero wrap">
+      <p class="eyebrow"><span data-i18n="hero.eyebrow">Free and open source</span> · <span class="ver" data-version>MIT</span></p>
+      <h1 data-i18n="hero.title">The SQL client that knows when to ask first.</h1>
+      <p class="lead" data-i18n="hero.lead">A fast desktop client for SQLite, PostgreSQL and MySQL/MariaDB. Bring your own AI: a built-in assistant and an MCP server for Claude Code, Cursor and friends — reads run on their own, every write waits for your approval.</p>
+      <div class="cta">
+        <a class="btn primary" data-dl="primary" href="https://github.com/julioczn/graphite/releases/latest">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-dl-label data-i18n="hero.download">Download</span>
+        </a>
+        <a class="btn" href="#download" data-i18n="hero.other">All platforms</a>
+        <a class="btn ghost" href="https://github.com/julioczn/graphite" data-i18n="hero.source">View source</a>
+      </div>
+      <p class="fine" data-i18n="hero.fine">macOS (Apple Silicon &amp; Intel) · Linux (.deb, AppImage) · English, Português, Español</p>
+      <figure class="shot hero-shot">
+        <img src="assets/screenshots/query.png" width="2880" height="1800" alt="Graphite running a SQL query with JOINs and showing the results grid" data-i18n-alt="alt.query">
+      </figure>
+    </section>
+
+    <section id="features" class="wrap section">
+      <h2 data-i18n="features.title">Everything you reach for every day</h2>
+      <p class="sub" data-i18n="features.sub">Built to be quick with the keyboard and careful with your data.</p>
+      <div class="grid">
+        <article class="card">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zm0 0v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+          <h3 data-i18n="f1.t">Three databases, one app</h3>
+          <p data-i18n="f1.d">SQLite, PostgreSQL and MySQL/MariaDB with saved connections, passwords encrypted by your OS keychain, and a demo database to try things.</p>
+        </article>
+        <article class="card">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>
+          <h3 data-i18n="f2.t">A real SQL editor</h3>
+          <p data-i18n="f2.d">Autocomplete for tables and columns, run everything or just the statement under the cursor, several results per run, and snippets like <code>sel</code>, <code>ij</code> or <code>ups</code>.</p>
+        </article>
+        <article class="card">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3zM3 10h18M3 15h18M9 10v9"/></svg>
+          <h3 data-i18n="f3.t">Edit data in place</h3>
+          <p data-i18n="f3.d">Double-click to edit, set NULL, delete rows, then apply everything in one transaction. Works on query results too, when the primary key is there.</p>
+        </article>
+        <article class="card">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>
+          <h3 data-i18n="f4.t">Generate SQL from tables</h3>
+          <p data-i18n="f4.d">Right-click a table for SELECT with JOINs that follow the foreign keys, INSERT, UPDATE or DELETE — ready to fill in.</p>
+        </article>
+        <article class="card">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/></svg>
+          <h3 data-i18n="f5.t">ER diagrams</h3>
+          <p data-i18n="f5.d">Automatic layout, inferred relations when the database has no foreign keys, search, keys-only view, SVG and PNG export.</p>
+        </article>
+        <article class="card">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+          <h3 data-i18n="f6.t">Backup, restore, export</h3>
+          <p data-i18n="f6.d">.sql and .sql.gz backups without pg_dump or mysqldump, streamed restore, and exports to CSV, JSON or INSERTs with no row limit.</p>
+        </article>
+        <article class="card">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>
+          <h3 data-i18n="f7.t">Transactions your way</h3>
+          <p data-i18n="f7.d">Auto-commit or manual mode per connection with commit and rollback. On PostgreSQL each statement gets a savepoint, so one error doesn't sink the transaction.</p>
+        </article>
+        <article class="card">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zM3.5 9h17M3.5 15h17M12 3c2.4 2.6 3.6 5.6 3.6 9s-1.2 6.4-3.6 9c-2.4-2.6-3.6-5.6-3.6-9S9.6 5.6 12 3z"/></svg>
+          <h3 data-i18n="f8.t">Your language</h3>
+          <p data-i18n="f8.d">English, Português and Español. Follows your system and switches instantly, no restart.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="ai" class="wrap section">
+      <div class="split">
+        <div>
+          <p class="eyebrow" data-i18n="ai.eyebrow">AI, on your terms</p>
+          <h2 data-i18n="ai.title">Plug in your own AI. Keep the final say.</h2>
+          <p class="sub" data-i18n="ai.sub">Use the built-in assistant with the Anthropic API or any OpenAI-compatible provider — including local models with Ollama or LM Studio — or let Claude Code, Cursor, VS Code and Claude Desktop use your connections through MCP.</p>
+          <ul class="checks">
+            <li><b data-i18n="ai.c1.t">Reads are read-only, for real.</b> <span data-i18n="ai.c1.d">The database itself enforces it, with a timeout and a row limit. Writes disguised as reads fail.</span></li>
+            <li><b data-i18n="ai.c2.t">Every write needs your approval.</b> <span data-i18n="ai.c2.d">You see who asked, where, and each statement. Approved scripts run in a transaction.</span></li>
+            <li><b data-i18n="ai.c3.t">Your keys stay yours.</b> <span data-i18n="ai.c3.d">Encrypted on your machine, one per provider, never shown again or sent anywhere else.</span></li>
+            <li><b data-i18n="ai.c4.t">Local-only MCP server.</b> <span data-i18n="ai.c4.d">Listens on 127.0.0.1 with a token and refuses browser requests. Every call is logged.</span></li>
+          </ul>
+        </div>
+        <figure class="shot">
+          <img src="assets/screenshots/approval.png" width="2880" height="1800" loading="lazy" alt="Approval dialog: an MCP agent asks to run an UPDATE and Graphite waits for the user" data-i18n-alt="alt.approval">
+        </figure>
+      </div>
+      <div class="mcp">
+        <div>
+          <h3 data-i18n="mcp.title">Connect an agent in one line</h3>
+          <p data-i18n="mcp.d">Turn on the MCP server in AI and agents → External agents and copy the command for your client. Graphite shows the exact config with your token.</p>
+        </div>
+        <pre><code><span class="muted">$</span> claude mcp add --transport http graphite \
+    http://127.0.0.1:7329/mcp \
+    --header "Authorization: Bearer &lt;token&gt;"</code></pre>
+      </div>
+    </section>
+
+    <section class="wrap section">
+      <div class="gallery">
+        <figure class="shot">
+          <img src="assets/screenshots/er.png" width="2880" height="1800" loading="lazy" alt="ER diagram of the demo database" data-i18n-alt="alt.er">
+          <figcaption data-i18n="cap.er">ER diagram with automatic layout and SVG/PNG export.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/screenshots/mcp.png" width="2880" height="1800" loading="lazy" alt="MCP server settings with ready-to-copy client configuration" data-i18n-alt="alt.mcp">
+          <figcaption data-i18n="cap.mcp">Ready-to-paste configs for Claude Code, Cursor, VS Code and Claude Desktop.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="download" class="wrap section">
+      <h2 data-i18n="dl.title">Download</h2>
+      <p class="sub"><span data-i18n="dl.sub">Free, no account, no telemetry.</span> <span data-version-line></span></p>
+      <div class="dl">
+        <article class="card">
+          <h3>macOS</h3>
+          <p data-i18n="dl.mac">Apple Silicon (M1 and newer) or Intel.</p>
+          <div class="row">
+            <a class="btn primary" data-dl="mac-arm64" href="https://github.com/julioczn/graphite/releases/latest">Apple Silicon · .dmg</a>
+            <a class="btn" data-dl="mac-x64" href="https://github.com/julioczn/graphite/releases/latest">Intel · .dmg</a>
+          </div>
+          <details>
+            <summary data-i18n="dl.gk.t">“Graphite can't be opened”?</summary>
+            <p data-i18n="dl.gk.d">The app isn't notarized by Apple yet. Open System Settings → Privacy &amp; Security and click “Open Anyway”, or run:</p>
+            <pre><code>xattr -dr com.apple.quarantine /Applications/Graphite.app</code></pre>
+          </details>
+        </article>
+        <article class="card">
+          <h3>Linux</h3>
+          <p data-i18n="dl.linux">x64. The .deb sets up the menu entry and the graphite command.</p>
+          <div class="row">
+            <a class="btn primary" data-dl="deb" href="https://github.com/julioczn/graphite/releases/latest">Debian / Ubuntu · .deb</a>
+            <a class="btn" data-dl="appimage" href="https://github.com/julioczn/graphite/releases/latest">AppImage</a>
+          </div>
+          <pre><code>sudo apt install ./graphite_*_amd64.deb</code></pre>
+        </article>
+        <article class="card">
+          <h3 data-i18n="dl.src.t">From source</h3>
+          <p data-i18n="dl.src.d">Node.js 22+. Works on macOS and Linux.</p>
+          <pre><code>git clone https://github.com/julioczn/graphite
+cd graphite &amp;&amp; npm install
+npm start</code></pre>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-in">
+      <span>Graphite · <span data-i18n="foot.license">MIT license</span> · © Julio Zimmermann</span>
+      <span class="foot-links">
+        <a href="https://github.com/julioczn/graphite">GitHub</a>
+        <a href="https://github.com/julioczn/graphite/releases" data-i18n="foot.releases">Releases</a>
+        <a href="https://github.com/julioczn/graphite/blob/main/CHANGELOG.md" data-i18n="foot.changelog">Changelog</a>
+        <a href="https://github.com/julioczn/graphite/issues" data-i18n="foot.issues">Report an issue</a>
+      </span>
+    </div>
+  </footer>
+
+  <script src="site.js"></script>
+</body>
+</html>

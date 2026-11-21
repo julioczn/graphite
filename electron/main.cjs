@@ -1,0 +1,310 @@
+// Main process: windows, native dialogs, secrets and the utility process.
+// utilityProcess that talks to the renderer directly over a MessagePort.
+const path = require("node:path");
+const fs = require("node:fs/promises");
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  utilityProcess,
+  MessageChannelMain,
+  nativeTheme,
+  safeStorage,
+  shell,
+  Menu,
+} = require("electron");
+const { AiHub } = require("./ai/hub.cjs");
+const { McpHost } = require("./ai/mcp.cjs");
+const { Assistant } = require("./ai/assistant.cjs");
+const i18n = require("../shared/i18n.mjs");
+const { t } = i18n;
+
+const isDev = !!process.env.VITE_DEV_SERVER_URL;
+// Separate profile (settings, saved connections, demo) for tests and
+// development, so they never touch the installed app's data.
+if (process.env.GRAPHITE_PROFILE_DIR) app.setPath("userData", process.env.GRAPHITE_PROFILE_DIR);
+let util = null;
+let ai = null; // { hub, mcp, assistant }, created when the app is ready
+
+// --- interface language -------------------------------------------------------
+// The preference ('system' or a locale id) lives in userData/prefs.json; main,
+// the utility process and every window follow the resolved locale.
+const prefsFile = () => path.join(app.getPath("userData"), "prefs.json");
+let prefs = { locale: "system" };
+function loadPrefs() {
+  try {
+    prefs = { ...prefs, ...JSON.parse(require("node:fs").readFileSync(prefsFile(), "utf8")) };
+  } catch {}
+  applyLocale();
+}
+function applyLocale() {
+  i18n.setLocale(i18n.resolveLocale(prefs.locale, app.getPreferredSystemLanguages()));
+}
+const localeInfo = () => ({ pref: prefs.locale, locale: i18n.getLocale() });
+ipcMain.handle("app:locale", () => localeInfo());
+ipcMain.handle("app:setLocale", async (_e, pref) => {
+  if (pref !== "system" && !i18n.LOCALES.some((l) => l.id === pref)) throw new Error("unknown locale");
+  prefs.locale = pref;
+  applyLocale();
+  await fs.writeFile(prefsFile(), JSON.stringify(prefs, null, 2));
+  util?.postMessage({ type: "locale", locale: i18n.getLocale() });
+  for (const w of BrowserWindow.getAllWindows()) w.webContents.send("app:locale", localeInfo());
+  return localeInfo();
+});
+
+function startUtility() {
+  if (util) return util;
+  util = utilityProcess.fork(path.join(__dirname, "utility.cjs"), [], {
+    serviceName: "GraphiteUtility",
+    stdio: "inherit",
+    env: { ...process.env, GRAPHITE_USER_DATA: app.getPath("userData"), GRAPHITE_LOCALE: i18n.getLocale() },
+  });
+  // The AI hub talks to the utility over a port of its own.
+  ai?.hub.attachUtil(util);
+  util.on("exit", (code) => {
+    util = null;
+    ai?.hub.detachUtil();
+    if (code) {
+      console.error("[main] utility process died, restarting", code);
+      startUtility();
+      for (const w of BrowserWindow.getAllWindows()) {
+        connectPorts(w);
+        w.webContents.send("util-restarted");
+      }
+    }
+  });
+  return util;
+}
+
+// Give the renderer and the utility process each one end of a channel.
+function connectPorts(win) {
+  const { port1, port2 } = new MessageChannelMain();
+  startUtility().postMessage({ type: "port", windowId: win.id }, [port1]);
+  win.webContents.postMessage("port", null, [port2]);
+}
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1360,
+    height: 860,
+    minWidth: 900,
+    minHeight: 560,
+    backgroundColor: "#0a0a0a",
+    title: "Graphite",
+    autoHideMenuBar: true,
+    icon: path.join(__dirname, "..", "build", "icon.png"),
+    webPreferences: {
+      preload: path.join(__dirname, "preload.cjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+
+  win.webContents.on("did-finish-load", () => connectPorts(win));
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//.test(url)) shell.openExternal(url);
+    return { action: "deny" };
+  });
+
+  if (isDev) win.loadURL(process.env.VITE_DEV_SERVER_URL);
+  else win.loadFile(path.join(__dirname, "..", "dist", "index.html"));
+}
+
+// --- IPC: things only the main process can do -----------------------------
+
+ipcMain.handle("dialog:openFile", async (e, opts = {}) => {
+  const win = BrowserWindow.fromWebContents(e.sender);
+  const res = await dialog.showOpenDialog(win, {
+    properties: ["openFile", ...(opts.create ? ["promptToCreate"] : [])],
+    filters: opts.filters,
+  });
+  return res.canceled ? null : res.filePaths[0];
+});
+
+ipcMain.handle(
+  "dialog:saveFile",
+  async (e, { defaultName, content, filters, encoding = "utf8" }) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    const res = await dialog.showSaveDialog(win, {
+      defaultPath: path.join(app.getPath("downloads"), defaultName),
+      filters,
+    });
+    if (res.canceled || !res.filePath) return null;
+    await fs.writeFile(
+      res.filePath,
+      encoding === "base64" ? Buffer.from(content, "base64") : content,
+      encoding === "base64" ? undefined : "utf8",
+    );
+    return res.filePath;
+  },
+);
+
+// Only picks a path; the utility process writes / reads the file itself
+// (backups and exports can be far bigger than an IPC message).
+ipcMain.handle(
+  "dialog:choosePath",
+  async (e, { mode = "save", defaultName = "", filters, title } = {}) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    if (mode === "save") {
+      const res = await dialog.showSaveDialog(win, {
+        title,
+        defaultPath: path.join(app.getPath("downloads"), defaultName),
+        filters,
+      });
+      return res.canceled ? null : res.filePath || null;
+    }
+    const res = await dialog.showOpenDialog(win, {
+      title,
+      defaultPath:
+        mode === "folder"
+          ? path.join(app.getPath("downloads"), defaultName)
+          : app.getPath("downloads"),
+      properties:
+        mode === "folder"
+          ? ["openDirectory", "createDirectory", "promptToCreate"]
+          : ["openFile"],
+      filters: mode === "folder" ? undefined : filters,
+    });
+    return res.canceled ? null : res.filePaths[0];
+  },
+);
+
+ipcMain.handle("shell:showItem", (_e, file) => shell.showItemInFolder(file));
+
+// Passwords never hit disk in plain text when the OS keyring is available.
+ipcMain.handle("secret:encrypt", (_e, plain) => {
+  if (!plain) return "";
+  if (safeStorage.isEncryptionAvailable()) {
+    return "enc:" + safeStorage.encryptString(plain).toString("base64");
+  }
+  return "b64:" + Buffer.from(plain, "utf8").toString("base64");
+});
+
+ipcMain.handle("secret:decrypt", (_e, stored) => {
+  if (!stored) return "";
+  if (stored.startsWith("enc:")) {
+    return safeStorage.decryptString(Buffer.from(stored.slice(4), "base64"));
+  }
+  if (stored.startsWith("b64:"))
+    return Buffer.from(stored.slice(4), "base64").toString("utf8");
+  return stored;
+});
+
+// --- AI: assistant, MCP server, approvals -------------------------------------
+
+function broadcast(channel, payload) {
+  for (const w of BrowserWindow.getAllWindows()) w.webContents.send(channel, payload);
+}
+
+// A write from an agent needs a window to approve it in: bring one up.
+function windowForApproval() {
+  let win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+  if (!win) {
+    createWindow();
+    return; // it loads the pending approvals itself (ai:pending)
+  }
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+  if (process.platform === "darwin") app.dock?.bounce("critical");
+  else win.flashFrame(true);
+}
+
+function aiState() {
+  return { settings: ai.hub.publicSettings(), mcp: ai.mcp.status() };
+}
+
+async function applyMcp() {
+  const { enabled, port, token } = ai.hub.data.mcp;
+  if (enabled) await ai.mcp.start({ port, token });
+  else await ai.mcp.stop();
+}
+
+function setupAi() {
+  const hub = new AiHub({ userData: app.getPath("userData"), safeStorage });
+  ai = { hub, mcp: new McpHost(hub, app.getVersion()), assistant: new Assistant(hub) };
+  if (util) hub.attachUtil(util);
+  hub.on("approval", (req) => {
+    broadcast("ai:approval", req);
+    windowForApproval();
+  });
+  hub.on("approvalDone", (d) => broadcast("ai:approvalDone", d));
+  hub.on("activity", (e) => broadcast("ai:activity", e));
+  hub.on("mcp", (st) => broadcast("ai:mcp", st));
+
+  ipcMain.handle("ai:state", () => aiState());
+  ipcMain.handle("ai:update", async (_e, patch) => {
+    const before = { ...hub.data.mcp };
+    hub.update(patch);
+    const m = hub.data.mcp;
+    if (m.enabled !== before.enabled || m.port !== before.port || m.token !== before.token) await applyMcp();
+    return aiState();
+  });
+  ipcMain.handle("ai:setActive", (_e, info) => hub.setActive(info));
+  ipcMain.handle("ai:decide", (_e, { id, ok }) => hub.decide(id, ok, ok ? null : t("recusado pelo usuário")));
+  ipcMain.handle("ai:pending", () => hub.pendingApprovals());
+  ipcMain.handle("ai:activity", () => hub.activity);
+  ipcMain.handle("ai:test", () => ai.assistant.test());
+  ipcMain.handle("ai:models", (_e, q = {}) =>
+    ai.assistant.models({
+      provider: q.provider === "openai" ? "openai" : "anthropic",
+      baseUrl: typeof q.baseUrl === "string" ? q.baseUrl.trim() : "",
+      apiKey: typeof q.apiKey === "string" ? q.apiKey.trim() : "",
+    }),
+  );
+  ipcMain.handle("ai:chatSend", (e, { convId, text, context }) => {
+    const sender = e.sender;
+    return ai.assistant.send(convId, { text, context }, (ev) => {
+      if (!sender.isDestroyed()) sender.send("ai:chat", { convId, ...ev });
+    });
+  });
+  ipcMain.handle("ai:chatStop", (_e, { convId }) => ai.assistant.stop(convId));
+  ipcMain.handle("ai:chatReset", (_e, { convId }) => ai.assistant.reset(convId));
+
+  applyMcp().catch((e) => console.error("[main] MCP server", e));
+}
+
+ipcMain.handle("app:info", () => ({
+  version: app.getVersion(),
+  platform: process.platform,
+  userData: app.getPath("userData"),
+}));
+
+// --- lifecycle ---------------------------------------------------------------
+
+app.whenReady().then(() => {
+  nativeTheme.themeSource = "dark";
+  loadPrefs();
+  if (process.platform === "darwin") {
+    // macOS needs an app menu: without it Cmd+C/V/X/A/Z and Cmd+Q stop working.
+    // No Window/File menu on purpose, so Cmd+W / Cmd+T reach the renderer (tabs).
+    Menu.setApplicationMenu(
+      Menu.buildFromTemplate([
+        { role: "appMenu" },
+        { role: "editMenu" },
+        ...(isDev ? [{ role: "viewMenu" }] : []),
+      ]),
+    );
+  } else if (!isDev) {
+    Menu.setApplicationMenu(null);
+  }
+  setupAi();
+  startUtility();
+  createWindow();
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+
+app.on("window-all-closed", () => {
+  // On macOS the app stays open; keep the databases reachable while the MCP
+  // server is on (agents may still be using them).
+  if (util && !(process.platform === "darwin" && ai?.mcp.status().running)) util.kill();
+  if (process.platform !== "darwin") app.quit();
+});
+
+app.on("before-quit", () => {
+  ai?.mcp.stop().catch(() => {});
+});

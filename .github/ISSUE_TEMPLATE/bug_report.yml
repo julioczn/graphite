@@ -1,0 +1,47 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead? Screenshots help.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Connect to …
+        2. Run …
+        3. See …
+  - type: input
+    id: version
+    attributes:
+      label: Graphite version
+      placeholder: "0.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [macOS (Apple Silicon), macOS (Intel), Ubuntu / Debian (.deb), Linux (AppImage), Other]
+    validations:
+      required: true
+  - type: dropdown
+    id: database
+    attributes:
+      label: Database
+      multiple: true
+      options: [SQLite, PostgreSQL, MySQL, MariaDB, Not database related]
+  - type: input
+    id: db-version
+    attributes:
+      label: Database server version
+      placeholder: e.g. PostgreSQL 17, MySQL 8.4
+  - type: markdown
+    attributes:
+      value: "⚠️ Don't paste passwords, API keys, MCP tokens or private data. For security problems use [private reporting](https://github.com/julioczn/graphite/security/advisories/new) instead."
