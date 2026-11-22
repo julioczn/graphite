@@ -77,16 +77,16 @@
 | DuckDB | ✅ | Local `.duckdb` file; AI asks for approval on every query |
 | Snowflake | 🧪 beta | Programmatic Access Token; read-only grid; not yet tested against a real account |
 | BigQuery | 🧪 beta | Service account key (JSON); read-only grid; tested with the open-source emulator |
-| MongoDB | ✅ | mongosh-style commands (`db.orders.find({…})`); JSON filter in the table tab |
-| Redis / Valkey | ✅ | redis-cli commands, one per line; keys browsed by type |
+| MongoDB | ✅ | mongosh-style commands (`db.orders.find({…})`); JSON filter; grid editing keeps BSON types |
+| Redis / Valkey | ✅ | redis-cli commands, one per line; keys browsed and edited by type (atomic `MULTI/EXEC`) |
 | Apache Cassandra / ScyllaDB | ✅ | CQL; keyspaces in the picker; pages without a total |
 | Amazon DynamoDB | ✅ | PartiQL; access key + secret (or DynamoDB Local) |
 | SurrealDB | ✅ | SurrealQL over HTTP; namespace + database |
 | Amazon Redshift | 🧪 beta | Not yet tested against a real cluster |
 | StarRocks | ✅ | No transactions (read-only grid); AI asks for approval on every query |
 
-Non-relational databases (MongoDB and below) have read-only grids for now, and the AI asks for approval on every
-command there, since none of them offers a read-only mode the app could rely on.
+On the non-relational databases the AI asks for approval on every command, since none of them offers a read-only mode
+the app could rely on. Grid editing is available for MongoDB and Redis; the others are read-only for now.
 
 ## AI: bring your own model or agent
 

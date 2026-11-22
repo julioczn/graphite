@@ -5,6 +5,14 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- Grid editing for **MongoDB** and **Redis**. MongoDB keeps each field's BSON type (number, Decimal128, Date,
+  ObjectId, Long, arrays/objects as Extended JSON) and applies a batch in a transaction on replica sets (Atlas); on a
+  standalone server it applies in order and reports how many changes went in if one fails. Redis applies the batch as
+  one `MULTI/EXEC` under `WATCH` (nothing is written if the key changes meanwhile), per key type: hash fields
+  (including renames), list items, set and sorted-set members and scores, strings (keeping the TTL) and stream entries
+  (delete).
+
 ## [0.7.0] - 2026-11-22
 
 ### Added

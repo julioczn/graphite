@@ -149,7 +149,9 @@ class RedisDriver {
   async listColumns(key) {
     const type = await this.typeOf(key)
     const cols = { string: ['value'], hash: ['field', 'value'], list: ['index', 'value'], set: ['member'], zset: ['member', 'score'], stream: ['id', 'fields'], 'ReJSON-RL': ['json'] }[type] || ['value']
-    return cols.map((name, i) => ({ name, type: i === 0 ? type : 'string', nullable: false, default: null, primary: i === 0 && type !== 'string', auto: false, references: null }))
+    // The first column identifies the row (field, index, member, id); a string
+    // or JSON key is a single row, identified by its value.
+    return cols.map((name, i) => ({ name, type: i === 0 ? type : 'string', nullable: false, default: null, primary: i === 0, auto: false, references: null }))
   }
 
   async schemaMap() {
@@ -203,6 +205,70 @@ class RedisDriver {
     } while (cursor !== '0' && rows.length < limit)
     const total = where && where !== '*' ? (cursor === '0' ? seen : null) : type === 'hash' ? await c.hlen(key) : await c.scard(key)
     return { fields: type === 'hash' ? ['field', 'value'] : ['member'], rows, total }
+  }
+
+  // Grid edits as one MULTI/EXEC under WATCH: all or nothing, and nothing
+  // at all if the key changes between reading it and writing.
+  async applyChanges(changes) {
+    const key = changes[0].table
+    const c = this.client
+    await c.watch(key)
+    try {
+      const type = await this.typeOf(key)
+      const ops = []
+      const value = (v) => {
+        if (v === null || v === undefined) throw new Error(t('O Redis não tem valores NULL'))
+        return String(v)
+      }
+      const no = () => { throw new Error(t('Este tipo de chave do Redis não permite essa alteração')) }
+      const marker = `__graphite_deleted_${Date.now()}__`
+      let listDeletes = 0
+      for (const ch of changes) {
+        const del = ch.kind === 'delete'
+        if (type === 'string') ops.push(del ? ['del', key] : ['set', key, value(ch.value), 'KEEPTTL'])
+        else if (type === 'ReJSON-RL') ops.push(del ? ['del', key] : ['call', 'JSON.SET', key, '$', value(ch.value)])
+        else if (type === 'hash') {
+          const field = String(ch.pk.field)
+          if (del) ops.push(['hdel', key, field])
+          else if (ch.column === 'value') ops.push(['hset', key, field, value(ch.value)])
+          else {
+            const current = await c.hget(key, field)
+            ops.push(['hset', key, value(ch.value), current ?? ''], ['hdel', key, field])
+          }
+        } else if (type === 'list') {
+          const index = Number(ch.pk.index)
+          if (del) { ops.push(['lset', key, index, marker]); listDeletes++ }
+          else if (ch.column === 'value') ops.push(['lset', key, index, value(ch.value)])
+          else no()
+        } else if (type === 'set') {
+          const member = String(ch.pk.member)
+          ops.push(['srem', key, member])
+          if (!del) ops.push(['sadd', key, value(ch.value)])
+        } else if (type === 'zset') {
+          const member = String(ch.pk.member)
+          if (del) ops.push(['zrem', key, member])
+          else if (ch.column === 'score') {
+            const score = Number(ch.value)
+            if (!Number.isFinite(score)) throw new Error(t('Valor inválido para um campo {kind}: {value}', { kind: 'score', value: ch.value }))
+            ops.push(['zadd', key, 'XX', score, member])
+          } else {
+            const score = await c.zscore(key, member)
+            ops.push(['zrem', key, member], ['zadd', key, score ?? 0, value(ch.value)])
+          }
+        } else if (type === 'stream') {
+          if (del) ops.push(['xdel', key, String(ch.pk.id)])
+          else no()
+        } else no()
+      }
+      if (listDeletes) ops.push(['lrem', key, 0, marker])
+      const res = await c.multi(ops).exec()
+      if (!res) throw new Error(t('A chave "{key}" mudou enquanto as alterações eram aplicadas; nada foi gravado', { key }))
+      const failed = res.find(([err]) => err)
+      if (failed) throw failed[0]
+      return changes.length
+    } finally {
+      await c.unwatch().catch(() => {})
+    }
   }
 
   async *streamTable(key) {

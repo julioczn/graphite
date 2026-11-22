@@ -14,6 +14,8 @@
 //   aiReadOnly    the database enforces a read-only mode for AI reads; when
 //                 false, every AI query needs the user's approval
 //   cursors       rows can be fetched in batches with DECLARE … CURSOR
+//   edit          grid editing in the table tab (defaults to `transactions`); engines
+//                 without SQL transactions apply edits through driver.applyChanges
 //   sql           the query language is SQL (false: MongoDB, Redis, CQL…):
 //                 SQL generation, snippets and SQL INSERT export are hidden
 //
@@ -123,12 +125,12 @@ export const ENGINES = [
       { key: 'database', optional: true, placeholder: 'test' },
     ],
     filter: { label: 'filter', placeholder: '{ "status": "pago" }' },
-    caps: { ...NOSQL, schemas: 'database' },
+    caps: { ...NOSQL, schemas: 'database', edit: true },
   }),
   engine('redis', 'Redis / Valkey', 'redis', {
     port: '6379',
     filter: { label: 'MATCH', placeholder: 'user:*' },
-    caps: { ...NOSQL, schemas: 'database' },
+    caps: { ...NOSQL, schemas: 'database', edit: true },
   }),
   // CQL: the picker switches keyspaces; no OFFSET and no cheap COUNT.
   engine('cassandra', 'Apache Cassandra', 'cql', { port: '9042', filter: { label: 'WHERE', placeholder: "status = 'pago' ALLOW FILTERING" }, caps: { ...NOSQL, schemas: 'database' } }),

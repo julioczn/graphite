@@ -98,6 +98,8 @@ function withJobDriver(sId, fn) {
 //       | { kind: 'delete', table, schema, pk }
 function applyChanges(s, changes) {
   const d = s.driver;
+  // Non-SQL engines (MongoDB, Redis) apply grid edits with their own commands.
+  if (d.applyChanges) return s.lock(() => d.applyChanges(changes));
   return s.lock(() =>
     s.atomic(async () => {
       let affected = 0;
