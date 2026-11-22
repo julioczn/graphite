@@ -19,6 +19,11 @@ const READ = {
   // EXPLAIN PLAN writes to PLAN_TABLE in Oracle; SQL Server has no EXPLAIN.
   mssql: new Set(['SELECT', 'WITH']),
   oracle: new Set(['SELECT', 'WITH']),
+  clickhouse: new Set(['SELECT', 'WITH', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN', 'EXISTS']),
+  trino: new Set(['SELECT', 'WITH', 'VALUES', 'TABLE', 'SHOW', 'DESCRIBE', 'EXPLAIN']),
+  // EXECUTE BLOCK can write: not a read.
+  firebird: new Set(['SELECT', 'WITH']),
+  duckdb: new Set(['SELECT', 'WITH', 'VALUES', 'TABLE', 'FROM', 'EXPLAIN', 'SHOW', 'DESCRIBE', 'SUMMARIZE']),
 }
 // Statements that return rows and can be read in batches (cursor / iterator /
 // sql_select_limit), so a huge result never has to fit in memory.

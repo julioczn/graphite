@@ -26,6 +26,10 @@ const DRIVERS = {
   libsql: () => require("./drivers/libsql.cjs"),
   mssql: () => require("./drivers/mssql.cjs"),
   oracle: () => require("./drivers/oracle.cjs"),
+  clickhouse: () => require("./drivers/clickhouse.cjs"),
+  trino: () => require("./drivers/trino.cjs"),
+  firebird: () => require("./drivers/firebird.cjs"),
+  duckdb: () => require("./drivers/duckdb.cjs"),
 };
 const MAX_ROWS = 5000;
 

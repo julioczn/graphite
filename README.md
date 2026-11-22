@@ -71,10 +71,14 @@
 | LibSQL / Turso | ✅ | Remote URL + token; no manual transaction mode |
 | SQL Server / Azure SQL | ✅ | Wide decimals in free-form queries lose precision (driver limitation); `CAST` them |
 | Oracle Database | ✅ | Thin mode (no Instant Client); "database" = service name |
+| ClickHouse | ✅ | HTTP; no transactions (read-only grid); AI reads with `readonly=1` |
+| Trino / Starburst | ✅ | "Database" = `catalog` or `catalog.schema`; read-only grid |
+| Firebird 3+ | ✅ | "Database" = path or alias on the server |
+| DuckDB | ✅ | Local `.duckdb` file; AI asks for approval on every query |
 | Amazon Redshift | 🧪 beta | Not yet tested against a real cluster |
 | StarRocks | ✅ | No transactions (read-only grid); AI asks for approval on every query |
 
-More are on the way: ClickHouse, DuckDB, Snowflake, BigQuery, Trino, Firebird, and non-relational
+More are on the way: Snowflake, BigQuery, and non-relational
 ones like Redis, MongoDB, Cassandra/ScyllaDB and DynamoDB.
 
 ## AI: bring your own model or agent
@@ -163,7 +167,8 @@ electron/
   preload.cjs     window.graphite: RPC over a MessagePort + whitelisted IPC
   utility.cjs     database process: handlers for conn/*, query/*, table/*, app/*
   ai/             hub (tools, agent sessions, approvals), mcp (server), assistant (chat)
-  drivers/        sqlite, postgres (pg), mysql (mysql2), libsql, mssql (tedious), oracle (oracledb)
+  drivers/        sqlite, postgres (pg), mysql (mysql2), libsql, mssql (tedious), oracle (oracledb),
+                  clickhouse, trino, firebird (node-firebird), duckdb (@duckdb/node-api)
   lib/            app database, demo, backup/restore/export, read-only guard for AI queries
 shared/
   engines.mjs     database engines: family, defaults and capabilities

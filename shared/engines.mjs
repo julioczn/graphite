@@ -15,7 +15,7 @@
 //                 false, every AI query needs the user's approval
 //   cursors       rows can be fetched in batches with DECLARE … CURSOR
 //
-// families: 'mysql' | 'postgres' | 'sqlite' | 'mssql' | 'oracle'.
+// families: 'mysql' | 'postgres' | 'sqlite' | 'mssql' | 'oracle' | 'clickhouse' | 'trino' | 'firebird' | 'duckdb'.
 //
 // fields: what the connection form asks for ('server' = host/port/user/
 // password/database/ssl, 'file' = a local file, 'url' = URL + auth token).
@@ -69,7 +69,19 @@ export const ENGINES = [
   // Thin mode (no Instant Client). "Database" is the service name. Oracle rolls
   // back only the failed statement, so no savepoints are needed.
   engine('oracle', 'Oracle', 'oracle', { port: '1521', caps: { schemas: 'schema', restore: false } }),
-  engine('sqlite', 'SQLite', 'sqlite', { fields: 'file', caps: { backup: true } }),
+  // "Database" = path or alias on the server. Failed statements roll back on
+  // their own, so no savepoints; READ ONLY transactions are enforced.
+  engine('firebird', 'Firebird', 'firebird', { port: '3050', user: 'SYSDBA', caps: { restore: false } }),
+  // HTTP interface; the picker switches databases. No interactive transactions;
+  // AI reads run with readonly=1, enforced by the server.
+  engine('clickhouse', 'ClickHouse', 'clickhouse', { port: '8123', user: 'default', caps: { schemas: 'database', transactions: false, manualMode: false, restore: false } }),
+  // Federated queries over catalogs; "database" = catalog or catalog.schema.
+  // AI reads run in START TRANSACTION READ ONLY, which Trino enforces.
+  engine('trino', 'Trino', 'trino', { port: '8080', user: 'graphite', caps: { schemas: 'schema', transactions: false, manualMode: false, restore: false } }),
+  engine('sqlite', 'SQLite', 'sqlite', { fields: 'file', exts: ['db', 'sqlite', 'sqlite3', 'db3'], caps: { backup: true } }),
+  // Embedded (native binary). No read-only transactions, and reads can reach
+  // local files (read_csv…), so every AI query needs approval.
+  engine('duckdb', 'DuckDB', 'duckdb', { fields: 'file', exts: ['duckdb', 'ddb', 'db'], caps: { schemas: 'schema', aiReadOnly: false } }),
   engine('libsql', 'LibSQL / Turso', 'sqlite', { fields: 'url', caps: { manualMode: false } }),
 ]
 

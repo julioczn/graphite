@@ -16,12 +16,14 @@ import { store } from './store'
 //   SQL Server: SELECT TOP n … / OFFSET … ROWS FETCH NEXT … ROWS ONLY
 //   Oracle:     … FETCH FIRST n ROWS ONLY / OFFSET … ROWS FETCH NEXT … ROWS ONLY
 export function withLimit(text, dialect) {
-  if (dialect !== 'mssql' && dialect !== 'oracle') return text
+  // Trino has LIMIT but puts OFFSET first.
+  if (dialect === 'trino') return text.replace(/\nLIMIT (\d+) OFFSET (\d+);/, '\nOFFSET $2 LIMIT $1;')
+  if (dialect !== 'mssql' && dialect !== 'oracle' && dialect !== 'firebird') return text
   const paged = /\nLIMIT (\d+) OFFSET (\d+);/
   if (paged.test(text)) return text.replace(paged, '\nOFFSET $2 ROWS FETCH NEXT $1 ROWS ONLY;')
   const m = /\nLIMIT (\d+);/.exec(text)
   if (!m) return text
-  if (dialect === 'oracle') return text.replace(m[0], `\nFETCH FIRST ${m[1]} ROWS ONLY;`)
+  if (dialect === 'oracle' || dialect === 'firebird') return text.replace(m[0], `\nFETCH FIRST ${m[1]} ROWS ONLY;`)
   return text.replace(m[0], ';').replace(/^SELECT( DISTINCT)?/, `SELECT$1 TOP ${m[1]}`)
 }
 
