@@ -80,14 +80,15 @@
 | BigQuery | 🧪 beta | Chave de conta de serviço (JSON); grade somente leitura; testado com o emulador open source |
 | MongoDB | ✅ | Comandos no estilo do mongosh (`db.orders.find({…})`); filtro JSON; edição na grade mantém os tipos BSON |
 | Redis / Valkey | ✅ | Comandos do redis-cli, um por linha; chaves exibidas e editadas por tipo (`MULTI/EXEC` atômico) |
-| Apache Cassandra / ScyllaDB | ✅ | CQL; keyspaces no seletor; paginação sem total |
-| Amazon DynamoDB | ✅ | PartiQL; access key + secret (ou DynamoDB Local) |
-| SurrealDB | ✅ | SurrealQL via HTTP; namespace + banco |
+| Apache Cassandra / ScyllaDB | ✅ | CQL; keyspaces no seletor; paginação sem total; edições num único batch logado |
+| Amazon DynamoDB | ✅ | PartiQL; access key + secret (ou DynamoDB Local); edições numa transação, mantendo os tipos |
+| SurrealDB | ✅ | SurrealQL via HTTP; namespace + banco; edições numa transação, mantendo os tipos |
 | Amazon Redshift | 🧪 beta | Ainda não testado contra um cluster real |
 | StarRocks | ✅ | Sem transações (grade somente leitura); a AI pede aprovação para toda consulta |
 
 Nos não relacionais, a AI pede aprovação para todo comando, porque nenhum deles oferece um modo somente leitura em
-que o app possa confiar. A edição pela grade funciona no MongoDB e no Redis; nos demais, a grade é somente leitura.
+que o app possa confiar. Todos têm edição pela grade; as colunas-chave (`_id`, chaves primária/de partição/de
+ordenação, `id`) ficam somente leitura, porque identificam a linha.
 
 ## AI: use o seu próprio modelo ou agente
 

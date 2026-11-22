@@ -5,14 +5,34 @@
 // - Tables come from INFO FOR DB; columns from the table's defined fields plus
 //   a sample of records (schemaless tables).
 // - Integers beyond 2^53 keep every digit (JSON source text access).
-// - No interactive transactions over HTTP: read-only grid; every AI query
-//   needs approval.
+// - Grid edits: one BEGIN … COMMIT request that THROWs (rolling everything
+//   back) if a record no longer exists. Values are s"…" literals (a plain
+//   string that looks like a record id or date would be converted) cast to
+//   the field's current type on the server; objects/arrays are edited as JSON;
+//   NULL removes the field (NONE).
+// - No interactive transactions over HTTP: every AI query needs approval.
 const { normaliseRows } = require('../lib/sql.cjs')
 const { t } = require('../../shared/i18n.mjs')
 
 // JSON.parse that keeps integers wider than a double as text.
 const parse = (text) => JSON.parse(text, (key, value, ctx) =>
   typeof value === 'number' && !Number.isSafeInteger(value) && ctx?.source && /^-?\d+$/.test(ctx.source) ? ctx.source : value)
+
+// A SurrealQL string literal that stays a string (no record/datetime coercion).
+const str = (v) => 's' + JSON.stringify(String(v))
+// The new value takes the type of the field's current value.
+const CASTS = ['datetime', 'decimal', 'int', 'float', 'bool', 'duration', 'uuid', 'record']
+const typedExpr = (field, lit) => `(${CASTS.map((c) => `IF type::is::${c}(${field}) { <${c}>${lit} }`).join(' ELSE ')} ELSE { ${lit} })`
+// Edited JSON → SurrealQL literal whose text leaves take the type of the value
+// at the same path today (a nested datetime, decimal or record stays one).
+function literal(v, path, quote) {
+  if (v === null) return 'NULL'
+  if (typeof v === 'string') return typedExpr(path, str(v))
+  if (typeof v !== 'object') return JSON.stringify(v)
+  if (Array.isArray(v)) return `[${v.map((x, i) => literal(x, `${path}[${i}]`, quote)).join(', ')}]`
+  return `{ ${Object.entries(v).map(([k, x]) => `${JSON.stringify(k)}: ${literal(x, `${path}.${quote(k)}`, quote)}`).join(', ')} }`
+}
+const GENERIC_TX_ERROR = /not executed due to a failed transaction|cancelled transaction/i
 
 const plain = (v) => (v !== null && typeof v === 'object' ? JSON.stringify(v) : v)
 
@@ -47,8 +67,9 @@ class SurrealDriver {
     const raw = await res.text()
     const body = raw ? parse(raw) : null
     if (!res.ok) throw new Error(body?.information || body?.description || `SurrealDB ${res.status}`)
-    const failed = body.find((r) => r.status === 'ERR')
-    if (failed) throw new Error(String(failed.result))
+    // In a failed transaction every statement errors; report the one that caused it.
+    const failed = body.find((r) => r.status === 'ERR' && !GENERIC_TX_ERROR.test(r.result)) || body.find((r) => r.status === 'ERR')
+    if (failed) throw new Error(String(failed.result).replace(/^An error occurred: /, ''))
     return body.map((r) => r.result)
   }
 
@@ -138,6 +159,8 @@ class SurrealDriver {
     const cond = where ? ` WHERE ${where}` : ''
     const order = orderBy ? ` ORDER BY ${this.quote(orderBy)} ${dir === 'desc' ? 'DESC' : 'ASC'}` : ''
     const [rows, count] = await this.sql(`SELECT * FROM ${tb}${cond}${order} LIMIT ${limit} START ${offset}; SELECT count() FROM ${tb}${cond} GROUP ALL`)
+    // Records of the page on screen: an edited object/array field is parsed as JSON.
+    this.shown = { table, records: new Map((rows || []).map((r) => [String(r.id), r])) }
     const g = this.grid(rows)
     return { fields: g.fields, rows: normaliseRows(g.rows, g.fields), total: count?.[0]?.count ?? 0 }
   }
@@ -171,6 +194,48 @@ class SurrealDriver {
   async firstRows(text, limit) {
     const r = await this.execute(text)
     return r.rows ? { ...r, rows: r.rows.slice(0, limit + 1) } : r
+  }
+
+  // changes: [{ kind: 'update' | 'delete', table, pk: { id }, column, value }]
+  async applyChanges(changes) {
+    const table = changes[0].table
+    const shown = this.shown?.table === table ? this.shown.records : new Map()
+    const lines = ['BEGIN TRANSACTION']
+    const vars = new Map() // record id → $rN
+    for (const ch of changes) {
+      const id = String(ch.pk.id)
+      if (!vars.has(id)) {
+        const v = `$r${vars.size}`
+        vars.set(id, v)
+        lines.push(`LET ${v} = <record>${str(id)}`)
+        lines.push(`IF record::tb(${v}) != ${str(table)} OR array::len(SELECT id FROM ${v}) = 0 { THROW ${str(t('O registro {id} não existe mais. Nada foi aplicado.', { id }))} }`)
+      }
+      const rid = vars.get(id)
+      if (ch.kind === 'delete') {
+        lines.push(`DELETE ${rid}`)
+        continue
+      }
+      if (ch.column === 'id') throw new Error(t('O id de um registro não pode ser alterado'))
+      const f = this.quote(ch.column)
+      let expr
+      if (ch.value === null) expr = 'NONE'
+      else {
+        const cur = shown.get(id)?.[ch.column]
+        if (cur !== null && typeof cur === 'object') {
+          let v
+          try {
+            v = JSON.parse(ch.value)
+          } catch {
+            throw new Error(t('{column}: informe o valor em JSON (ex.: {example})', { column: ch.column, example: Array.isArray(cur) ? '["a", "b"]' : '{"a": 1}' }))
+          }
+          expr = literal(v, f, (k) => this.quote(k))
+        } else expr = typedExpr(f, str(ch.value))
+      }
+      lines.push(`UPDATE ${rid} SET ${f} = ${expr} RETURN NONE`)
+    }
+    lines.push('COMMIT TRANSACTION')
+    await this.sql(lines.join(';\n') + ';')
+    return changes.length
   }
 
   async transaction(fn) {

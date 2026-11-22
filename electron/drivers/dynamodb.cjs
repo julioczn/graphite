@@ -5,7 +5,10 @@
 //   other attributes are the union of what the items carry.
 // - Paging follows NextToken, so there is no total.
 // - endpoint points at DynamoDB Local / LocalStack.
-// - No interactive transactions: read-only grid; every AI query needs approval.
+// - Grid edits: one TransactWriteItems (all or nothing, up to 100 items), each
+//   item conditioned on still existing. A value keeps the attribute's type
+//   (S, N, BOOL, M/L and sets as JSON); NULL removes the attribute.
+// - No interactive transactions: every AI query needs approval.
 const { sign } = require('../lib/sigv4.cjs')
 const { normaliseRows } = require('../lib/sql.cjs')
 const { t } = require('../../shared/i18n.mjs')
@@ -32,6 +35,18 @@ function marshall(v) {
   if (typeof v === 'number' || typeof v === 'bigint') return { N: String(v) }
   return { S: String(v) }
 }
+
+// Plain JSON value → AttributeValue (maps and lists recursively).
+function toAv(v) {
+  if (v === null || v === undefined) return { NULL: true }
+  if (typeof v === 'boolean') return { BOOL: v }
+  if (typeof v === 'number') return { N: String(v) }
+  if (Array.isArray(v)) return { L: v.map(toAv) }
+  if (typeof v === 'object') return { M: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, toAv(x)])) }
+  return { S: String(v) }
+}
+
+const NUMBER = /^-?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/
 
 const plain = (v) => (Buffer.isBuffer(v) ? v : v && typeof v === 'object' ? JSON.stringify(v, (k, x) => (x?.type === 'Buffer' ? `<${x.data.length} bytes>` : x)) : v)
 
@@ -209,6 +224,8 @@ class DynamoDriver {
       }
       if (items.length >= limit) break
     }
+    // Raw items of the page on screen: edits keep each attribute's type.
+    this.shown = { table, items: new Map(items.map((it) => [JSON.stringify(keys.map((k) => String(unmarshall(it[k])))), it])) }
     const g = this.grid(items, keys)
     return { fields: g.fields, rows: normaliseRows(g.rows, g.fields), total: null }
   }
@@ -254,6 +271,80 @@ class DynamoDriver {
   async firstRows(text, limit) {
     const r = await this.execute(text)
     return r.rows ? { ...r, rows: r.rows.slice(0, limit + 1) } : r
+  }
+
+  // changes: [{ kind: 'update' | 'delete', table, pk: {attr: val}, column, value }]
+  async applyChanges(changes) {
+    const table = changes[0].table
+    const d = await this.describe(table)
+    const keys = d.KeySchema.map((k) => k.AttributeName)
+    const keyType = Object.fromEntries(d.AttributeDefinitions.map((a) => [a.AttributeName, a.AttributeType]))
+    const shown = this.shown?.table === table ? this.shown.items : new Map()
+    const keyOf = (pk) => Object.fromEntries(keys.map((k) => [k, keyType[k] === 'N' ? { N: String(pk[k]) } : keyType[k] === 'B' ? { B: pk[k] } : { S: String(pk[k]) }]))
+    // One write per item: its edits merge into one update; a delete wins.
+    const items = new Map()
+    for (const ch of changes) {
+      const id = JSON.stringify(keys.map((k) => String(ch.pk[k])))
+      const it = items.get(id) || { pk: ch.pk, del: false, set: new Map(), remove: new Set() }
+      items.set(id, it)
+      if (ch.kind === 'delete') it.del = true
+      else if (keys.includes(ch.column)) throw new Error(t('Atributos da chave não podem ser alterados no DynamoDB'))
+      else if (ch.value === null) it.remove.add(ch.column)
+      else it.set.set(ch.column, this.typed(ch.column, ch.value, shown.get(id)?.[ch.column]))
+    }
+    if (items.size > 100) throw new Error(t('O DynamoDB aplica no máximo 100 itens por vez; aplique em partes'))
+    const writes = [...items.values()].map((it) => {
+      const names = { '#k': keys[0] }
+      const base = { TableName: table, Key: keyOf(it.pk), ConditionExpression: 'attribute_exists(#k)', ExpressionAttributeNames: names }
+      if (it.del) return { Delete: base }
+      const values = {}
+      const set = [...it.set].map(([col, av], i) => ((names['#s' + i] = col), (values[':s' + i] = av), `#s${i} = :s${i}`))
+      const rm = [...it.remove].map((col, i) => ((names['#r' + i] = col), `#r${i}`))
+      const expr = [set.length && 'SET ' + set.join(', '), rm.length && 'REMOVE ' + rm.join(', ')].filter(Boolean).join(' ')
+      return { Update: { ...base, UpdateExpression: expr, ...(set.length && { ExpressionAttributeValues: values }) } }
+    })
+    try {
+      await this.api('TransactWriteItems', { TransactItems: writes })
+    } catch (e) {
+      if (/ConditionalCheckFailed/.test(e.message)) throw new Error(t('Um dos itens não existe mais. Nada foi aplicado.'))
+      throw e
+    }
+    return changes.length
+  }
+
+  // The grid's text → AttributeValue of the attribute's current type.
+  typed(column, text, current) {
+    const kind = current ? Object.keys(current)[0] : 'S'
+    const json = () => {
+      try {
+        return JSON.parse(text)
+      } catch {
+        throw new Error(t('{column}: informe o valor em JSON (ex.: {example})', { column, example: kind === 'M' ? '{"a": 1}' : '["a", "b"]' }))
+      }
+    }
+    switch (kind) {
+      case 'N':
+        if (!NUMBER.test(text.trim())) throw new Error(t('{column}: "{value}" não é um número', { column, value: text }))
+        return { N: text.trim() }
+      case 'BOOL':
+        if (!/^(true|false)$/i.test(text.trim())) throw new Error(t('{column}: use true ou false', { column }))
+        return { BOOL: /^true$/i.test(text.trim()) }
+      case 'M':
+      case 'L':
+        return toAv(json())
+      case 'SS':
+      case 'NS': {
+        const list = json()
+        if (!Array.isArray(list) || !list.length) throw new Error(t('{column}: um conjunto precisa de pelo menos um valor, em JSON (ex.: ["a", "b"])', { column }))
+        if (kind === 'NS' && !list.every((n) => NUMBER.test(String(n)))) throw new Error(t('{column}: "{value}" não é um número', { column, value: list.find((n) => !NUMBER.test(String(n))) }))
+        return { [kind]: [...new Set(list.map(String))] }
+      }
+      case 'B':
+      case 'BS':
+        throw new Error(t('{column}: valores binários não podem ser editados na grade', { column }))
+      default:
+        return { S: text }
+    }
   }
 
   async transaction(fn) {

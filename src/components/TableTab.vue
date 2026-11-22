@@ -41,7 +41,12 @@ const readOnly = computed(() => !!store.connection.saved?.config?.readOnly)
 // Edits are applied in one transaction, so engines without transactions are read-only here.
 const canEdit = computed(() => (caps().edit ?? caps().transactions) !== false)
 const editable = computed(() => tab.kind !== 'view' && pk.value.length > 0 && !readOnly.value && canEdit.value)
-const colEditable = computed(() => (binary.value.length ? fields.value.map((_, i) => !binary.value.includes(i)) : null))
+// Byte columns, and key columns where the engine can't change a row's key.
+const colEditable = computed(() => {
+  const keysLocked = caps().editKeys === false
+  if (!binary.value.length && !keysLocked) return null
+  return fields.value.map((f, i) => !binary.value.includes(i) && !(keysLocked && pk.value.includes(f)))
+})
 const insertTarget = computed(() => qualifiedName(tab.table, tab.schema))
 const pendingCount = computed(() => Object.keys(edits.value).length + Object.keys(deleted.value).length)
 // total is null when the engine can't count cheaply (Cassandra, DynamoDB…).

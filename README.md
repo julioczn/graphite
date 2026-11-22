@@ -79,14 +79,15 @@
 | BigQuery | 🧪 beta | Service account key (JSON); read-only grid; tested with the open-source emulator |
 | MongoDB | ✅ | mongosh-style commands (`db.orders.find({…})`); JSON filter; grid editing keeps BSON types |
 | Redis / Valkey | ✅ | redis-cli commands, one per line; keys browsed and edited by type (atomic `MULTI/EXEC`) |
-| Apache Cassandra / ScyllaDB | ✅ | CQL; keyspaces in the picker; pages without a total |
-| Amazon DynamoDB | ✅ | PartiQL; access key + secret (or DynamoDB Local) |
-| SurrealDB | ✅ | SurrealQL over HTTP; namespace + database |
+| Apache Cassandra / ScyllaDB | ✅ | CQL; keyspaces in the picker; pages without a total; grid edits as one logged batch |
+| Amazon DynamoDB | ✅ | PartiQL; access key + secret (or DynamoDB Local); grid edits in one transaction, attribute types kept |
+| SurrealDB | ✅ | SurrealQL over HTTP; namespace + database; grid edits in one transaction, field types kept |
 | Amazon Redshift | 🧪 beta | Not yet tested against a real cluster |
 | StarRocks | ✅ | No transactions (read-only grid); AI asks for approval on every query |
 
 On the non-relational databases the AI asks for approval on every command, since none of them offers a read-only mode
-the app could rely on. Grid editing is available for MongoDB and Redis; the others are read-only for now.
+the app could rely on. They all support grid editing; key columns (`_id`, primary/partition/sort keys, `id`) stay
+read-only, since they identify the row.
 
 ## AI: bring your own model or agent
 
