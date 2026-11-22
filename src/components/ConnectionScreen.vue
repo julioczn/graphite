@@ -10,11 +10,12 @@ import { ENGINES, engineOf } from '../../shared/engines.mjs'
 
 const engine = (id) => engineOf(id) || engineOf('postgres')
 // Oracle: the service name; SQL Server: the initial database.
-const DB_PLACEHOLDER = { postgres: 'postgres', oracle: 'FREEPDB1', mssql: 'master' }
+const DB_PLACEHOLDER = { postgres: 'postgres', oracle: 'FREEPDB1', mssql: 'master', trino: 'hive.default', clickhouse: 'default', firebird: '/data/app.fdb' }
 const GROUPS = computed(() => [
   { label: t('Compatíveis com MySQL'), family: 'mysql' },
   { label: t('Compatíveis com PostgreSQL'), family: 'postgres' },
-  { label: t('Outros bancos SQL'), families: ['mssql', 'oracle'] },
+  { label: t('Outros bancos SQL'), families: ['mssql', 'oracle', 'firebird'] },
+  { label: t('Analíticos'), families: ['clickhouse', 'trino', 'duckdb'] },
   { label: t('SQLite e LibSQL'), family: 'sqlite' },
 ].map((g) => ({ ...g, engines: ENGINES.filter((e) => (g.families || [g.family]).includes(e.family)) })))
 
@@ -88,15 +89,16 @@ function config() {
 }
 
 function defaultName() {
-  if (isSqlite.value) return form.file.split(/[\\/]/).pop() || 'SQLite'
+  if (isSqlite.value) return form.file.split(/[\\/]/).pop() || current.value.label
   if (isUrl.value) return hostOf(form.url) || current.value.label
   return `${form.user ? form.user + '@' : ''}${form.host}${form.database ? '/' + form.database : ''}`
 }
 
 async function browse() {
+  const e = current.value
   const file = await bridge.openFile({
     create: true,
-    filters: [{ name: 'SQLite', extensions: ['db', 'sqlite', 'sqlite3', 'db3'] }, { name: t('Todos os arquivos'), extensions: ['*'] }],
+    filters: [{ name: e.label, extensions: e.exts || ['db'] }, { name: t('Todos os arquivos'), extensions: ['*'] }],
   })
   if (file) form.file = file
 }
@@ -274,7 +276,7 @@ onMounted(load)
               <input id="f-pass" v-model="form.password" class="input" type="password" autocomplete="off" />
             </div>
             <div class="field span-2">
-              <label for="f-db">{{ current.family === 'oracle' ? t('Nome do serviço') : t('Banco de dados') }}</label>
+              <label for="f-db">{{ current.family === 'oracle' ? t('Nome do serviço') : current.family === 'firebird' ? t('Caminho ou alias do banco') : t('Banco de dados') }}</label>
               <input id="f-db" v-model="form.database" class="input" :placeholder="DB_PLACEHOLDER[current.family] || t('opcional')" />
             </div>
             <div class="checks span-2">

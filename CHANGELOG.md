@@ -12,6 +12,15 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 - AI reads on Oracle run in `SET TRANSACTION READ ONLY`; on SQL Server they run in a transaction that is always
   rolled back, and `SELECT … INTO` needs approval.
 
+- **ClickHouse** (HTTP; AI reads with `readonly=1`), **Trino** (REST, catalogs as `catalog.schema`; AI reads in a
+  read-only transaction), **Firebird** 3+ (AI reads in a read-only transaction) and **DuckDB** (embedded; every AI
+  query needs approval because reads can reach local files), tested against ClickHouse 25.8, Trino 476,
+  Firebird 5 and DuckDB 1.5.
+- Wide `NUMERIC`/`DECIMAL` values are read as exact text when browsing and exporting (SQL Server, Firebird).
+
+### Changed
+- The app is larger (~45 MB more per download) because DuckDB is embedded with its native library.
+
 ### Known limitations
 - SQL Server: in free-form queries, `decimal`/`numeric` values beyond ~15 significant digits lose precision (driver
   limitation); table browsing and exports read them as exact text. Only the last result set of a batch is shown.

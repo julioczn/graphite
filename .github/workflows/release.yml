@@ -25,8 +25,10 @@ jobs:
         include:
           - os: macos-latest
             target: --mac dmg zip --arm64 --x64
+            natives: darwin arm64 x64
           - os: ubuntu-latest
             target: --linux AppImage deb --x64
+            natives: linux x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +43,10 @@ jobs:
         run: test "v$(node -p "require('./package.json').version")" = "$TAG"
       - run: npm ci
       - run: npm run build
+      # DuckDB ships one native binding per platform; npm installs only the
+      # runner's, so fetch the other architectures being packaged.
+      - name: Native bindings for every target
+        run: node scripts/native-bindings.mjs ${{ matrix.natives }}
       - name: Package
         run: npx electron-builder ${{ matrix.target }} --publish never
         env:

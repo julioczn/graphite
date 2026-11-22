@@ -29,7 +29,8 @@ let view
 const langConf = new Compartment()
 const placeholderConf = new Compartment()
 
-const DIALECTS = { postgres: PostgreSQL, mysql: MySQL, sqlite: SQLite, mssql: MSSQL, oracle: PLSQL }
+// ClickHouse has no dedicated CodeMirror dialect; MySQL's (backticks) is closest.
+const DIALECTS = { postgres: PostgreSQL, mysql: MySQL, sqlite: SQLite, mssql: MSSQL, oracle: PLSQL, clickhouse: MySQL, trino: PostgreSQL, firebird: PostgreSQL, duckdb: PostgreSQL }
 
 // Monochrome syntax: hierarchy by weight, brightness and style instead of hue.
 const highlight = HighlightStyle.define([

@@ -7,9 +7,9 @@
     "dev": "concurrently -k -n vite,electron \"vite\" \"wait-on tcp:5199 && VITE_DEV_SERVER_URL=http://localhost:5199 electron . --no-sandbox\"",
     "build": "vite build",
     "start": "vite build && electron . --no-sandbox",
-    "dist": "vite build && electron-builder --linux AppImage deb --x64",
-    "dist:deb": "vite build && electron-builder --linux deb --x64",
-    "dist:mac": "vite build && electron-builder --mac dmg zip --arm64 --x64",
+    "dist": "vite build && node scripts/native-bindings.mjs linux x64 && electron-builder --linux AppImage deb --x64",
+    "dist:deb": "vite build && node scripts/native-bindings.mjs linux x64 && electron-builder --linux deb --x64",
+    "dist:mac": "vite build && node scripts/native-bindings.mjs darwin arm64 x64 && electron-builder --mac dmg zip --arm64 --x64",
     "i18n:check": "node scripts/i18n-check.mjs"
   },
   "author": "Julio Zimmermann <julioczn@gmail.com>",
@@ -60,9 +60,12 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",
+    "@clickhouse/client": "1.25.0",
+    "@duckdb/node-api": "1.5.6-r.2",
     "@libsql/client": "0.18.0",
     "@modelcontextprotocol/sdk": "1.32.2",
     "mysql2": "^3.24.6",
+    "node-firebird": "2.21.0",
     "oracledb": "26.0.0",
     "pg": "^8.23.1",
     "tedious": "20.3.9",
@@ -81,7 +84,9 @@
       "!node_modules/@libsql/darwin-*/**",
       "!node_modules/@libsql/linux-*/**",
       "!node_modules/@libsql/win32-*/**",
-      "!node_modules/oracledb/build/**"
+      "!node_modules/oracledb/build/**",
+      "!node_modules/@duckdb/node-bindings-*/**",
+      "node_modules/@duckdb/node-bindings-${platform}-${arch}/**"
     ],
     "linux": {
       "target": [
@@ -130,6 +135,9 @@
     },
     "dmg": {
       "artifactName": "Graphite-${version}-${arch}.${ext}"
-    }
+    },
+    "asarUnpack": [
+      "node_modules/@duckdb/node-bindings-*/**"
+    ]
   }
 }

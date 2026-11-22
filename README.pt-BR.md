@@ -72,10 +72,14 @@
 | LibSQL / Turso | ✅ | URL remota + token; sem modo de transação manual |
 | SQL Server / Azure SQL | ✅ | Decimais largos em consultas livres perdem precisão (limitação do driver); use `CAST` |
 | Oracle Database | ✅ | Modo Thin (sem Instant Client); "banco" = nome do serviço |
+| ClickHouse | ✅ | HTTP; sem transações (grade somente leitura); a AI lê com `readonly=1` |
+| Trino / Starburst | ✅ | "Banco" = `catálogo` ou `catálogo.schema`; grade somente leitura |
+| Firebird 3+ | ✅ | "Banco" = caminho ou alias no servidor |
+| DuckDB | ✅ | Arquivo `.duckdb` local; a AI pede aprovação para toda consulta |
 | Amazon Redshift | 🧪 beta | Ainda não testado contra um cluster real |
 | StarRocks | ✅ | Sem transações (grade somente leitura); a AI pede aprovação para toda consulta |
 
-Vêm mais por aí: ClickHouse, DuckDB, Snowflake, BigQuery, Trino, Firebird e não relacionais como
+Vêm mais por aí: Snowflake, BigQuery e não relacionais como
 Redis, MongoDB, Cassandra/ScyllaDB e DynamoDB.
 
 ## AI: use o seu próprio modelo ou agente
@@ -166,7 +170,8 @@ electron/
   preload.cjs     window.graphite: RPC via MessagePort + IPC em whitelist
   utility.cjs     processo de banco: handlers conn/*, query/*, table/*, app/*
   ai/             hub (ferramentas, sessões dos agentes, aprovações), mcp (servidor), assistant (chat)
-  drivers/        sqlite, postgres (pg), mysql (mysql2), libsql, mssql (tedious), oracle (oracledb)
+  drivers/        sqlite, postgres (pg), mysql (mysql2), libsql, mssql (tedious), oracle (oracledb),
+                  clickhouse, trino, firebird (node-firebird), duckdb (@duckdb/node-api)
   lib/            banco do app, demo, backup/restore/exportação, guarda de leitura das consultas da AI
 shared/
   engines.mjs     engines de banco: família, padrões e capacidades

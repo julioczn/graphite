@@ -59,6 +59,8 @@ class Session {
   async savepoint(name, fn) {
     const d = this.driver
     const sql = txSql(d)
+    // Engines without savepoints (DuckDB): run inside the open transaction as is.
+    if (!sql.savepoint) return fn()
     await d.execute(sql.savepoint(name))
     try {
       const out = await fn()
