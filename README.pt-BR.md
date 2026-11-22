@@ -78,11 +78,16 @@
 | DuckDB | ✅ | Arquivo `.duckdb` local; a AI pede aprovação para toda consulta |
 | Snowflake | 🧪 beta | Programmatic Access Token; grade somente leitura; ainda não testado numa conta real |
 | BigQuery | 🧪 beta | Chave de conta de serviço (JSON); grade somente leitura; testado com o emulador open source |
+| MongoDB | ✅ | Comandos no estilo do mongosh (`db.orders.find({…})`); filtro JSON na aba da tabela |
+| Redis / Valkey | ✅ | Comandos do redis-cli, um por linha; chaves exibidas por tipo |
+| Apache Cassandra / ScyllaDB | ✅ | CQL; keyspaces no seletor; paginação sem total |
+| Amazon DynamoDB | ✅ | PartiQL; access key + secret (ou DynamoDB Local) |
+| SurrealDB | ✅ | SurrealQL via HTTP; namespace + banco |
 | Amazon Redshift | 🧪 beta | Ainda não testado contra um cluster real |
 | StarRocks | ✅ | Sem transações (grade somente leitura); a AI pede aprovação para toda consulta |
 
-Vêm mais por aí: não relacionais como
-Redis, MongoDB, Cassandra/ScyllaDB e DynamoDB.
+Nos não relacionais (MongoDB para baixo), a grade é somente leitura por enquanto, e a AI pede aprovação para todo
+comando, porque nenhum deles oferece um modo somente leitura em que o app possa confiar.
 
 ## AI: use o seu próprio modelo ou agente
 
@@ -173,7 +178,8 @@ electron/
   utility.cjs     processo de banco: handlers conn/*, query/*, table/*, app/*
   ai/             hub (ferramentas, sessões dos agentes, aprovações), mcp (servidor), assistant (chat)
   drivers/        sqlite, postgres (pg), mysql (mysql2), libsql, mssql (tedious), oracle (oracledb),
-                  clickhouse, trino, firebird (node-firebird), duckdb (@duckdb/node-api)
+                  clickhouse, trino, firebird (node-firebird), duckdb (@duckdb/node-api),
+                  snowflake, bigquery, mongodb, redis (ioredis), cassandra (cassandra-driver), dynamodb, surrealdb
   lib/            banco do app, demo, backup/restore/exportação, guarda de leitura das consultas da AI
 shared/
   engines.mjs     engines de banco: família, padrões e capacidades

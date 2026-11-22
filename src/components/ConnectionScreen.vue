@@ -10,13 +10,14 @@ import { ENGINES, engineOf } from '../../shared/engines.mjs'
 
 const engine = (id) => engineOf(id) || engineOf('postgres')
 // Oracle: the service name; SQL Server: the initial database.
-const DB_PLACEHOLDER = { postgres: 'postgres', oracle: 'FREEPDB1', mssql: 'master', trino: 'hive.default', clickhouse: 'default', firebird: '/data/app.fdb' }
+const DB_PLACEHOLDER = { postgres: 'postgres', oracle: 'FREEPDB1', mssql: 'master', trino: 'hive.default', clickhouse: 'default', firebird: '/data/app.fdb', redis: '0' }
 const GROUPS = computed(() => [
   { label: t('Compatíveis com MySQL'), family: 'mysql' },
   { label: t('Compatíveis com PostgreSQL'), family: 'postgres' },
   { label: t('Outros bancos SQL'), families: ['mssql', 'oracle', 'firebird'] },
   { label: t('Analíticos'), families: ['clickhouse', 'trino', 'duckdb'] },
   { label: t('Nuvem'), families: ['snowflake', 'bigquery'] },
+  { label: t('Não relacionais'), families: ['mongo', 'redis', 'cql', 'partiql', 'surql'] },
   { label: t('SQLite e LibSQL'), family: 'sqlite' },
 ].map((g) => ({ ...g, engines: ENGINES.filter((e) => (g.families || [g.family]).includes(e.family)) })))
 
@@ -46,14 +47,16 @@ const customFields = computed(() => (isCustom.value ? current.value.form : []))
 // Labels and hints of the custom form inputs, by key.
 const FIELD_LABELS = computed(() => ({
   account: t('Conta'), user: t('Usuário'), token: t('Token de acesso (PAT)'), warehouse: 'Warehouse', role: t('Papel (role)'),
-  database: current.value.id === 'bigquery' ? t('Dataset padrão') : t('Banco.schema'),
-  keyFile: t('Chave da conta de serviço (JSON)'), project: t('ID do projeto'), location: t('Região'), endpoint: t('Endpoint (emulador)'),
+  database: { bigquery: t('Dataset padrão'), snowflake: t('Banco.schema') }[current.value.id] || t('Banco de dados'),
+  url: t('URL de conexão'), password: t('Senha'), namespace: 'Namespace', secretKey: 'Secret access key', accessKey: 'Access key ID', region: t('Região'),
+  keyFile: t('Chave da conta de serviço (JSON)'), project: t('ID do projeto'), location: t('Região'),
+  endpoint: current.value.id === 'bigquery' ? t('Endpoint (emulador)') : 'Endpoint',
 }))
 const FIELD_HINTS = computed(() => ({
   account: t('O identificador da conta, como aparece na URL: <conta>.snowflakecomputing.com.'),
   token: t('Crie um Programmatic Access Token em Snowsight → Settings → Authentication.'),
   project: t('Se vazio, usa o projeto da chave.'),
-  endpoint: t('Só para testes com um emulador local do BigQuery.'),
+  endpoint: current.value.id === 'bigquery' ? t('Só para testes com um emulador local do BigQuery.') : t('Para DynamoDB Local ou LocalStack; deixe vazio para a AWS.'),
 }))
 // What the user should know before picking this engine.
 const engineHint = computed(() => [
@@ -103,7 +106,12 @@ function config() {
   // The URL engines' auth token travels (and is stored encrypted) as the password.
   else if (isUrl.value) Object.assign(c, { url: form.url.trim(), password: form.password })
   else if (isCustom.value) {
-    for (const f of customFields.value) c[f.key] = f.type === 'secret' ? form.password : (form.extra[f.key] ?? '').trim()
+    // The secret always travels as `password`: save() encrypts that key only,
+    // so it must never end up in the plain config under its own name.
+    for (const f of customFields.value) {
+      if (f.type === 'secret') c.password = form.password
+      else c[f.key] = (form.extra[f.key] ?? '').trim()
+    }
   }
   else Object.assign(c, { host: form.host, port: form.port, user: form.user, password: form.password, database: form.database, ssl: form.ssl })
   return c

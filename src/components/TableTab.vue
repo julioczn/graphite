@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { call } from '../lib/api'
 import { store, toast, newQueryTab, selectSql, caps } from '../lib/store'
+import { engineOf } from '../../shared/engines.mjs'
 import { t, i18n } from '../lib/i18n'
 import { exportRows } from '../lib/export'
 import Icon from './Icon.vue'
@@ -42,7 +43,12 @@ const editable = computed(() => tab.kind !== 'view' && pk.value.length > 0 && !r
 const colEditable = computed(() => (binary.value.length ? fields.value.map((_, i) => !binary.value.includes(i)) : null))
 const insertTarget = computed(() => qualifiedName(tab.table, tab.schema))
 const pendingCount = computed(() => Object.keys(edits.value).length + Object.keys(deleted.value).length)
-const from = computed(() => (total.value ? offset.value + 1 : 0))
+// total is null when the engine can't count cheaply (Cassandra, DynamoDB…).
+const unknownTotal = computed(() => total.value === null || total.value === undefined)
+const from = computed(() => (total.value || (unknownTotal.value && rows.value.length) ? offset.value + 1 : 0))
+const hasNext = computed(() => (unknownTotal.value ? rows.value.length >= limit.value : to.value < total.value))
+const filterLabel = computed(() => engineOf(store.connection.engine)?.filter?.label || 'WHERE')
+const filterPlaceholder = computed(() => engineOf(store.connection.engine)?.filter?.placeholder)
 const to = computed(() => offset.value + rows.value.length)
 
 async function loadMeta() {
@@ -98,7 +104,7 @@ watch([from, to, total, durationMs, pendingCount, () => tab.view, () => i18n.loc
     return
   }
   tab.status = [
-    t('{from}–{to} de {total} linhas', { from: from.value, to: to.value, total: total.value }),
+    unknownTotal.value ? t('{from}–{to} linhas', { from: from.value, to: to.value }) : t('{from}–{to} de {total} linhas', { from: from.value, to: to.value, total: total.value }),
     `${durationMs.value} ms`,
     ...(pendingCount.value ? [t('{n} alteração pendente|{n} alterações pendentes', { n: pendingCount.value })] : []),
   ]
@@ -221,9 +227,9 @@ function openSql() {
       </div>
 
       <form v-show="tab.view === 'data'" class="filter" @submit.prevent="applyFilter">
-        <span class="where">WHERE</span>
+        <span class="where">{{ filterLabel }}</span>
         <input v-model="filterText" class="mono" spellcheck="false"
-               :placeholder="columns[1] ? `${columns[1].name} = '${t('valor')}'` : t('condição SQL')" />
+               :placeholder="filterPlaceholder || (columns[1] ? `${columns[1].name} = '${t('valor')}'` : t('condição SQL'))" />
         <button v-if="filterText || where" type="button" class="clear" :title="t('Limpar filtro')" @click="clearFilter"><Icon name="close" :size="12" /></button>
         <button type="submit" class="btn sm">{{ t('Filtrar') }}</button>
       </form>
@@ -260,15 +266,16 @@ function openSql() {
           <template v-if="editable">{{ t('Duplo clique edita') }} · <span class="kbd">{{ key('del') }}</span> {{ t('define NULL') }} · {{ t('clique no nº da linha +') }} <span class="kbd">{{ key('del') }}</span> {{ t('exclui') }} · {{ t('botão direito: mais ações') }}</template>
           <template v-else-if="tab.kind === 'view'">{{ t('View — somente leitura') }}</template>
           <template v-else-if="readOnly">{{ t('Conexão somente leitura') }}</template>
+          <template v-else-if="caps().transactions === false">{{ t('Edição pela grade indisponível neste banco') }}</template>
           <template v-else>{{ t('Sem chave primária — edição desativada') }}</template>
         </span>
         <span class="grow" />
         <select class="limit" :value="limit" :title="t('Linhas por página')" @change="setLimit">
           <option v-for="n in [50, 100, 250, 500, 1000]" :key="n" :value="n">{{ t('{count} / pág.', { count: n }) }}</option>
         </select>
-        <span class="range">{{ t('{from}–{to} de {total}', { from, to, total }) }}</span>
+        <span class="range">{{ unknownTotal ? `${from}–${to}` : t('{from}–{to} de {total}', { from, to, total }) }}</span>
         <button class="btn ghost icon sm" :disabled="offset === 0 || loading" :title="t('Anterior')" @click="page(-1)"><Icon name="left" :size="14" /></button>
-        <button class="btn ghost icon sm" :disabled="to >= total || loading" :title="t('Próxima')" @click="page(1)"><Icon name="right" :size="14" /></button>
+        <button class="btn ghost icon sm" :disabled="!hasNext || loading" :title="t('Próxima')" @click="page(1)"><Icon name="right" :size="14" /></button>
       </div>
     </template>
 

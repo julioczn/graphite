@@ -14,9 +14,13 @@
 //   aiReadOnly    the database enforces a read-only mode for AI reads; when
 //                 false, every AI query needs the user's approval
 //   cursors       rows can be fetched in batches with DECLARE … CURSOR
+//   sql           the query language is SQL (false: MongoDB, Redis, CQL…):
+//                 SQL generation, snippets and SQL INSERT export are hidden
+//
+// filter: { label, placeholder } of the table tab's filter box (default WHERE).
 //
 // families: 'mysql' | 'postgres' | 'sqlite' | 'mssql' | 'oracle' | 'clickhouse' | 'trino' | 'firebird' |
-// 'duckdb' | 'snowflake' | 'bigquery'.
+// 'duckdb' | 'snowflake' | 'bigquery' | 'mongo' | 'redis' | 'cql' | 'partiql' | 'surql'.
 //
 // form: engines with their own connection form list its inputs ({ key, type:
 // 'text' | 'secret' | 'file', optional, wide }); labels live in ConnectionScreen.
@@ -26,6 +30,7 @@
 // status: 'stable' (tested against a real server) or 'beta' (best effort).
 
 const BASE = {
+  sql: true,
   transactions: true,
   manualMode: true,
   savepoints: false,
@@ -51,6 +56,7 @@ const engine = (id, label, family, extra = {}) => ({
 })
 
 const PG = { schemas: 'schema', savepoints: true, backup: true, cursors: true }
+const NOSQL = { sql: false, transactions: false, manualMode: false, aiReadOnly: false, er: false, restore: false }
 const MY = { schemas: 'database', backup: true }
 
 export const ENGINES = [
@@ -106,6 +112,49 @@ export const ENGINES = [
       { key: 'endpoint', optional: true, wide: true, placeholder: 'http://localhost:9050' },
     ],
     caps: { schemas: 'schema', transactions: false, manualMode: false, aiReadOnly: false, restore: false },
+  }),
+  // Non-relational: their own query languages (caps.sql = false), no grid
+  // editing yet, no read-only mode — every AI query needs approval.
+  engine('mongodb', 'MongoDB', 'mongo', {
+    form: [
+      { key: 'url', wide: true, placeholder: 'mongodb://localhost:27017' },
+      { key: 'user', optional: true },
+      { key: 'password', type: 'secret', optional: true },
+      { key: 'database', optional: true, placeholder: 'test' },
+    ],
+    filter: { label: 'filter', placeholder: '{ "status": "pago" }' },
+    caps: { ...NOSQL, schemas: 'database' },
+  }),
+  engine('redis', 'Redis / Valkey', 'redis', {
+    port: '6379',
+    filter: { label: 'MATCH', placeholder: 'user:*' },
+    caps: { ...NOSQL, schemas: 'database' },
+  }),
+  // CQL: the picker switches keyspaces; no OFFSET and no cheap COUNT.
+  engine('cassandra', 'Apache Cassandra', 'cql', { port: '9042', filter: { label: 'WHERE', placeholder: "status = 'pago' ALLOW FILTERING" }, caps: { ...NOSQL, schemas: 'database' } }),
+  engine('scylladb', 'ScyllaDB', 'cql', { port: '9042', filter: { label: 'WHERE', placeholder: "status = 'pago' ALLOW FILTERING" }, caps: { ...NOSQL, schemas: 'database' } }),
+  // PartiQL over the HTTP API (SigV4); endpoint for DynamoDB Local.
+  engine('dynamodb', 'Amazon DynamoDB', 'partiql', {
+    form: [
+      { key: 'region', placeholder: 'us-east-1' },
+      { key: 'accessKey', placeholder: 'AKIA…' },
+      { key: 'secretKey', type: 'secret', wide: true },
+      { key: 'endpoint', optional: true, wide: true, placeholder: 'http://localhost:8000' },
+    ],
+    filter: { label: 'WHERE', placeholder: "status = 'pago'" },
+    caps: { ...NOSQL },
+  }),
+  // SurrealQL over HTTP; namespace + database; the picker switches databases.
+  engine('surrealdb', 'SurrealDB', 'surql', {
+    form: [
+      { key: 'url', wide: true, placeholder: 'http://localhost:8000' },
+      { key: 'user', placeholder: 'root' },
+      { key: 'password', type: 'secret' },
+      { key: 'namespace', placeholder: 'test' },
+      { key: 'database', placeholder: 'test' },
+    ],
+    filter: { label: 'WHERE', placeholder: "status = 'pago'" },
+    caps: { ...NOSQL, schemas: 'database' },
   }),
   engine('sqlite', 'SQLite', 'sqlite', { fields: 'file', exts: ['db', 'sqlite', 'sqlite3', 'db3'], caps: { backup: true } }),
   // Embedded (native binary). No read-only transactions, and reads can reach

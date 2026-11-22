@@ -288,7 +288,7 @@ function label(r, i) {
       <button class="btn ghost sm" :title="`${tab.savedId ? t('Salvar') : t('Salvar como…')} (${shortcut('mod', 's')})`" @click="save">
         <Icon name="save" :size="13" /> {{ t('Salvar') }}
       </button>
-      <button class="btn ghost sm snip-btn" :class="{ on: snippetAnchor }" data-snippet-toggle
+      <button v-if="caps().sql !== false" class="btn ghost sm snip-btn" :class="{ on: snippetAnchor }" data-snippet-toggle
               :title="t('Inserir snippet de SQL (ou digite o atalho no editor, ex.: sel, ins, lj)')" @click="toggleSnippets">
         <Icon name="bolt" :size="13" /> {{ t('Snippets') }}
       </button>

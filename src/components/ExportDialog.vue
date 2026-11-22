@@ -19,7 +19,8 @@ const FORMATS = [
   { id: 'csv', label: 'CSV', ext: 'csv' },
   { id: 'json', label: 'JSON', ext: 'json' },
   { id: 'jsonl', label: 'JSON Lines', ext: 'jsonl' },
-  { id: 'sql', label: 'SQL INSERT', ext: 'sql' },
+  // INSERT statements only make sense for SQL databases.
+  ...(store.connection?.caps?.sql === false ? [] : [{ id: 'sql', label: 'SQL INSERT', ext: 'sql' }]),
 ]
 const all = store.tables.filter((t) => t.type === 'table' || t.type === 'view')
 const key = (t) => `${t.schema ?? ''}.${t.name}`
