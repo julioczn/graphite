@@ -4,6 +4,9 @@
 (function () {
   'use strict'
 
+  document.documentElement.classList.add('js')
+  var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches
+
   var REPO = 'julioczn/graphite'
 
   var T = {
@@ -16,25 +19,23 @@
       'db.ana': 'Analíticos',
       'db.cloud': 'Data warehouses na nuvem',
       'db.nosql': 'NoSQL',
-      'db.nosql.d': 'MongoDB e Redis são editáveis na grade; as consultas usam a linguagem de cada banco.',
+      'db.nosql.d': 'Todos editáveis na grade, com as colunas de chave travadas. As consultas usam a linguagem de cada banco.',
       'nav.ai': 'AI e agentes',
       'nav.download': 'Download',
       'nav.language': 'Idioma',
-      'hero.eyebrow': 'Gratuito e open source',
-      'hero.title': 'O cliente SQL que sabe a hora de pedir permissão.',
-      'hero.lead': 'Um cliente desktop rápido para 24 bancos — PostgreSQL, MySQL, SQL Server, Oracle, SQLite, MongoDB, Redis, ClickHouse e outros. Use a sua própria AI: um assistente embutido e um servidor MCP para Claude Code, Cursor e companhia — toda escrita espera a sua aprovação.',
+      'hero.title': 'Todos os bancos.<br><span class="grad">Um app rápido.</span>',
+      'hero.lead': 'SQL, NoSQL e data warehouses na nuvem, lado a lado num app desktop gratuito. Traga a sua própria AI — um assistente embutido e um servidor MCP para Claude Code, Cursor e companhia — e nada é gravado sem o seu OK.',
       'hero.download': 'Download',
       'hero.other': 'Todas as plataformas',
-      'hero.source': 'Ver o código',
-      'hero.fine': 'macOS (Apple Silicon e Intel) · Linux (.deb, AppImage) · English, Português, Español',
+      'hero.fine': 'macOS (Apple Silicon e Intel) · Linux (.deb, AppImage) · Grátis, sem conta, sem telemetria',
       'features.title': 'Tudo o que você usa no dia a dia',
       'features.sub': 'Feito para ser rápido no teclado e cuidadoso com os seus dados.',
       'f1.t': '24 bancos, um app',
       'f1.d': 'Relacionais, analíticos, data warehouses na nuvem e NoSQL, com conexões salvas, senhas cifradas pelo chaveiro do sistema e um banco demo para testar.',
       'f2.t': 'Um editor SQL de verdade',
       'f2.d': 'Autocomplete de tabelas e colunas, execute tudo ou só a instrução sob o cursor, vários resultados por execução e snippets como <code>sel</code>, <code>ij</code> ou <code>ups</code>.',
-      'f3.t': 'Edite os dados ali mesmo',
-      'f3.d': 'Duplo clique para editar, defina NULL, exclua linhas e aplique tudo numa transação. Funciona também em resultados de consulta, quando a chave primária está lá.',
+      'f3.t': 'Edite qualquer grade, SQL ou NoSQL',
+      'f3.d': 'Duplo clique para editar, defina NULL, exclua linhas e aplique tudo de uma vez — tudo ou nada. Tabelas, resultados de consulta, MongoDB, Redis, Cassandra, DynamoDB e SurrealDB.',
       'f4.t': 'Gere SQL a partir das tabelas',
       'f4.d': 'Botão direito numa tabela para SELECT com JOINs que seguem as chaves estrangeiras, INSERT, UPDATE ou DELETE — prontos para preencher.',
       'f5.t': 'Diagramas ER',
@@ -60,8 +61,6 @@
       'ai.c4.d': 'Escuta em 127.0.0.1 com token e recusa requisições de navegador. Toda chamada fica registrada.',
       'mcp.title': 'Conecte um agente com uma linha',
       'mcp.d': 'Ligue o servidor MCP em AI e agentes → Agentes externos e copie o comando do seu cliente. O Graphite mostra a configuração exata com o seu token.',
-      'cap.er': 'Diagrama ER com layout automático e exportação SVG/PNG.',
-      'cap.mcp': 'Configuração pronta para Claude Code, Cursor, VS Code e Claude Desktop.',
       'dl.title': 'Download',
       'dl.sub': 'Gratuito, sem conta, sem telemetria.',
       'dl.mac': 'Apple Silicon (M1 ou mais novo) ou Intel.',
@@ -82,6 +81,23 @@
       'alt.mcp': 'Configuração do servidor MCP com a configuração do cliente pronta para copiar',
       'dl.for': 'Download para {os}',
       'dl.version': 'Versão atual: {v}.',
+      'hero.new': 'Novo',
+      'hero.news': 'Edite Cassandra, DynamoDB e SurrealDB direto na grade',
+      'hero.verb': 'Consulte, edite e explore',
+      'hero.verb.sr': 'PostgreSQL, MySQL, MongoDB, Redis, DynamoDB e mais 19 bancos',
+      'hero.star': 'Estrela no GitHub',
+      'st.db': 'bancos num só app',
+      'st.nosql': 'bancos NoSQL, editáveis na grade',
+      'st.ai': 'jeitos de usar AI: nuvem, local ou MCP',
+      'st.tel': 'contas, anúncios ou telemetria',
+      'show.query': 'Editor SQL',
+      'show.table': 'Edição de dados',
+      'show.er': 'Diagramas ER',
+      'show.mcp': 'MCP para agentes',
+      'marquee': 'Bancos suportados',
+      'alt.table': 'Editando as linhas de uma tabela na grade',
+      'final.t': 'Chega de pular entre clientes de banco.',
+      'final.d': 'Postgres de manhã, Mongo depois do almoço, aquela tabela do DynamoDB às 2 da manhã — um app, um atalho, um lugar para todas as suas conexões.',
     },
     es: {
       'nav.features': 'Funciones',
@@ -92,25 +108,23 @@
       'db.ana': 'Analíticas',
       'db.cloud': 'Data warehouses en la nube',
       'db.nosql': 'NoSQL',
-      'db.nosql.d': 'MongoDB y Redis se pueden editar en la tabla; las consultas usan el lenguaje de cada base.',
+      'db.nosql.d': 'Todas editables en la tabla, con las columnas clave bloqueadas. Las consultas usan el lenguaje de cada base.',
       'nav.ai': 'IA y agentes',
       'nav.download': 'Descargar',
       'nav.language': 'Idioma',
-      'hero.eyebrow': 'Gratis y de código abierto',
-      'hero.title': 'El cliente SQL que sabe cuándo pedir permiso.',
-      'hero.lead': 'Un cliente de escritorio rápido para 24 bases de datos — PostgreSQL, MySQL, SQL Server, Oracle, SQLite, MongoDB, Redis, ClickHouse y más. Usa tu propia IA: un asistente integrado y un servidor MCP para Claude Code, Cursor y compañía — cada escritura espera tu aprobación.',
+      'hero.title': 'Todas las bases.<br><span class="grad">Una app rápida.</span>',
+      'hero.lead': 'SQL, NoSQL y data warehouses en la nube, lado a lado en una app de escritorio gratuita. Trae tu propia IA — un asistente integrado y un servidor MCP para Claude Code, Cursor y compañía — y nada se escribe sin tu OK.',
       'hero.download': 'Descargar',
       'hero.other': 'Todas las plataformas',
-      'hero.source': 'Ver el código',
-      'hero.fine': 'macOS (Apple Silicon e Intel) · Linux (.deb, AppImage) · English, Português, Español',
+      'hero.fine': 'macOS (Apple Silicon e Intel) · Linux (.deb, AppImage) · Gratis, sin cuenta, sin telemetría',
       'features.title': 'Todo lo que usas a diario',
       'features.sub': 'Hecho para ser rápido con el teclado y cuidadoso con tus datos.',
       'f1.t': '24 bases de datos, una app',
       'f1.d': 'Relacionales, analíticas, data warehouses en la nube y NoSQL, con conexiones guardadas, contraseñas cifradas por el llavero del sistema y una base de datos demo para probar.',
       'f2.t': 'Un editor SQL de verdad',
       'f2.d': 'Autocompletado de tablas y columnas, ejecuta todo o solo la instrucción bajo el cursor, varios resultados por ejecución y snippets como <code>sel</code>, <code>ij</code> o <code>ups</code>.',
-      'f3.t': 'Edita los datos ahí mismo',
-      'f3.d': 'Doble clic para editar, establece NULL, elimina filas y aplica todo en una transacción. También funciona en resultados de consultas, cuando la clave primaria está presente.',
+      'f3.t': 'Edita cualquier tabla, SQL o NoSQL',
+      'f3.d': 'Doble clic para editar, establece NULL, elimina filas y aplica todo de una vez — todo o nada. Tablas, resultados de consultas, MongoDB, Redis, Cassandra, DynamoDB y SurrealDB.',
       'f4.t': 'Genera SQL desde las tablas',
       'f4.d': 'Clic derecho en una tabla para SELECT con JOINs que siguen las claves foráneas, INSERT, UPDATE o DELETE — listos para completar.',
       'f5.t': 'Diagramas ER',
@@ -136,8 +150,6 @@
       'ai.c4.d': 'Escucha en 127.0.0.1 con un token y rechaza solicitudes del navegador. Cada llamada queda registrada.',
       'mcp.title': 'Conecta un agente con una línea',
       'mcp.d': 'Activa el servidor MCP en IA y agentes → Agentes externos y copia el comando de tu cliente. Graphite muestra la configuración exacta con tu token.',
-      'cap.er': 'Diagrama ER con diseño automático y exportación SVG/PNG.',
-      'cap.mcp': 'Configuración lista para Claude Code, Cursor, VS Code y Claude Desktop.',
       'dl.title': 'Descargar',
       'dl.sub': 'Gratis, sin cuenta, sin telemetría.',
       'dl.mac': 'Apple Silicon (M1 o más reciente) o Intel.',
@@ -158,6 +170,23 @@
       'alt.mcp': 'Configuración del servidor MCP con la configuración del cliente lista para copiar',
       'dl.for': 'Descargar para {os}',
       'dl.version': 'Versión actual: {v}.',
+      'hero.new': 'Nuevo',
+      'hero.news': 'Edita Cassandra, DynamoDB y SurrealDB directamente en la tabla',
+      'hero.verb': 'Consulta, edita y explora',
+      'hero.verb.sr': 'PostgreSQL, MySQL, MongoDB, Redis, DynamoDB y 19 bases de datos más',
+      'hero.star': 'Estrella en GitHub',
+      'st.db': 'bases de datos en una app',
+      'st.nosql': 'motores NoSQL, editables en la tabla',
+      'st.ai': 'formas de usar IA: nube, local o MCP',
+      'st.tel': 'cuentas, anuncios o telemetría',
+      'show.query': 'Editor SQL',
+      'show.table': 'Edición de datos',
+      'show.er': 'Diagramas ER',
+      'show.mcp': 'MCP para agentes',
+      'marquee': 'Bases de datos compatibles',
+      'alt.table': 'Editando las filas de una tabla',
+      'final.t': 'Deja de saltar entre clientes de bases de datos.',
+      'final.d': 'Postgres por la mañana, Mongo después del almuerzo, esa tabla de DynamoDB a las 2 de la madrugada — una app, un atajo, un lugar para todas tus conexiones.',
     },
   }
   var EN_EXTRA = { 'dl.for': 'Download for {os}', 'dl.version': 'Current version: {v}.' }
@@ -166,6 +195,7 @@
   var original = {}
   document.querySelectorAll('[data-i18n]').forEach(function (el) { original[el.dataset.i18n] = el.innerHTML })
   document.querySelectorAll('[data-i18n-alt]').forEach(function (el) { original[el.dataset.i18nAlt] = el.alt })
+  document.querySelectorAll('[data-i18n-aria]').forEach(function (el) { original[el.dataset.i18nAria] = el.getAttribute('aria-label') })
 
   var lang = 'en'
   var release = null
@@ -185,6 +215,9 @@
     })
     document.querySelectorAll('[data-i18n-alt]').forEach(function (el) {
       el.alt = lang === 'en' ? original[el.dataset.i18nAlt] : tr(el.dataset.i18nAlt)
+    })
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (el) {
+      el.setAttribute('aria-label', lang === 'en' ? original[el.dataset.i18nAria] : tr(el.dataset.i18nAria))
     })
     document.getElementById('lang').value = lang
     renderDownloads()
@@ -208,16 +241,17 @@
 
   function renderDownloads() {
     var os = detectOs()
-    var primary = document.querySelector('[data-dl="primary"]')
-    var label = primary.querySelector('[data-dl-label]')
-    if (os) {
-      primary.dataset.target = os === 'mac' ? 'mac-arm64' : 'deb'
-      label.textContent = tr('dl.for', { os: os === 'mac' ? 'macOS' : 'Linux' })
-    } else {
-      primary.dataset.target = ''
-      primary.href = '#download'
-      label.textContent = tr('hero.download')
-    }
+    document.querySelectorAll('[data-dl="primary"]').forEach(function (primary) {
+      var label = primary.querySelector('[data-dl-label]')
+      if (os) {
+        primary.dataset.target = os === 'mac' ? 'mac-arm64' : 'deb'
+        label.textContent = tr('dl.for', { os: os === 'mac' ? 'macOS' : 'Linux' })
+      } else {
+        primary.dataset.target = ''
+        primary.href = '#download'
+        label.textContent = tr('hero.download')
+      }
+    })
     if (!release) return
     document.querySelectorAll('[data-dl]').forEach(function (a) {
       var key = a.dataset.dl === 'primary' ? a.dataset.target : a.dataset.dl
@@ -261,6 +295,89 @@
     try { localStorage.setItem('graphite-site-lang', e.target.value) } catch (err) {}
     apply(e.target.value)
   })
+
+  // --- hero: typed database names ---------------------------------------------
+  var NAMES = ['PostgreSQL', 'MongoDB', 'MySQL', 'Redis', 'DynamoDB', 'SQL Server', 'ClickHouse', 'Oracle', 'Cassandra', 'SQLite', 'Snowflake', 'SurrealDB', 'DuckDB', 'BigQuery']
+  var typed = document.querySelector('[data-typed]')
+  if (typed && !reduced) {
+    var n = 0
+    var pos = NAMES[0].length
+    var deleting = true
+    var tick = function () {
+      if (deleting) {
+        pos--
+        if (pos === 0) { deleting = false; n = (n + 1) % NAMES.length }
+      } else {
+        pos++
+      }
+      typed.textContent = NAMES[n].slice(0, pos)
+      var delay = deleting ? 45 : 85
+      if (!deleting && pos === NAMES[n].length) { deleting = true; delay = 1900 }
+      setTimeout(tick, delay)
+    }
+    setTimeout(tick, 2200)
+  }
+
+  // --- hero: screenshot tabs (auto-advance until the visitor picks one) ---------
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-shot]'))
+  var timer = null
+  function show(name) {
+    tabs.forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.shot === name)) })
+    document.querySelectorAll('[data-shot-img]').forEach(function (img) { img.hidden = img.dataset.shotImg !== name })
+  }
+  tabs.forEach(function (b, i) {
+    b.addEventListener('click', function () { clearInterval(timer); show(b.dataset.shot) })
+    b.addEventListener('keydown', function (e) {
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
+      if (!d) return
+      var next = tabs[(i + d + tabs.length) % tabs.length]
+      clearInterval(timer)
+      show(next.dataset.shot)
+      next.focus()
+    })
+  })
+  if (tabs.length && !reduced && 'IntersectionObserver' in window) {
+    var stage = document.querySelector('.stage')
+    var visible = false
+    new IntersectionObserver(function (es) { visible = es[0].isIntersecting }).observe(stage)
+    timer = setInterval(function () {
+      if (!visible || document.hidden) return
+      var i = tabs.findIndex(function (b) { return b.getAttribute('aria-selected') === 'true' })
+      show(tabs[(i + 1) % tabs.length].dataset.shot)
+    }, 5000)
+  }
+
+  // --- marquee: second copy for a seamless loop ---------------------------------
+  var track = document.querySelector('.marquee-track')
+  if (track && !reduced) {
+    Array.prototype.slice.call(track.children).forEach(function (li) {
+      var c = li.cloneNode(true)
+      c.setAttribute('aria-hidden', 'true')
+      track.appendChild(c)
+    })
+  }
+
+  // --- scroll reveal ------------------------------------------------------------
+  var items = document.querySelectorAll('.reveal')
+  if ('IntersectionObserver' in window && !reduced) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return
+        e.target.classList.add('in')
+        io.unobserve(e.target)
+      })
+    }, { rootMargin: '0px 0px -40px 0px' })
+    items.forEach(function (el) {
+      // Already on screen (a reload halfway down): show it right away.
+      if (el.getBoundingClientRect().top < window.innerHeight) return el.classList.add('in')
+      // Stagger siblings a little (cards in a grid).
+      var sib = Array.prototype.indexOf.call(el.parentNode.children, el)
+      if (el.classList.contains('card')) el.style.transitionDelay = Math.min(sib, 5) * 60 + 'ms'
+      io.observe(el)
+    })
+  } else {
+    items.forEach(function (el) { el.classList.add('in') })
+  }
 
   apply(storedLang() || browserLang())
   loadRelease()

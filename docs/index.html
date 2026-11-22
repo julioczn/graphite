@@ -3,17 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Graphite: SQL client for SQLite, PostgreSQL and MySQL</title>
-  <meta name="description" content="Free, open-source desktop database client for 24 databases — PostgreSQL, MySQL, SQL Server, Oracle, SQLite, MongoDB, Redis, ClickHouse and more — with an AI assistant and an MCP server for your own agents. macOS and Linux.">
+  <title>Graphite — every database, one fast app</title>
+  <meta name="description" content="Browse, query and edit PostgreSQL, MySQL, SQL Server, Oracle, MongoDB, Redis, DynamoDB, ClickHouse and 16 more databases in one fast desktop app. Built-in AI assistant and MCP server, and every write waits for your approval. Free and open source for macOS and Linux.">
   <meta name="theme-color" content="#0a0a0a">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon.png">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Graphite: SQL client for SQLite, PostgreSQL and MySQL">
-  <meta property="og:description" content="Free, open-source desktop client for 24 databases, with an AI assistant and an MCP server for your own agents.">
+  <meta property="og:site_name" content="Graphite">
+  <meta property="og:title" content="Graphite — every database, one fast app">
+  <meta property="og:description" content="SQL, NoSQL and cloud warehouses: 24 databases in one free desktop app, with an AI assistant that asks before it writes.">
   <meta property="og:url" content="https://julioczn.github.io/graphite/">
-  <meta property="og:image" content="https://julioczn.github.io/graphite/assets/screenshots/query.png">
+  <meta property="og:image" content="https://julioczn.github.io/graphite/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Graphite: every database, one fast app">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Graphite — every database, one fast app">
+  <meta name="twitter:description" content="SQL, NoSQL and cloud warehouses: 24 databases in one free desktop app, with an AI assistant that asks before it writes.">
+  <meta name="twitter:image" content="https://julioczn.github.io/graphite/assets/og.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -47,69 +54,108 @@
   </header>
 
   <main id="top">
-    <section class="hero wrap">
-      <p class="eyebrow"><span data-i18n="hero.eyebrow">Free and open source</span> · <span class="ver" data-version>MIT</span></p>
-      <h1 data-i18n="hero.title">The SQL client that knows when to ask first.</h1>
-      <p class="lead" data-i18n="hero.lead">A fast desktop client for 24 databases — PostgreSQL, MySQL, SQL Server, Oracle, SQLite, MongoDB, Redis, ClickHouse and more. Bring your own AI: a built-in assistant and an MCP server for Claude Code, Cursor and friends — every write waits for your approval.</p>
-      <div class="cta">
-        <a class="btn primary" data-dl="primary" href="https://github.com/julioczn/graphite/releases/latest">
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span data-dl-label data-i18n="hero.download">Download</span>
+    <section class="hero">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="wrap">
+        <a class="pill rise" style="--d:0ms" href="https://github.com/julioczn/graphite/releases/latest">
+          <span class="pill-tag" data-i18n="hero.new">New</span>
+          <span data-i18n="hero.news">Edit Cassandra, DynamoDB and SurrealDB right in the grid</span>
+          <span class="pill-arrow" aria-hidden="true">→</span>
         </a>
-        <a class="btn" href="#download" data-i18n="hero.other">All platforms</a>
-        <a class="btn ghost" href="https://github.com/julioczn/graphite" data-i18n="hero.source">View source</a>
+        <h1 class="rise" style="--d:80ms" data-i18n="hero.title">Every database.<br><span class="grad">One fast app.</span></h1>
+        <p class="typed-line rise" style="--d:160ms">
+          <span data-i18n="hero.verb">Query, edit and explore</span>
+          <span class="typed-box"><span class="typed" data-typed aria-hidden="true">PostgreSQL</span><span class="caret" aria-hidden="true"></span></span>
+          <span class="sr" data-i18n="hero.verb.sr">PostgreSQL, MySQL, MongoDB, Redis, DynamoDB and 19 more databases</span>
+        </p>
+        <p class="lead rise" style="--d:240ms" data-i18n="hero.lead">SQL, NoSQL and cloud warehouses, side by side in one free desktop app. Bring your own AI — a built-in assistant and an MCP server for Claude Code, Cursor and friends — and nothing gets written without your OK.</p>
+        <div class="cta rise" style="--d:320ms">
+          <a class="btn primary big" data-dl="primary" href="https://github.com/julioczn/graphite/releases/latest">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span data-dl-label data-i18n="hero.download">Download</span>
+          </a>
+          <a class="btn big" href="https://github.com/julioczn/graphite">
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 .2a8 8 0 00-2.5 15.6c.4 0 .5-.2.5-.4v-1.5c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.3 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.5 7.5 0 014 0c1.5-1 2.2-.8 2.2-.8.4 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.1 0 3.1-1.9 3.8-3.6 4 .3.3.6.8.6 1.5v2.2c0 .2.1.5.6.4A8 8 0 008 .2z"/></svg>
+            <span data-i18n="hero.star">Star on GitHub</span>
+          </a>
+        </div>
+        <p class="fine rise" style="--d:380ms"><span data-i18n="hero.fine">macOS (Apple Silicon &amp; Intel) · Linux (.deb, AppImage) · Free, no account, no telemetry</span> · <span data-version>MIT</span></p>
+
+        <ul class="stats rise" style="--d:440ms">
+          <li><b>24</b><span data-i18n="st.db">databases in one app</span></li>
+          <li><b>6</b><span data-i18n="st.nosql">NoSQL engines, editable in the grid</span></li>
+          <li><b>3</b><span data-i18n="st.ai">ways to bring AI: cloud, local or MCP</span></li>
+          <li><b>0</b><span data-i18n="st.tel">accounts, ads or telemetry</span></li>
+        </ul>
+
+        <div class="stage rise" style="--d:520ms">
+          <div class="tabs" role="tablist" aria-label="Screenshots">
+            <button role="tab" aria-selected="true" data-shot="query" data-i18n="show.query">SQL editor</button>
+            <button role="tab" aria-selected="false" data-shot="table" data-i18n="show.table">Edit data</button>
+            <button role="tab" aria-selected="false" data-shot="er" data-i18n="show.er">ER diagrams</button>
+            <button role="tab" aria-selected="false" data-shot="mcp" data-i18n="show.mcp">MCP for agents</button>
+          </div>
+          <figure class="shot hero-shot">
+            <img data-shot-img="query" src="assets/screenshots/query.png" width="2880" height="1800" alt="Graphite running a SQL query with JOINs and showing the results grid" data-i18n-alt="alt.query">
+            <img data-shot-img="table" hidden loading="lazy" src="assets/screenshots/table.png" width="2880" height="1800" alt="Editing a table's rows in the grid" data-i18n-alt="alt.table">
+            <img data-shot-img="er" hidden loading="lazy" src="assets/screenshots/er.png" width="2880" height="1800" alt="ER diagram of the demo database" data-i18n-alt="alt.er">
+            <img data-shot-img="mcp" hidden loading="lazy" src="assets/screenshots/mcp.png" width="2880" height="1800" alt="MCP server settings with ready-to-copy client configuration" data-i18n-alt="alt.mcp">
+          </figure>
+        </div>
       </div>
-      <p class="fine" data-i18n="hero.fine">macOS (Apple Silicon &amp; Intel) · Linux (.deb, AppImage) · English, Português, Español</p>
-      <figure class="shot hero-shot">
-        <img src="assets/screenshots/query.png" width="2880" height="1800" alt="Graphite running a SQL query with JOINs and showing the results grid" data-i18n-alt="alt.query">
-      </figure>
+
+      <div class="marquee" aria-label="Supported databases" data-i18n-aria="marquee">
+        <ul class="marquee-track">
+          <li>PostgreSQL</li><li>MySQL</li><li>MongoDB</li><li>SQLite</li><li>Redis</li><li>SQL Server</li><li>Oracle</li><li>ClickHouse</li><li>DynamoDB</li><li>MariaDB</li><li>DuckDB</li><li>Cassandra</li><li>Snowflake</li><li>BigQuery</li><li>CockroachDB</li><li>SurrealDB</li><li>Trino</li><li>TiDB</li><li>ScyllaDB</li><li>Redshift</li><li>StarRocks</li><li>Firebird</li><li>LibSQL / Turso</li><li>GreengageDB</li><li>Valkey</li>
+        </ul>
+      </div>
     </section>
 
     <section id="features" class="wrap section">
-      <h2 data-i18n="features.title">Everything you reach for every day</h2>
+      <h2 class="reveal" data-i18n="features.title">Everything you reach for every day</h2>
       <p class="sub" data-i18n="features.sub">Built to be quick with the keyboard and careful with your data.</p>
       <div class="grid">
-        <article class="card">
+        <article class="card reveal">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zm0 0v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
           <h3 data-i18n="f1.t">24 databases, one app</h3>
           <p data-i18n="f1.d">Relational, analytics, cloud warehouses and NoSQL, with saved connections, passwords encrypted by your OS keychain, and a demo database to try things.</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>
           <h3 data-i18n="f2.t">A real SQL editor</h3>
           <p data-i18n="f2.d">Autocomplete for tables and columns, run everything or just the statement under the cursor, several results per run, and snippets like <code>sel</code>, <code>ij</code> or <code>ups</code>.</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3zM3 10h18M3 15h18M9 10v9"/></svg>
-          <h3 data-i18n="f3.t">Edit data in place</h3>
-          <p data-i18n="f3.d">Double-click to edit, set NULL, delete rows, then apply everything in one transaction. Works on query results too, when the primary key is there.</p>
+          <h3 data-i18n="f3.t">Edit any grid, SQL or NoSQL</h3>
+          <p data-i18n="f3.d">Double-click to edit, set NULL, delete rows, then apply it all at once — all or nothing. Tables, query results, MongoDB, Redis, Cassandra, DynamoDB and SurrealDB.</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>
           <h3 data-i18n="f4.t">Generate SQL from tables</h3>
           <p data-i18n="f4.d">Right-click a table for SELECT with JOINs that follow the foreign keys, INSERT, UPDATE or DELETE — ready to fill in.</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/></svg>
           <h3 data-i18n="f5.t">ER diagrams</h3>
           <p data-i18n="f5.d">Automatic layout, inferred relations when the database has no foreign keys, search, keys-only view, SVG and PNG export.</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
           <h3 data-i18n="f6.t">Backup, restore, export</h3>
           <p data-i18n="f6.d">.sql and .sql.gz backups without pg_dump or mysqldump, streamed restore, and exports to CSV, JSON or INSERTs with no row limit.</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>
           <h3 data-i18n="f7.t">Transactions your way</h3>
           <p data-i18n="f7.d">Auto-commit or manual mode per connection with commit and rollback. On PostgreSQL each statement gets a savepoint, so one error doesn't sink the transaction.</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zM3.5 9h17M3.5 15h17M12 3c2.4 2.6 3.6 5.6 3.6 9s-1.2 6.4-3.6 9c-2.4-2.6-3.6-5.6-3.6-9S9.6 5.6 12 3z"/></svg>
           <h3 data-i18n="f8.t">Your language</h3>
           <p data-i18n="f8.d">English, Português and Español. Follows your system and switches instantly, no restart.</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 017 0v3M12 15v2"/></svg>
           <h3 data-i18n="f9.t">Secure connections</h3>
           <p data-i18n="f9.d">TLS that verifies the server's certificate by default, your own CA, and client certificates for mutual TLS. Passwords and keys stay encrypted on your machine.</p>
@@ -118,23 +164,23 @@
     </section>
 
     <section id="databases" class="wrap section">
-      <h2 data-i18n="db.title">Your databases, all in one place</h2>
+      <h2 class="reveal" data-i18n="db.title">Your databases, all in one place</h2>
       <p class="sub" data-i18n="db.sub">Each one with its own query language, catalog and quirks — tested against real servers, except the ones marked beta.</p>
       <div class="dbs">
-        <article class="card">
+        <article class="card reveal">
           <h3 data-i18n="db.rel">Relational</h3>
           <ul class="chips"><li>PostgreSQL</li><li>MySQL</li><li>MariaDB</li><li>SQLite</li><li>SQL Server</li><li>Oracle</li><li>CockroachDB</li><li>TiDB</li><li>Firebird</li><li>GreengageDB</li><li>LibSQL / Turso</li></ul>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <h3 data-i18n="db.ana">Analytics</h3>
           <ul class="chips"><li>ClickHouse</li><li>DuckDB</li><li>Trino</li><li>StarRocks</li></ul>
           <h3 data-i18n="db.cloud">Cloud warehouses</h3>
           <ul class="chips"><li>Snowflake <span class="beta">beta</span></li><li>BigQuery <span class="beta">beta</span></li><li>Amazon Redshift <span class="beta">beta</span></li></ul>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <h3 data-i18n="db.nosql">NoSQL</h3>
           <ul class="chips"><li>MongoDB</li><li>Redis / Valkey</li><li>Apache Cassandra</li><li>ScyllaDB</li><li>Amazon DynamoDB</li><li>SurrealDB</li></ul>
-          <p class="note" data-i18n="db.nosql.d">MongoDB and Redis are editable in the grid; queries use each database's own language.</p>
+          <p class="note" data-i18n="db.nosql.d">All editable in the grid, with key columns locked. Queries use each database's own language.</p>
         </article>
       </div>
     </section>
@@ -167,24 +213,11 @@
       </div>
     </section>
 
-    <section class="wrap section">
-      <div class="gallery">
-        <figure class="shot">
-          <img src="assets/screenshots/er.png" width="2880" height="1800" loading="lazy" alt="ER diagram of the demo database" data-i18n-alt="alt.er">
-          <figcaption data-i18n="cap.er">ER diagram with automatic layout and SVG/PNG export.</figcaption>
-        </figure>
-        <figure class="shot">
-          <img src="assets/screenshots/mcp.png" width="2880" height="1800" loading="lazy" alt="MCP server settings with ready-to-copy client configuration" data-i18n-alt="alt.mcp">
-          <figcaption data-i18n="cap.mcp">Ready-to-paste configs for Claude Code, Cursor, VS Code and Claude Desktop.</figcaption>
-        </figure>
-      </div>
-    </section>
-
     <section id="download" class="wrap section">
-      <h2 data-i18n="dl.title">Download</h2>
+      <h2 class="reveal" data-i18n="dl.title">Download</h2>
       <p class="sub"><span data-i18n="dl.sub">Free, no account, no telemetry.</span> <span data-version-line></span></p>
       <div class="dl">
-        <article class="card">
+        <article class="card reveal">
           <h3>macOS</h3>
           <p data-i18n="dl.mac">Apple Silicon (M1 and newer) or Intel.</p>
           <div class="row">
@@ -197,7 +230,7 @@
             <pre><code>xattr -dr com.apple.quarantine /Applications/Graphite.app</code></pre>
           </details>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <h3>Linux</h3>
           <p data-i18n="dl.linux">x64. The .deb sets up the menu entry and the graphite command.</p>
           <div class="row">
@@ -206,7 +239,7 @@
           </div>
           <pre><code>sudo apt install ./graphite_*_amd64.deb</code></pre>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <h3 data-i18n="dl.src.t">From source</h3>
           <p data-i18n="dl.src.d">Node.js 22+. Works on macOS and Linux.</p>
           <pre><code>git clone https://github.com/julioczn/graphite
@@ -218,6 +251,21 @@ npm start</code></pre>
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/></svg>
         <p><strong data-i18n="dl.upd.t">Install once, it keeps itself up to date.</strong>
           <span data-i18n="dl.upd.d">Graphite notices new releases, shows what changed, downloads the right package, verifies it against GitHub's SHA-256 and restarts on the new version. From 0.9.0 on; you can turn the check off.</span></p>
+      </div>
+    </section>
+
+    <section class="wrap section">
+      <div class="final reveal">
+        <img src="assets/icon.svg" width="64" height="64" alt="">
+        <h2 data-i18n="final.t">Stop juggling database clients.</h2>
+        <p class="sub" data-i18n="final.d">Postgres in the morning, Mongo after lunch, that DynamoDB table at 2 a.m. — one app, one shortcut, one place for your connections.</p>
+        <div class="cta">
+          <a class="btn primary big" data-dl="primary" href="https://github.com/julioczn/graphite/releases/latest">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span data-dl-label data-i18n="hero.download">Download</span>
+          </a>
+          <a class="btn big" href="#download" data-i18n="hero.other">All platforms</a>
+        </div>
       </div>
     </section>
   </main>
