@@ -65,11 +65,15 @@ async function exportData(d, opts, job) {
   if (!EXT[o.format]) throw new Error(t('Formato desconhecido: {format}', { format: o.format }))
   if (d.beginSnapshot) await d.beginSnapshot()
 
+  // selectList: drivers that must read some column types as text to keep
+  // them exact (SQL Server decimals) list the columns themselves.
+  const tableSources = []
+  for (const t of opts.tables || []) tableSources.push({ ...t, cols: d.selectList ? await d.selectList(t.name, t.schema) : '*' })
   const sources = opts.query
     ? [{ name: path.basename(opts.file), sql: opts.query, target: d.quote(opts.sqlTable || 'resultado'), file: opts.file }]
-    : opts.tables.map((t) => ({
+    : tableSources.map((t) => ({
       name: t.name,
-      sql: `select * from ${d.qualified(t.name, t.schema)}${t.where?.trim() ? ` where ${t.where}` : ''}`,
+      sql: `select ${t.cols} from ${d.qualified(t.name, t.schema)}${t.where?.trim() ? ` where ${t.where}` : ''}`,
       target: d.qualified(t.name, d.dialect === 'postgres' ? t.schema : null),
       file: opts.tables.length === 1 && opts.file ? opts.file : path.join(opts.dir, `${t.name}.${EXT[o.format]}`),
     }))

@@ -6,6 +6,19 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 ## [Unreleased]
 
 ### Added
+- **SQL Server** (2016+ / Azure SQL, via tedious) and **Oracle Database** (12c+, Thin mode — no Instant Client),
+  tested against SQL Server 2022 and Oracle Database 23ai. Paging with `OFFSET … FETCH`, generated SQL and snippets
+  use `TOP` / `FETCH FIRST`, scripts understand `GO` batches and PL/SQL blocks ending in `/`.
+- AI reads on Oracle run in `SET TRANSACTION READ ONLY`; on SQL Server they run in a transaction that is always
+  rolled back, and `SELECT … INTO` needs approval.
+
+### Known limitations
+- SQL Server: in free-form queries, `decimal`/`numeric` values beyond ~15 significant digits lose precision (driver
+  limitation); table browsing and exports read them as exact text. Only the last result set of a batch is shown.
+
+## [0.6.0] - 2026-11-21
+
+### Added
 - New databases: **MariaDB**, **TiDB**, **CockroachDB**, **GreengageDB**, **StarRocks** and **LibSQL / Turso**
   (tested against real servers), plus **Amazon Redshift** in beta. The connection form now has a database type picker.
 - Each engine declares what it supports; the interface hides what an engine can't do (manual transactions, backup,
@@ -65,5 +78,6 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/julioczn/graphite/releases/tag/v0.6.0
 [0.5.0]: https://github.com/julioczn/graphite/releases/tag/v0.5.0

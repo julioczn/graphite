@@ -10,6 +10,20 @@
 // every unnumbered one, so the cursor would start at the end.
 import { quoteIdent, tableName } from './sqlText'
 import { t } from './i18n'
+import { store } from './store'
+
+// SQL Server and Oracle have no LIMIT: rewrite the templates' row limits.
+//   SQL Server: SELECT TOP n … / OFFSET … ROWS FETCH NEXT … ROWS ONLY
+//   Oracle:     … FETCH FIRST n ROWS ONLY / OFFSET … ROWS FETCH NEXT … ROWS ONLY
+export function withLimit(text, dialect) {
+  if (dialect !== 'mssql' && dialect !== 'oracle') return text
+  const paged = /\nLIMIT (\d+) OFFSET (\d+);/
+  if (paged.test(text)) return text.replace(paged, '\nOFFSET $2 ROWS FETCH NEXT $1 ROWS ONLY;')
+  const m = /\nLIMIT (\d+);/.exec(text)
+  if (!m) return text
+  if (dialect === 'oracle') return text.replace(m[0], `\nFETCH FIRST ${m[1]} ROWS ONLY;`)
+  return text.replace(m[0], ';').replace(/^SELECT( DISTINCT)?/, `SELECT$1 TOP ${m[1]}`)
+}
 
 // --- generic templates ------------------------------------------------------
 
@@ -173,7 +187,7 @@ export function snippetsFor(dialect) {
   for (const [group, items] of groups()) {
     for (const [trigger, title, body] of items) {
       const text = typeof body === 'string' ? body : body[dialect]
-      if (text) out.push({ group, trigger, title, body: localizeFields(text, names) })
+      if (text) out.push({ group, trigger, title, body: localizeFields(withLimit(text, dialect), names) })
     }
   }
   return out
@@ -195,7 +209,7 @@ const esc = (s) => String(s).replace(/[{}]/g, '\\$&')
 // name starting with a digit would be read as a numbered stop (`${1}`).
 const field = (label) => '${' + String(label).replace(/[{}\\]/g, '_').replace(/^(\d)/, '_$1') + '}'
 
-const NUMERIC = /^(tiny|small|medium|big)?int|^integer|^serial|^bigserial|^smallserial|^numeric|^decimal|^real|^float|^double|^bit\b|^year|^money|^bool/i
+const NUMERIC = /^(tiny|small|medium|big)?int|^integer|^number|^serial|^bigserial|^smallserial|^numeric|^decimal|^real|^float|^double|^bit\b|^year|^money|^bool/i
 
 // Placeholder for a value: quoted for text-like types, bare for numbers.
 function valueStop(col) {
@@ -228,7 +242,7 @@ export function tableSnippets(table, columns) {
   const nonKey = columns.filter((c) => !c.primary && !c.auto)
 
   const out = {
-    select: `SELECT ${columns.map((c) => q(c.name)).join(',\n       ')}\nFROM ${target}\nLIMIT 100;${'${}'}`,
+    select: withLimit(`SELECT ${columns.map((c) => q(c.name)).join(',\n       ')}\nFROM ${target}\nLIMIT 100;${'${}'}`, store.connection?.dialect),
     insert: `INSERT INTO ${target} (${writable.map((c) => q(c.name)).join(', ')})\nVALUES (${writable.map(valueStop).join(', ')});${'${}'}`,
     update: nonKey.length
       ? `UPDATE ${target}\nSET ${nonKey.map((c) => `${q(c.name)} = ${valueStop(c)}`).join(',\n    ')}\nWHERE ${where};${'${}'}`
@@ -248,7 +262,7 @@ export function tableSnippets(table, columns) {
       const kind = c.nullable ? 'LEFT JOIN' : 'JOIN'
       return { a, sql: `${kind} ${esc(tableName(ref.table, c.refSchema ?? table.schema))} ${a} ON ${a}.${q(ref.column)} = ${me}.${q(c.name)}` }
     })
-    out.join = `SELECT ${me}.*, ${joins.map((j) => `${j.a}.*`).join(', ')}\nFROM ${target} ${me}\n${joins.map((j) => j.sql).join('\n')}\nLIMIT 100;${'${}'}`
+    out.join = withLimit(`SELECT ${me}.*, ${joins.map((j) => `${j.a}.*`).join(', ')}\nFROM ${target} ${me}\n${joins.map((j) => j.sql).join('\n')}\nLIMIT 100;${'${}'}`, store.connection?.dialect)
   }
   return out
 }

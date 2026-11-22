@@ -24,6 +24,8 @@ const DRIVERS = {
   postgres: () => require("./drivers/postgres.cjs"),
   mysql: () => require("./drivers/mysql.cjs"),
   libsql: () => require("./drivers/libsql.cjs"),
+  mssql: () => require("./drivers/mssql.cjs"),
+  oracle: () => require("./drivers/oracle.cjs"),
 };
 const MAX_ROWS = 5000;
 
@@ -219,7 +221,7 @@ const handlers = {
   "query/run": ({ sId, sql }) => {
     const s = session(sId);
     return s.lock(async () => {
-      const statements = splitStatements(sql);
+      const statements = splitStatements(sql, s.driver.dialect);
       const results = [];
       for (const st of statements) {
         const t0 = performance.now();
@@ -386,9 +388,12 @@ const handlers = {
     const t0 = performance.now();
     // A bad WHERE must not abort an open PostgreSQL transaction.
     return session(sId).guarded(async () => {
-      const page = await d.execute(
-        `select * from ${from}${filter}${order} limit ${Number(limit)} offset ${Number(offset)}`,
-      );
+      // Drivers whose SQL has no LIMIT/OFFSET (SQL Server, Oracle) build their own.
+      const cols = d.selectList ? await d.selectList(table, schema) : "*";
+      const sql = d.pageSql
+        ? d.pageSql({ cols, from, filter, order, limit: Number(limit), offset: Number(offset) })
+        : `select ${cols} from ${from}${filter}${order} limit ${Number(limit)} offset ${Number(offset)}`;
+      const page = await d.execute(sql);
       const count = await d.execute(`select count(*) from ${from}${filter}`);
       return {
         ...page,

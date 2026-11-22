@@ -16,7 +16,8 @@ const root = ref(null)
 const input = ref(null)
 const list = ref(null)
 
-const isPg = computed(() => store.connection.dialect === 'postgres')
+// "Schema" engines (PostgreSQL, Oracle) vs "database" ones (MySQL, SQL Server).
+const isPg = computed(() => store.connection.caps?.schemas === 'schema')
 
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()

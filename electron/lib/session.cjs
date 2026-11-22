@@ -10,7 +10,19 @@
 const { commandOf } = require('./sql.cjs')
 const { t } = require('../../shared/i18n.mjs')
 
-const TX_CONTROL = new Set(['BEGIN', 'START', 'COMMIT', 'END', 'ROLLBACK', 'SAVEPOINT', 'RELEASE'])
+const TX_CONTROL = new Set(['BEGIN', 'START', 'COMMIT', 'END', 'ROLLBACK', 'SAVEPOINT', 'RELEASE', 'SAVE'])
+
+// Transaction statements; drivers whose engine spells them differently
+// (SQL Server's SAVE TRANSACTION, Oracle's implicit BEGIN) override driver.txSql.
+const DEFAULT_TX = {
+  begin: 'begin',
+  commit: 'commit',
+  rollback: 'rollback',
+  savepoint: (n) => `savepoint ${n}`,
+  rollbackTo: (n) => `rollback to savepoint ${n}`,
+  release: (n) => `release savepoint ${n}`,
+}
+const txSql = (d) => ({ ...DEFAULT_TX, ...(d.txSql || {}) })
 const MYSQL_IMPLICIT_COMMIT = new Set(['CREATE', 'DROP', 'ALTER', 'RENAME', 'TRUNCATE', 'GRANT', 'REVOKE', 'LOCK', 'UNLOCK'])
 const DDL = new Set(['CREATE', 'DROP', 'ALTER', 'RENAME', 'TRUNCATE'])
 
@@ -37,20 +49,24 @@ class Session {
 
   async ensureTx() {
     if (this.inTx) return
-    if (this.driver.dialect !== 'mysql') await this.driver.execute('begin')
+    const begin = txSql(this.driver).begin
+    // Oracle has no BEGIN: the driver just stops auto-committing (beginTx).
+    if (this.driver.beginTx) await this.driver.beginTx()
+    else if (this.driver.dialect !== 'mysql' && begin) await this.driver.execute(begin)
     this.inTx = true
   }
 
   async savepoint(name, fn) {
     const d = this.driver
-    await d.execute(`savepoint ${name}`)
+    const sql = txSql(d)
+    await d.execute(sql.savepoint(name))
     try {
       const out = await fn()
-      await d.execute(`release savepoint ${name}`)
+      if (sql.release) await d.execute(sql.release(name))
       return out
     } catch (e) {
-      await d.execute(`rollback to savepoint ${name}`).catch(() => {})
-      await d.execute(`release savepoint ${name}`).catch(() => {})
+      await d.execute(sql.rollbackTo(name)).catch(() => {})
+      if (sql.release) await d.execute(sql.release(name)).catch(() => {})
       throw e
     }
   }
@@ -109,12 +125,12 @@ class Session {
   }
 
   async commit() {
-    if (this.inTx || this.driver.dialect === 'mysql') await this.driver.execute('commit')
+    if (this.inTx || this.driver.dialect === 'mysql') await this.driver.execute(txSql(this.driver).commit)
     this.resetTx()
   }
 
   async rollback() {
-    if (this.inTx || this.driver.dialect === 'mysql') await this.driver.execute('rollback')
+    if (this.inTx || this.driver.dialect === 'mysql') await this.driver.execute(txSql(this.driver).rollback)
     this.resetTx()
   }
 

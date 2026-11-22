@@ -1,6 +1,6 @@
 {
   "name": "graphite",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Desktop SQL client for SQLite, PostgreSQL and MySQL/MariaDB, with an AI assistant and an MCP server for your own agents.",
   "main": "electron/main.cjs",
   "scripts": {
@@ -63,7 +63,9 @@
     "@libsql/client": "0.18.0",
     "@modelcontextprotocol/sdk": "1.32.2",
     "mysql2": "^3.24.6",
+    "oracledb": "26.0.0",
     "pg": "^8.23.1",
+    "tedious": "20.3.9",
     "zod": "4.6.7"
   },
   "productName": "Graphite",
@@ -78,7 +80,8 @@
       "!node_modules/libsql/**",
       "!node_modules/@libsql/darwin-*/**",
       "!node_modules/@libsql/linux-*/**",
-      "!node_modules/@libsql/win32-*/**"
+      "!node_modules/@libsql/win32-*/**",
+      "!node_modules/oracledb/build/**"
     ],
     "linux": {
       "target": [
