@@ -167,6 +167,8 @@ class Updater extends EventEmitter {
 
   async download() {
     if (!this.release || !this.state.canInstall) throw new Error(t('Atualização automática indisponível nesta instalação'))
+    // Never install the same or an older version (the API can lag right after a release).
+    if (!newer(this.release.version, this.state.current)) throw new Error(t('Você já está na versão mais recente'))
     const asset = assetFor(this.install.kind, this.release.version, this.release.assets)
     if (!asset) throw new Error(t('Esta versão não tem um pacote para este sistema'))
     // Without the digest GitHub publishes, the download can't be verified: refuse.

@@ -9,6 +9,8 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 - SurrealDB: a wrong user or password showed "Unexpected token 'T'… is not valid JSON" instead of the reason. The
   server answers auth errors in plain text; they now read "SurrealDB authentication failed: …". A URL that isn't a
   SurrealDB server says so, and query errors no longer start with "There was a problem with the database:".
+- Updates: the download refuses a release that isn't newer than the running version (the GitHub API can still
+  return the previous release for a few minutes after publishing).
 
 ## [0.10.0] - 2026-11-22
 
