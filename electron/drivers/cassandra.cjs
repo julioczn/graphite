@@ -11,6 +11,7 @@
 //   every AI query needs approval.
 const cassandra = require('cassandra-driver')
 const { normaliseRows } = require('../lib/sql.cjs')
+const { tlsOptions, modeOf } = require('../lib/tls.cjs')
 
 const { types } = cassandra
 const SYSTEM_KS = /^system(_|$)|^dse_|^solr_admin$/
@@ -57,7 +58,7 @@ class CassandraDriver {
       // Round robin needs no local data center name; fine for a desktop client.
       policies: { loadBalancing: new cassandra.policies.loadBalancing.RoundRobinPolicy() },
       ...(c.user && { credentials: { username: c.user, password: c.password || '' } }),
-      ...(c.ssl && { sslOptions: { rejectUnauthorized: false } }),
+      ...(c.ssl && { sslOptions: tlsOptions(c) }),
       socketOptions: { connectTimeout: 10000, readTimeout: 120000 },
     })
     await this.client.connect()

@@ -1,5 +1,6 @@
 const pg = require('pg')
 const { normaliseRows, erFrom } = require('../lib/sql.cjs')
+const { tlsOptions, modeOf } = require('../lib/tls.cjs')
 
 // Keep temporal types as the server formats them instead of JS Dates.
 const RAW_TYPES = new Set([1082, 1083, 1114, 1184, 1266])
@@ -45,7 +46,7 @@ class PostgresDriver {
       user: c.user,
       password: c.password,
       database: c.database || 'postgres',
-      ssl: c.ssl ? { rejectUnauthorized: false } : undefined,
+      ssl: tlsOptions(c) || undefined,
       connectionTimeoutMillis: 10000,
       types,
       application_name: 'Graphite',

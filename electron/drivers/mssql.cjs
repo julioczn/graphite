@@ -12,6 +12,7 @@
 // lets SELECT / WITH through, refusing SELECT … INTO.
 const { Connection, Request, TYPES } = require('tedious')
 const { normaliseRows, erFrom } = require('../lib/sql.cjs')
+const { tlsOptions, modeOf } = require('../lib/tls.cjs')
 
 const SYSTEM_DBS = new Set(['master', 'tempdb', 'model', 'msdb'])
 
@@ -79,8 +80,10 @@ class MssqlDriver {
         port: Number(c.port) || 1433,
         database: c.database || undefined,
         encrypt: !!c.ssl,
-        // Self-signed certificates are the norm on local and internal servers.
-        trustServerCertificate: true,
+        // 'require' accepts any certificate (self-signed ones are common on
+        // internal servers); the verify modes check it against the CA.
+        trustServerCertificate: !c.ssl || modeOf(c) === 'require',
+        ...(c.ssl && { cryptoCredentialsDetails: (({ ca, cert, key }) => ({ ca, cert, key }))(tlsOptions(c)) }),
         connectTimeout: 15000,
         requestTimeout: 0,
         rowCollectionOnRequestCompletion: false,

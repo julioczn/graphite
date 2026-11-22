@@ -34,6 +34,8 @@ function blank(type = 'postgres') {
     host: 'localhost', port: e.port,
     user: e.user, password: '', database: '', file: '', url: '', extra: {},
     ssl: e.ssl, readOnly: false, savePassword: true,
+    // New connections verify the certificate and host name by default.
+    sslMode: 'verify-full', sslCa: '', sslCert: '', sslKey: '',
   }
 }
 
@@ -96,6 +98,8 @@ async function pick(c) {
     id: c.id, name: c.name, type: c.type,
     password: c.password ? await bridge.decrypt(c.password) : '',
     savePassword: !!c.password || engine(c.type).fields === 'file',
+    // Saved before TLS modes existed: keep their behaviour (encrypt, don't verify).
+    sslMode: c.config.sslMode || 'require',
     extra: Object.fromEntries((engine(c.type).form || []).filter((f) => f.type !== 'secret').map((f) => [f.key, c.config[f.key] ?? ''])),
   })
 }
@@ -113,7 +117,11 @@ function config() {
       else c[f.key] = (form.extra[f.key] ?? '').trim()
     }
   }
-  else Object.assign(c, { host: form.host, port: form.port, user: form.user, password: form.password, database: form.database, ssl: form.ssl })
+  else {
+    Object.assign(c, { host: form.host, port: form.port, user: form.user, password: form.password, database: form.database, ssl: form.ssl })
+    // Paths only: the certificate and key files stay where the user keeps them.
+    if (form.ssl) Object.assign(c, { sslMode: form.sslMode, sslCa: form.sslCa.trim(), sslCert: form.sslCert.trim(), sslKey: form.sslKey.trim() })
+  }
   return c
 }
 
@@ -122,6 +130,17 @@ function defaultName() {
   if (isUrl.value) return hostOf(form.url) || current.value.label
   if (isCustom.value) return [form.extra.user, form.extra.account || form.extra.project].filter(Boolean).join('@') || current.value.label
   return `${form.user ? form.user + '@' : ''}${form.host}${form.database ? '/' + form.database : ''}`
+}
+
+const TLS_FILES = computed(() => [
+  { key: 'sslCa', label: t('Certificado da CA (PEM)'), placeholder: 'ca.pem' },
+  { key: 'sslCert', label: t('Certificado do cliente (PEM)'), placeholder: 'client-cert.pem' },
+  { key: 'sslKey', label: t('Chave do cliente (PEM)'), placeholder: 'client-key.pem' },
+])
+
+async function browsePem(key) {
+  const file = await bridge.openFile({ filters: [{ name: 'PEM', extensions: ['pem', 'crt', 'cer', 'key'] }, { name: t('Todos os arquivos'), extensions: ['*'] }] })
+  if (file) form[key] = file
 }
 
 async function browseExtra(f) {
@@ -330,8 +349,27 @@ onMounted(load)
               <input id="f-db" v-model="form.database" class="input" :placeholder="DB_PLACEHOLDER[current.family] || t('opcional')" />
             </div>
             <div class="checks span-2">
-              <label class="check"><input v-model="form.ssl" type="checkbox" /> {{ t('Usar SSL') }}</label>
+              <label v-if="current.caps.ssl !== false" class="check"><input v-model="form.ssl" type="checkbox" /> {{ t('Usar SSL') }}</label>
               <label class="check"><input v-model="form.savePassword" type="checkbox" /> {{ t('Salvar senha') }}</label>
+            </div>
+            <div v-if="form.ssl && current.caps.ssl !== false" class="tls span-2">
+              <div class="field">
+                <label for="f-sslmode">{{ t('Verificação do certificado') }}</label>
+                <select id="f-sslmode" v-model="form.sslMode" class="input">
+                  <option v-if="current.family !== 'oracle'" value="require">{{ t('Só criptografar (não verificar)') }}</option>
+                  <option value="verify-ca">{{ t('Verificar a CA') }}</option>
+                  <option value="verify-full">{{ t('Verificar a CA e o nome do host') }}</option>
+                </select>
+                <div class="hint">{{ form.sslMode === 'require' ? t('Aceita qualquer certificado: protege contra quem só escuta a rede, mas não contra um servidor falso.') : t('Sem um arquivo de CA, valem as autoridades confiáveis do sistema.') }}</div>
+              </div>
+              <div v-for="f in TLS_FILES" :key="f.key" class="field">
+                <label :for="'f-' + f.key">{{ f.label }} <span class="muted">({{ t('opcional') }})</span></label>
+                <div class="row">
+                  <input :id="'f-' + f.key" v-model="form[f.key]" class="input mono" :placeholder="f.placeholder" spellcheck="false" />
+                  <button type="button" class="btn" @click="browsePem(f.key)"><Icon name="folder" :size="14" /></button>
+                  <button v-if="form[f.key]" type="button" class="btn" :title="t('Remover')" @click="form[f.key] = ''"><Icon name="close" :size="13" /></button>
+                </div>
+              </div>
             </div>
           </template>
         </div>
@@ -434,6 +472,7 @@ onMounted(load)
 .card-head h1 { margin: 0 0 4px; font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .card-head p { margin: 0 0 20px; }
 
+.tls { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-1); }
 .hint { margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--fg-4); }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 14px; }

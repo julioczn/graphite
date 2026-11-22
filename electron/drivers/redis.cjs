@@ -9,6 +9,7 @@
 // - No grid editing; every AI command needs approval.
 const Redis = require('ioredis')
 const { t } = require('../../shared/i18n.mjs')
+const { tlsOptions, modeOf } = require('../lib/tls.cjs')
 
 const MAX_KEYS = 1000
 
@@ -85,15 +86,22 @@ class RedisDriver {
       username: c.user || undefined,
       password: c.password || undefined,
       db: this.dbIndex,
-      tls: c.ssl ? { rejectUnauthorized: false } : undefined,
+      tls: tlsOptions(c) || undefined,
       lazyConnect: true,
       connectTimeout: 10000,
       maxRetriesPerRequest: 1,
       enableOfflineQueue: false,
       retryStrategy: () => null,
     })
-    this.client.on('error', () => {}) // surfaced through the failing command
-    await this.client.connect()
+    // ioredis reports a failed TLS handshake as "Connection is closed";
+    // keep the real reason (bad certificate, wrong host name…) to show it.
+    this.lastError = null
+    this.client.on('error', (e) => { this.lastError = e })
+    try {
+      await this.client.connect()
+    } catch (e) {
+      throw this.lastError || e
+    }
   }
 
   async disconnect() {

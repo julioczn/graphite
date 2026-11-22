@@ -1,5 +1,6 @@
 const mysql = require('mysql2/promise')
 const { normaliseRows, erFrom } = require('../lib/sql.cjs')
+const { tlsOptions, modeOf } = require('../lib/tls.cjs')
 
 const SYSTEM_DBS = new Set(['information_schema', 'mysql', 'performance_schema', 'sys', 'metrics_schema', '_statistics_'])
 
@@ -32,7 +33,8 @@ class MysqlDriver {
       user: c.user,
       password: c.password,
       database: c.database || undefined,
-      ssl: c.ssl ? { rejectUnauthorized: false } : undefined,
+      // mysql2 checks the host name only with verifyIdentity.
+      ssl: c.ssl ? { ...tlsOptions(c), verifyIdentity: modeOf(c) === 'verify-full' } : undefined,
       connectTimeout: 10000,
       // affectedRows counts matched rows, so an update that keeps the same
       // value still reports 1 and the apply check below holds.
@@ -41,6 +43,16 @@ class MysqlDriver {
       supportBigNumbers: true,
       bigNumberStrings: true,
     })
+    // mysql2 skips the host name check when the host is an IP address (Node
+    // then compares against "localhost"), so verify-full checks it here.
+    if (c.ssl && modeOf(c) === 'verify-full') {
+      const cert = this.conn.connection.stream?.getPeerCertificate?.()
+      const err = cert && require('node:tls').checkServerIdentity(c.host || 'localhost', cert)
+      if (err) {
+        await this.disconnect()
+        throw err
+      }
+    }
     await this.detectFlavor()
   }
 
