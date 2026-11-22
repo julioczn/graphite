@@ -7,14 +7,20 @@
 //   which the user types (it can be expensive on big tables).
 // - Values: bigint/varint/decimal/uuid/inet/date/time/duration as text,
 //   collections and UDTs as JSON.
-// - No interactive transactions (only lightweight ones): read-only grid;
-//   every AI query needs approval.
+// - Grid edits: one logged BATCH (all or nothing), after checking that every
+//   row still exists; values go through fromJson() so the server converts the
+//   grid's text to the column type. Key columns can't change (CQL rule).
+// - No interactive transactions: every AI query needs approval.
 const cassandra = require('cassandra-driver')
 const { normaliseRows } = require('../lib/sql.cjs')
 const { tlsOptions, modeOf } = require('../lib/tls.cjs')
+const { t } = require('../../shared/i18n.mjs')
 
 const { types } = cassandra
 const SYSTEM_KS = /^system(_|$)|^dse_|^solr_admin$/
+// Types whose grid text is the value itself; anything else (collections, tuples,
+// UDTs) is shown as JSON and edited as JSON.
+const SCALAR = /^(ascii|bigint|blob|boolean|counter|date|decimal|double|duration|float|inet|int|smallint|text|time|timestamp|timeuuid|tinyint|uuid|varchar|varint)$/
 
 function cell(v) {
   if (v === null || v === undefined) return null
@@ -222,6 +228,55 @@ class CassandraDriver {
     if (!rs.columns) return { affected: 0 }
     const g = this.grid(rs)
     return { fields: g.fields, rows: normaliseRows(g.rows.slice(0, limit + 1), g.fields) }
+  }
+
+  // changes: [{ kind: 'update' | 'delete', table, schema, pk: {col: val}, column, value }]
+  async applyChanges(changes) {
+    const { table, schema } = changes[0]
+    const ks = schema ?? this.client.keyspace
+    const cols = new Map((await this.columnsRaw(table, ks)).map((c) => [c.column_name, c]))
+    const keys = [...cols.values()].filter((c) => c.kind === 'partition_key' || c.kind === 'clustering').map((c) => c.column_name)
+    const from = this.qualified(table, ks)
+    const where = keys.map((k) => `${this.quote(k)} = fromJson(?)`).join(' and ')
+    const keyParams = (pk) => keys.map((k) => JSON.stringify(pk[k] === null || pk[k] === undefined ? null : pk[k]))
+    const label = (pk) => keys.map((k) => `${k} = ${pk[k]}`).join(', ')
+    // UPDATE in CQL is an upsert: make sure no row came back from the dead.
+    const seen = new Set()
+    for (const ch of changes) {
+      const id = JSON.stringify(keyParams(ch.pk))
+      if (seen.has(id)) continue
+      seen.add(id)
+      const rs = await this.client.execute(`select ${this.quote(keys[0])} from ${from} where ${where}`, keyParams(ch.pk), { prepare: true })
+      if (!rs.rows.length) throw new Error(t('A linha {key} não existe mais. Nada foi aplicado.', { key: label(ch.pk) }))
+    }
+    const queries = changes.map((ch) => {
+      if (ch.kind === 'delete') return { query: `delete from ${from} where ${where}`, params: keyParams(ch.pk) }
+      const col = cols.get(ch.column)
+      if (!col) throw new Error(t('A coluna {column} não existe', { column: ch.column }))
+      if (keys.includes(ch.column)) throw new Error(t('Colunas da chave primária não podem ser alteradas no Cassandra'))
+      if (ch.value === null) return { query: `update ${from} set ${this.quote(ch.column)} = null where ${where}`, params: keyParams(ch.pk) }
+      let json = ch.value
+      if (!SCALAR.test(col.type)) {
+        try {
+          json = JSON.parse(ch.value)
+        } catch {
+          throw new Error(t('{column}: informe o valor em JSON (ex.: {example})', { column: ch.column, example: /^(frozen<)?map</.test(col.type) ? '{"a": 1}' : '["a", "b"]' }))
+        }
+      }
+      return { query: `update ${from} set ${this.quote(ch.column)} = fromJson(?) where ${where}`, params: [JSON.stringify(json), ...keyParams(ch.pk)] }
+    })
+    try {
+      await this.client.batch(queries, { prepare: true, logged: true })
+    } catch (e) {
+      // fromJson failures read like "Unable to make int from 'abc'" / marshal_exception.
+      if (/fromjson|marshal/i.test(e.message)) {
+        // Keep the server's reason, without the Java class / Scylla wrapper around it.
+        const reason = e.message.split(/MarshalException:\s*|marshaling error:\s*/i).pop().replace(/\)\s*$/, '').trim()
+        throw new Error(t('Valor incompatível com o tipo da coluna: {error}', { error: reason.slice(0, 200) }))
+      }
+      throw e
+    }
+    return changes.length
   }
 
   async transaction(fn) {

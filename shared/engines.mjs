@@ -17,6 +17,8 @@
 //   ssl           TLS options in the connection form (Firebird encrypts its own wire)
 //   edit          grid editing in the table tab (defaults to `transactions`); engines
 //                 without SQL transactions apply edits through driver.applyChanges
+//   editKeys      key columns can be edited in the grid (false: MongoDB _id, CQL
+//                 and DynamoDB keys, SurrealDB id — they identify the row for good)
 //   sql           the query language is SQL (false: MongoDB, Redis, CQL…):
 //                 SQL generation, snippets and SQL INSERT export are hidden
 //
@@ -117,8 +119,8 @@ export const ENGINES = [
     ],
     caps: { schemas: 'schema', transactions: false, manualMode: false, aiReadOnly: false, restore: false },
   }),
-  // Non-relational: their own query languages (caps.sql = false), no grid
-  // editing yet, no read-only mode — every AI query needs approval.
+  // Non-relational: their own query languages (caps.sql = false), grid edits
+  // through driver.applyChanges, no read-only mode — every AI query needs approval.
   engine('mongodb', 'MongoDB', 'mongo', {
     form: [
       { key: 'url', wide: true, placeholder: 'mongodb://localhost:27017' },
@@ -127,7 +129,7 @@ export const ENGINES = [
       { key: 'database', optional: true, placeholder: 'test' },
     ],
     filter: { label: 'filter', placeholder: '{ "status": "pago" }' },
-    caps: { ...NOSQL, schemas: 'database', edit: true },
+    caps: { ...NOSQL, schemas: 'database', edit: true, editKeys: false },
   }),
   engine('redis', 'Redis / Valkey', 'redis', {
     port: '6379',
@@ -135,8 +137,8 @@ export const ENGINES = [
     caps: { ...NOSQL, schemas: 'database', edit: true },
   }),
   // CQL: the picker switches keyspaces; no OFFSET and no cheap COUNT.
-  engine('cassandra', 'Apache Cassandra', 'cql', { port: '9042', filter: { label: 'WHERE', placeholder: "status = 'pago' ALLOW FILTERING" }, caps: { ...NOSQL, schemas: 'database' } }),
-  engine('scylladb', 'ScyllaDB', 'cql', { port: '9042', filter: { label: 'WHERE', placeholder: "status = 'pago' ALLOW FILTERING" }, caps: { ...NOSQL, schemas: 'database' } }),
+  engine('cassandra', 'Apache Cassandra', 'cql', { port: '9042', filter: { label: 'WHERE', placeholder: "status = 'pago' ALLOW FILTERING" }, caps: { ...NOSQL, schemas: 'database', edit: true, editKeys: false } }),
+  engine('scylladb', 'ScyllaDB', 'cql', { port: '9042', filter: { label: 'WHERE', placeholder: "status = 'pago' ALLOW FILTERING" }, caps: { ...NOSQL, schemas: 'database', edit: true, editKeys: false } }),
   // PartiQL over the HTTP API (SigV4); endpoint for DynamoDB Local.
   engine('dynamodb', 'Amazon DynamoDB', 'partiql', {
     form: [
@@ -146,7 +148,7 @@ export const ENGINES = [
       { key: 'endpoint', optional: true, wide: true, placeholder: 'http://localhost:8000' },
     ],
     filter: { label: 'WHERE', placeholder: "status = 'pago'" },
-    caps: { ...NOSQL },
+    caps: { ...NOSQL, edit: true, editKeys: false },
   }),
   // SurrealQL over HTTP; namespace + database; the picker switches databases.
   engine('surrealdb', 'SurrealDB', 'surql', {
@@ -158,7 +160,7 @@ export const ENGINES = [
       { key: 'database', placeholder: 'test' },
     ],
     filter: { label: 'WHERE', placeholder: "status = 'pago'" },
-    caps: { ...NOSQL, schemas: 'database' },
+    caps: { ...NOSQL, schemas: 'database', edit: true, editKeys: false },
   }),
   engine('sqlite', 'SQLite', 'sqlite', { fields: 'file', exts: ['db', 'sqlite', 'sqlite3', 'db3'], caps: { backup: true } }),
   // Embedded (native binary). No read-only transactions, and reads can reach

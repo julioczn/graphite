@@ -5,6 +5,20 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- Grid editing for **Cassandra / ScyllaDB**, **DynamoDB** and **SurrealDB**, all or nothing:
+  - Cassandra/ScyllaDB: one logged `BATCH`, after checking every row still exists (CQL `UPDATE` would otherwise
+    recreate a deleted row); values go through `fromJson()`, so the server converts the text to the column type
+    (bigint, decimal, timestamp, uuid, inet, date…; collections and UDTs edited as JSON).
+  - DynamoDB: one `TransactWriteItems` (up to 100 items), each conditioned on the item still existing; an attribute
+    keeps its type (S, N, BOOL, maps/lists and sets as JSON); NULL removes the attribute.
+  - SurrealDB: one `BEGIN … COMMIT` that rolls back if a record is gone; the new value takes the type of the field's
+    current value, also inside objects and arrays (datetime, decimal, duration, record, uuid…); NULL removes the field.
+
+### Changed
+- Key columns are read-only in the grid where a row's key can't change (MongoDB `_id`, Cassandra/DynamoDB keys,
+  SurrealDB `id`), instead of failing when the edit is applied.
+
 ## [0.9.0] - 2026-11-22
 
 ### Added
