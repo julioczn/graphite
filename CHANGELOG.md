@@ -18,6 +18,10 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
   Firebird 5 and DuckDB 1.5.
 - Wide `NUMERIC`/`DECIMAL` values are read as exact text when browsing and exporting (SQL Server, Firebird).
 
+- **Snowflake** (SQL API v2 with a Programmatic Access Token) and **BigQuery** (REST API with a service account key)
+  in beta, without SDKs. BigQuery tested against the open-source emulator; Snowflake against a mock of the documented
+  API. Both: read-only grid, AI asks for approval on every query.
+
 ### Changed
 - The app is larger (~45 MB more per download) because DuckDB is embedded with its native library.
 

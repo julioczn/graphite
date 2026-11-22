@@ -75,10 +75,12 @@
 | Trino / Starburst | ✅ | "Database" = `catalog` or `catalog.schema`; read-only grid |
 | Firebird 3+ | ✅ | "Database" = path or alias on the server |
 | DuckDB | ✅ | Local `.duckdb` file; AI asks for approval on every query |
+| Snowflake | 🧪 beta | Programmatic Access Token; read-only grid; not yet tested against a real account |
+| BigQuery | 🧪 beta | Service account key (JSON); read-only grid; tested with the open-source emulator |
 | Amazon Redshift | 🧪 beta | Not yet tested against a real cluster |
 | StarRocks | ✅ | No transactions (read-only grid); AI asks for approval on every query |
 
-More are on the way: Snowflake, BigQuery, and non-relational
+More are on the way: non-relational
 ones like Redis, MongoDB, Cassandra/ScyllaDB and DynamoDB.
 
 ## AI: bring your own model or agent

@@ -16,6 +16,7 @@ const GROUPS = computed(() => [
   { label: t('Compatíveis com PostgreSQL'), family: 'postgres' },
   { label: t('Outros bancos SQL'), families: ['mssql', 'oracle', 'firebird'] },
   { label: t('Analíticos'), families: ['clickhouse', 'trino', 'duckdb'] },
+  { label: t('Nuvem'), families: ['snowflake', 'bigquery'] },
   { label: t('SQLite e LibSQL'), family: 'sqlite' },
 ].map((g) => ({ ...g, engines: ENGINES.filter((e) => (g.families || [g.family]).includes(e.family)) })))
 
@@ -30,7 +31,7 @@ function blank(type = 'postgres') {
   return {
     id: null, name: '', type,
     host: 'localhost', port: e.port,
-    user: e.user, password: '', database: '', file: '', url: '',
+    user: e.user, password: '', database: '', file: '', url: '', extra: {},
     ssl: e.ssl, readOnly: false, savePassword: true,
   }
 }
@@ -38,6 +39,22 @@ function blank(type = 'postgres') {
 const current = computed(() => engine(form.type))
 const isSqlite = computed(() => current.value.fields === 'file')
 const isUrl = computed(() => current.value.fields === 'url')
+// Engines with their own form (Snowflake, BigQuery): engine.form lists the
+// inputs; a 'secret' one is stored encrypted as the password.
+const isCustom = computed(() => Array.isArray(current.value.form))
+const customFields = computed(() => (isCustom.value ? current.value.form : []))
+// Labels and hints of the custom form inputs, by key.
+const FIELD_LABELS = computed(() => ({
+  account: t('Conta'), user: t('Usuário'), token: t('Token de acesso (PAT)'), warehouse: 'Warehouse', role: t('Papel (role)'),
+  database: current.value.id === 'bigquery' ? t('Dataset padrão') : t('Banco.schema'),
+  keyFile: t('Chave da conta de serviço (JSON)'), project: t('ID do projeto'), location: t('Região'), endpoint: t('Endpoint (emulador)'),
+}))
+const FIELD_HINTS = computed(() => ({
+  account: t('O identificador da conta, como aparece na URL: <conta>.snowflakecomputing.com.'),
+  token: t('Crie um Programmatic Access Token em Snowsight → Settings → Authentication.'),
+  project: t('Se vazio, usa o projeto da chave.'),
+  endpoint: t('Só para testes com um emulador local do BigQuery.'),
+}))
 // What the user should know before picking this engine.
 const engineHint = computed(() => [
   current.value.status === 'beta' && t('Suporte em beta: ainda não testado contra um servidor real.'),
@@ -76,6 +93,7 @@ async function pick(c) {
     id: c.id, name: c.name, type: c.type,
     password: c.password ? await bridge.decrypt(c.password) : '',
     savePassword: !!c.password || engine(c.type).fields === 'file',
+    extra: Object.fromEntries((engine(c.type).form || []).filter((f) => f.type !== 'secret').map((f) => [f.key, c.config[f.key] ?? ''])),
   })
 }
 
@@ -84,6 +102,9 @@ function config() {
   if (isSqlite.value) Object.assign(c, { file: form.file, readOnly: form.readOnly })
   // The URL engines' auth token travels (and is stored encrypted) as the password.
   else if (isUrl.value) Object.assign(c, { url: form.url.trim(), password: form.password })
+  else if (isCustom.value) {
+    for (const f of customFields.value) c[f.key] = f.type === 'secret' ? form.password : (form.extra[f.key] ?? '').trim()
+  }
   else Object.assign(c, { host: form.host, port: form.port, user: form.user, password: form.password, database: form.database, ssl: form.ssl })
   return c
 }
@@ -91,7 +112,13 @@ function config() {
 function defaultName() {
   if (isSqlite.value) return form.file.split(/[\\/]/).pop() || current.value.label
   if (isUrl.value) return hostOf(form.url) || current.value.label
+  if (isCustom.value) return [form.extra.user, form.extra.account || form.extra.project].filter(Boolean).join('@') || current.value.label
   return `${form.user ? form.user + '@' : ''}${form.host}${form.database ? '/' + form.database : ''}`
+}
+
+async function browseExtra(f) {
+  const file = await bridge.openFile({ filters: [{ name: FIELD_LABELS.value[f.key] || f.key, extensions: f.exts || ['*'] }, { name: t('Todos os arquivos'), extensions: ['*'] }] })
+  if (file) form.extra[f.key] = file
 }
 
 async function browse() {
@@ -165,6 +192,7 @@ function subtitle(c) {
   const fields = engine(c.type).fields
   if (fields === 'file') return c.config.file
   if (fields === 'url') return c.config.url
+  if (engine(c.type).form) return [c.config.user, c.config.account || c.config.project, c.config.database].filter(Boolean).join(' · ')
   return `${c.config.user ? c.config.user + '@' : ''}${c.config.host}:${c.config.port}${c.config.database ? '/' + c.config.database : ''}`
 }
 
@@ -244,6 +272,20 @@ onMounted(load)
               </div>
             </div>
             <label class="check span-2"><input v-model="form.readOnly" type="checkbox" /> {{ t('Abrir somente leitura') }}</label>
+          </template>
+
+          <template v-else-if="isCustom">
+            <div v-for="f in customFields" :key="f.key" class="field" :class="{ 'span-2': f.wide }">
+              <label :for="'f-x-' + f.key">{{ FIELD_LABELS[f.key] || f.key }} <span v-if="f.optional" class="muted">({{ t('opcional') }})</span></label>
+              <div v-if="f.type === 'file'" class="row">
+                <input :id="'f-x-' + f.key" v-model="form.extra[f.key]" class="input mono" :placeholder="f.placeholder" spellcheck="false" />
+                <button type="button" class="btn" @click="browseExtra(f)"><Icon name="folder" :size="14" /> {{ t('Procurar') }}</button>
+              </div>
+              <input v-else-if="f.type === 'secret'" :id="'f-x-' + f.key" v-model="form.password" class="input mono" type="password" autocomplete="off" spellcheck="false" :placeholder="f.placeholder" />
+              <input v-else :id="'f-x-' + f.key" v-model="form.extra[f.key]" class="input mono" :placeholder="f.placeholder" spellcheck="false" />
+              <div v-if="FIELD_HINTS[f.key]" class="hint">{{ FIELD_HINTS[f.key] }}</div>
+            </div>
+            <label v-if="customFields.some((f) => f.type === 'secret')" class="check span-2"><input v-model="form.savePassword" type="checkbox" /> {{ t('Salvar senha') }}</label>
           </template>
 
           <template v-else-if="isUrl">

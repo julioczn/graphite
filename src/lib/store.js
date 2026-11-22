@@ -256,7 +256,7 @@ export function closeTab(id) {
 
 export function selectSql(table) {
   const d = store.connection?.dialect
-  const q = (s) => (d === 'mysql' || d === 'clickhouse' ? '`' + s + '`' : d === 'mssql' ? `[${s}]` : `"${s}"`)
+  const q = (s) => (d === 'mysql' || d === 'clickhouse' || d === 'bigquery' ? '`' + s + '`' : d === 'mssql' ? `[${s}]` : `"${s}"`)
   const name = isCurrentSchema(table.schema) ? q(table.name) : `${q(table.schema)}.${q(table.name)}`
   if (d === 'mssql') return `select top 100 *\nfrom ${name};`
   if (d === 'oracle' || d === 'firebird') return `select *\nfrom ${name}\nfetch first 100 rows only;`

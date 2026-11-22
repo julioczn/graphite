@@ -30,6 +30,8 @@ const DRIVERS = {
   trino: () => require("./drivers/trino.cjs"),
   firebird: () => require("./drivers/firebird.cjs"),
   duckdb: () => require("./drivers/duckdb.cjs"),
+  snowflake: () => require("./drivers/snowflake.cjs"),
+  bigquery: () => require("./drivers/bigquery.cjs"),
 };
 const MAX_ROWS = 5000;
 

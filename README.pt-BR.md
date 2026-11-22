@@ -76,10 +76,12 @@
 | Trino / Starburst | ✅ | "Banco" = `catálogo` ou `catálogo.schema`; grade somente leitura |
 | Firebird 3+ | ✅ | "Banco" = caminho ou alias no servidor |
 | DuckDB | ✅ | Arquivo `.duckdb` local; a AI pede aprovação para toda consulta |
+| Snowflake | 🧪 beta | Programmatic Access Token; grade somente leitura; ainda não testado numa conta real |
+| BigQuery | 🧪 beta | Chave de conta de serviço (JSON); grade somente leitura; testado com o emulador open source |
 | Amazon Redshift | 🧪 beta | Ainda não testado contra um cluster real |
 | StarRocks | ✅ | Sem transações (grade somente leitura); a AI pede aprovação para toda consulta |
 
-Vêm mais por aí: Snowflake, BigQuery e não relacionais como
+Vêm mais por aí: não relacionais como
 Redis, MongoDB, Cassandra/ScyllaDB e DynamoDB.
 
 ## AI: use o seu próprio modelo ou agente
