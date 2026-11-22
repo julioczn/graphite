@@ -81,6 +81,21 @@ contextBridge.exposeInMainWorld('graphite', {
     },
   },
 
+  // Updates from GitHub Releases: check, download (SHA-256 verified), install and relaunch.
+  update: {
+    state: () => ipcRenderer.invoke('update:state'),
+    check: () => ipcRenderer.invoke('update:check'),
+    download: () => ipcRenderer.invoke('update:download'),
+    install: () => ipcRenderer.invoke('update:install'),
+    setAuto: (on) => ipcRenderer.invoke('update:setAuto', on),
+    openPage: () => ipcRenderer.invoke('update:openPage'),
+    onState(fn) {
+      const listener = (_e, s) => fn(s)
+      ipcRenderer.on('update:state', listener)
+      return () => ipcRenderer.removeListener('update:state', listener)
+    },
+  },
+
   // AI: settings, MCP server, approvals, activity and the assistant chat.
   // The API key only goes in (ai.update); it never comes back.
   ai: {

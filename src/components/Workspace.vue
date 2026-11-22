@@ -18,6 +18,7 @@ import RestoreDialog from './RestoreDialog.vue'
 import ExportDialog from './ExportDialog.vue'
 import AiPanel from './AiPanel.vue'
 import LanguageMenu from './LanguageMenu.vue'
+import UpdateButton from './UpdateButton.vue'
 import { engineOf } from '../../shared/engines.mjs'
 import { ai } from '../lib/ai'
 
@@ -101,6 +102,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           <Icon name="sparkle" :size="18" />
           <span v-if="ai.approvals.length" class="badge">{{ ai.approvals.length }}</span>
         </button>
+        <UpdateButton compact />
         <LanguageMenu compact />
         <button class="act" :title="t('Busca rápida ({key})', { key: shortcut('mod', 'p') })" @click="store.quickSearch = true"><Icon name="search" :size="18" /></button>
         <button class="act" :title="t('Desconectar')" @click="closeConnection"><Icon name="power" :size="18" /></button>

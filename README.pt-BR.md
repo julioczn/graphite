@@ -154,11 +154,18 @@ autoridades confiáveis do sistema) e, para TLS mútuo, o **certificado e a chav
 guarda só os caminhos). O Firebird criptografa o próprio protocolo; o MongoDB recebe as opções de TLS na URL de
 conexão (`tls=true&tlsCAFile=…`).
 
+### Atualizações
+
+O Graphite consulta as releases deste repositório ao abrir e a cada 6 horas, mostra **Atualização disponível** na
+barra lateral e baixa e instala a versão nova para você: o arquivo é conferido com o SHA-256 que o GitHub publica e o
+Graphite reinicia já na versão nova (`.app` no macOS, AppImage ou `.deb` via `pkexec`). A verificação automática pode
+ser desligada no mesmo diálogo; ela é uma consulta simples à API do GitHub, sem nada sobre você ou seus bancos.
+
 ### Onde ficam os seus dados
 
 Conexões salvas, histórico e configurações ficam no seu computador: `~/Library/Application Support/Graphite` (macOS)
-ou `~/.config/Graphite` (Linux). O Graphite não tem telemetria; ele só conversa com os seus bancos e, se você
-configurar, com o seu provedor de AI.
+ou `~/.config/Graphite` (Linux). O Graphite não tem telemetria; ele só conversa com os seus bancos, com o seu provedor
+de AI (se você configurar) e com o GitHub para verificar atualizações (dá para desligar).
 
 ## Compilar a partir do código
 
