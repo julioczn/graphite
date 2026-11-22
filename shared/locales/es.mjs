@@ -547,7 +547,7 @@ export default {
   "Paginação (LIMIT / OFFSET)": "Paginación (LIMIT / OFFSET)",
   "Papel (role)": "Rol",
   "Falha na autenticação do SurrealDB{detail}": "Error de autenticación en SurrealDB{detail}",
-  "Resposta inesperada do servidor. Confira a URL do SurrealDB.": "Respuesta inesperada del servidor. Revisa la URL de SurrealDB.",
+  "Resposta inesperada do servidor (HTTP {status}). Confira a URL do SurrealDB.": "Respuesta inesperada del servidor (HTTP {status}). Revisa la URL de SurrealDB.",
   "Você já está na versão mais recente": "Ya tienes la versión más reciente",
   "Para autenticar com certificado, informe o certificado e a chave do cliente": "Para autenticarte con certificado, indica el certificado y la clave del cliente",
   "Para DynamoDB Local ou LocalStack; deixe vazio para a AWS.": "Para DynamoDB Local o LocalStack; déjalo vacío para AWS.",
