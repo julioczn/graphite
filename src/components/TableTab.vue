@@ -39,7 +39,8 @@ const applying = ref(false)
 const pk = computed(() => columns.value.filter((c) => c.primary).map((c) => c.name))
 const readOnly = computed(() => !!store.connection.saved?.config?.readOnly)
 // Edits are applied in one transaction, so engines without transactions are read-only here.
-const editable = computed(() => tab.kind !== 'view' && pk.value.length > 0 && !readOnly.value && caps().transactions !== false)
+const canEdit = computed(() => (caps().edit ?? caps().transactions) !== false)
+const editable = computed(() => tab.kind !== 'view' && pk.value.length > 0 && !readOnly.value && canEdit.value)
 const colEditable = computed(() => (binary.value.length ? fields.value.map((_, i) => !binary.value.includes(i)) : null))
 const insertTarget = computed(() => qualifiedName(tab.table, tab.schema))
 const pendingCount = computed(() => Object.keys(edits.value).length + Object.keys(deleted.value).length)
@@ -266,7 +267,7 @@ function openSql() {
           <template v-if="editable">{{ t('Duplo clique edita') }} · <span class="kbd">{{ key('del') }}</span> {{ t('define NULL') }} · {{ t('clique no nº da linha +') }} <span class="kbd">{{ key('del') }}</span> {{ t('exclui') }} · {{ t('botão direito: mais ações') }}</template>
           <template v-else-if="tab.kind === 'view'">{{ t('View — somente leitura') }}</template>
           <template v-else-if="readOnly">{{ t('Conexão somente leitura') }}</template>
-          <template v-else-if="caps().transactions === false">{{ t('Edição pela grade indisponível neste banco') }}</template>
+          <template v-else-if="!canEdit">{{ t('Edição pela grade indisponível neste banco') }}</template>
           <template v-else>{{ t('Sem chave primária — edição desativada') }}</template>
         </span>
         <span class="grow" />

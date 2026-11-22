@@ -65,6 +65,31 @@ const keyOrder = (keys) => ['_id', ...keys.filter((k) => k !== '_id').sort()].fi
 
 const one = (label, value) => ({ fields: [label], rows: [[cell(value)]] })
 
+// An _id typed in the grid (24 hex chars → ObjectId, digits → number).
+function idFrom(v) {
+  if (typeof v === 'string' && /^[0-9a-f]{24}$/i.test(v)) return new ObjectId(v)
+  return v
+}
+
+// Text edited in the grid → a value of the field's original BSON type.
+function typed(original, text) {
+  if (text === null || text === undefined) return null
+  const bad = (kind) => { throw new Error(t('Valor inválido para um campo {kind}: {value}', { kind, value: text })) }
+  if (original === null || original === undefined) return text
+  if (typeof original === 'number') { const n = Number(text); return Number.isFinite(n) && String(text).trim() !== '' ? n : bad('number') }
+  if (typeof original === 'boolean') return /^(true|false)$/i.test(text) ? /^true$/i.test(text) : bad('boolean')
+  if (original instanceof Date) { const d = new Date(text); return isNaN(d) ? bad('date') : d }
+  if (original instanceof ObjectId) return /^[0-9a-f]{24}$/i.test(text) ? new ObjectId(text) : bad('objectId')
+  if (original instanceof Decimal128) { try { return Decimal128.fromString(String(text).trim()) } catch { return bad('decimal') } }
+  if (original instanceof Long) return /^-?\d+$/.test(String(text).trim()) ? Long.fromString(String(text).trim()) : bad('long')
+  if (original instanceof Int32) return /^-?\d+$/.test(String(text).trim()) ? new Int32(Number(text)) : bad('int')
+  if (Array.isArray(original) || typeof original === 'object') {
+    // Shown as relaxed Extended JSON; mongosh syntax ({ a: 1 }) is accepted too.
+    try { return EJSON.parse(text, { relaxed: true }) } catch { try { return parseValue(text) } catch { return bad(Array.isArray(original) ? 'array' : 'object') } }
+  }
+  return String(text)
+}
+
 class MongoDriver {
   constructor(config) {
     this.config = config
@@ -198,7 +223,53 @@ class MongoDriver {
     const sort = orderBy ? { [orderBy]: dir === 'desc' ? -1 : 1 } : undefined
     const docs = await coll.find(filter, { sort, skip: offset, limit }).toArray()
     const total = where ? await coll.countDocuments(filter) : await coll.estimatedDocumentCount()
+    // The page's documents, so edits keep each field's BSON type and _id.
+    this.shown = { key: `${coll.dbName}.${table}`, docs: new Map(docs.map((d) => [String(cell(d._id)), d])) }
     return { ...toGrid(docs), total }
+  }
+
+  // Grid edits: $set / deleteOne by _id, in a transaction where the server
+  // supports one (replica sets, Atlas); otherwise in order, stopping at the
+  // first failure and saying how many went in.
+  async applyChanges(changes) {
+    const { table, schema } = changes[0]
+    const db = this.client.db(schema ?? this.dbName)
+    const coll = db.collection(table)
+    const docs = this.shown?.key === `${db.databaseName}.${table}` ? this.shown.docs : new Map()
+    let done = 0
+    const run = async (session) => {
+      done = 0
+      for (const ch of changes) {
+        const doc = docs.get(String(ch.pk._id))
+        const id = doc ? doc._id : idFrom(ch.pk._id)
+        if (ch.kind === 'delete') {
+          const r = await coll.deleteOne({ _id: id }, { session })
+          if (r.deletedCount !== 1) throw new Error(t('O documento {id} não existe mais', { id: String(ch.pk._id) }))
+        } else {
+          if (ch.column === '_id') throw new Error(t('O _id de um documento não pode ser alterado'))
+          const r = await coll.updateOne({ _id: id }, { $set: { [ch.column]: typed(doc?.[ch.column], ch.value) } }, { session })
+          if (r.matchedCount !== 1) throw new Error(t('O documento {id} não existe mais', { id: String(ch.pk._id) }))
+        }
+        done++
+      }
+      return done
+    }
+    const session = this.client.startSession()
+    try {
+      return await session.withTransaction(() => run(session))
+    } catch (e) {
+      // Standalone servers have no transactions: apply in order instead.
+      if (e.code === 20 || /replica set|Transaction numbers|retryable writes|does not support transactions/i.test(e.message)) {
+        try {
+          return await run(undefined)
+        } catch (err) {
+          throw new Error(done ? t('{error} ({n} alteração já aplicada; sem transação neste servidor)|{error} ({n} alterações já aplicadas; sem transação neste servidor)', { error: err.message, n: done }) : err.message)
+        }
+      }
+      throw e
+    } finally {
+      await session.endSession()
+    }
   }
 
   // Exports: the columns are every field found in the matching documents.
