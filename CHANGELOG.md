@@ -5,6 +5,8 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-22
+
 ### Added
 - **SQL Server** (2016+ / Azure SQL, via tedious) and **Oracle Database** (12c+, Thin mode — no Instant Client),
   tested against SQL Server 2022 and Oracle Database 23ai. Paging with `OFFSET … FETCH`, generated SQL and snippets
@@ -98,6 +100,7 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/julioczn/graphite/releases/tag/v0.7.0
 [0.6.0]: https://github.com/julioczn/graphite/releases/tag/v0.6.0
 [0.5.0]: https://github.com/julioczn/graphite/releases/tag/v0.5.0
