@@ -173,3 +173,8 @@ details p { margin: 10px 0; }
 
 /* Grid items default to min-width: auto, so a wide <pre> would stretch the page on phones. */
 .grid > *, .split > *, .mcp > *, .gallery > *, .dl > *, .dbs > * { min-width: 0; }
+
+.dl-note { display: flex; gap: 14px; align-items: flex-start; margin-top: 16px; padding: 16px 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-1); }
+.dl-note .ic { flex: none; width: 20px; height: 20px; margin-top: 2px; }
+.dl-note p { margin: 0; color: var(--fg-2); line-height: 1.6; }
+.dl-note strong { color: var(--fg); margin-right: 4px; }
