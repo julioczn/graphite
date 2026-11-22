@@ -5,12 +5,15 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
-## [0.10.1] - 2026-11-22
+## [0.10.2] - 2026-11-22
+
+0.10.1 was built but never published; its changes ship here.
 
 ### Fixed
 - SurrealDB: a wrong user or password showed "Unexpected token 'T'… is not valid JSON" instead of the reason. The
   server answers auth errors in plain text; they now read "SurrealDB authentication failed: …". A URL that isn't a
-  SurrealDB server says so, and query errors no longer start with "There was a problem with the database:".
+  SurrealDB server (a web page, a proxy error) says so instead of showing the page, and query errors no longer
+  start with "There was a problem with the database:".
 - Updates: the download refuses a release that isn't newer than the running version (the GitHub API can still
   return the previous release for a few minutes after publishing).
 
@@ -153,8 +156,8 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.10.1...HEAD
-[0.10.1]: https://github.com/julioczn/graphite/releases/tag/v0.10.1
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.10.2...HEAD
+[0.10.2]: https://github.com/julioczn/graphite/releases/tag/v0.10.2
 [0.10.0]: https://github.com/julioczn/graphite/releases/tag/v0.10.0
 [0.9.0]: https://github.com/julioczn/graphite/releases/tag/v0.9.0
 [0.8.0]: https://github.com/julioczn/graphite/releases/tag/v0.8.0
