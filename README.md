@@ -69,10 +69,12 @@
 | CockroachDB | ✅ | No Graphite backup (use CockroachDB's own `BACKUP`) |
 | GreengageDB | ✅ | |
 | LibSQL / Turso | ✅ | Remote URL + token; no manual transaction mode |
+| SQL Server / Azure SQL | ✅ | Wide decimals in free-form queries lose precision (driver limitation); `CAST` them |
+| Oracle Database | ✅ | Thin mode (no Instant Client); "database" = service name |
 | Amazon Redshift | 🧪 beta | Not yet tested against a real cluster |
 | StarRocks | ✅ | No transactions (read-only grid); AI asks for approval on every query |
 
-More are on the way: SQL Server, Oracle, ClickHouse, DuckDB, Snowflake, BigQuery, Trino, Firebird, and non-relational
+More are on the way: ClickHouse, DuckDB, Snowflake, BigQuery, Trino, Firebird, and non-relational
 ones like Redis, MongoDB, Cassandra/ScyllaDB and DynamoDB.
 
 ## AI: bring your own model or agent
@@ -161,7 +163,7 @@ electron/
   preload.cjs     window.graphite: RPC over a MessagePort + whitelisted IPC
   utility.cjs     database process: handlers for conn/*, query/*, table/*, app/*
   ai/             hub (tools, agent sessions, approvals), mcp (server), assistant (chat)
-  drivers/        sqlite (node:sqlite), postgres (pg), mysql (mysql2), libsql (@libsql/client)
+  drivers/        sqlite, postgres (pg), mysql (mysql2), libsql, mssql (tedious), oracle (oracledb)
   lib/            app database, demo, backup/restore/export, read-only guard for AI queries
 shared/
   engines.mjs     database engines: family, defaults and capabilities

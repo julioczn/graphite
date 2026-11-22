@@ -15,6 +15,8 @@
 //                 false, every AI query needs the user's approval
 //   cursors       rows can be fetched in batches with DECLARE … CURSOR
 //
+// families: 'mysql' | 'postgres' | 'sqlite' | 'mssql' | 'oracle'.
+//
 // fields: what the connection form asks for ('server' = host/port/user/
 // password/database/ssl, 'file' = a local file, 'url' = URL + auth token).
 // status: 'stable' (tested against a real server) or 'beta' (best effort).
@@ -62,6 +64,11 @@ export const ENGINES = [
   // reads go through approval until the read-only guard is verified there.
   engine('redshift', 'Amazon Redshift', 'postgres', { port: '5439', ssl: true, status: 'beta', caps: { schemas: 'schema', aiReadOnly: false } }),
   engine('greengage', 'GreengageDB', 'postgres', { port: '5432', user: 'gpadmin', caps: { schemas: 'schema', savepoints: true, cursors: true, backup: true } }),
+  // The schema picker switches databases (USE); tables keep their schema (dbo…).
+  engine('sqlserver', 'SQL Server', 'mssql', { port: '1433', user: 'sa', caps: { schemas: 'database', savepoints: false, restore: false } }),
+  // Thin mode (no Instant Client). "Database" is the service name. Oracle rolls
+  // back only the failed statement, so no savepoints are needed.
+  engine('oracle', 'Oracle', 'oracle', { port: '1521', caps: { schemas: 'schema', restore: false } }),
   engine('sqlite', 'SQLite', 'sqlite', { fields: 'file', caps: { backup: true } }),
   engine('libsql', 'LibSQL / Turso', 'sqlite', { fields: 'url', caps: { manualMode: false } }),
 ]

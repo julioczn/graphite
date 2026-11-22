@@ -16,6 +16,9 @@ const READ = {
   postgres: new Set(['SELECT', 'WITH', 'VALUES', 'TABLE', 'EXPLAIN', 'SHOW']),
   mysql: new Set(['SELECT', 'WITH', 'VALUES', 'TABLE', 'EXPLAIN', 'SHOW', 'DESCRIBE', 'DESC']),
   sqlite: new Set(['SELECT', 'WITH', 'VALUES', 'EXPLAIN', 'PRAGMA']),
+  // EXPLAIN PLAN writes to PLAN_TABLE in Oracle; SQL Server has no EXPLAIN.
+  mssql: new Set(['SELECT', 'WITH']),
+  oracle: new Set(['SELECT', 'WITH']),
 }
 // Statements that return rows and can be read in batches (cursor / iterator /
 // sql_select_limit), so a huge result never has to fit in memory.
@@ -28,7 +31,7 @@ const READ_TIMEOUT_MS = 30000
 // so nothing counts as a read and every statement needs approval.
 function classify(sql, dialect, caps) {
   const guarded = caps?.aiReadOnly !== false
-  const statements = splitStatements(sql).map((st) => {
+  const statements = splitStatements(sql, dialect).map((st) => {
     const command = commandOf(st.text)
     let read = READ[dialect]?.has(command) ?? false
     let why = read ? null : command ? t('{command} altera o banco ou não é reconhecido como leitura', { command }) : t('instrução não reconhecida')
@@ -39,6 +42,11 @@ function classify(sql, dialect, caps) {
     if (read && dialect === 'mysql' && /\binto\s+(outfile|dumpfile)\b/i.test(st.text)) {
       read = false
       why = t('SELECT … INTO OUTFILE grava um arquivo no servidor')
+    }
+    // SELECT … INTO creates a table in SQL Server.
+    if (read && dialect === 'mssql' && /\binto\s+[\[#@\w"]/i.test(stripStrings(st.text))) {
+      read = false
+      why = t('SELECT … INTO cria uma tabela')
     }
     if (read && dialect === 'sqlite' && command === 'PRAGMA' && (/=/.test(st.text) || SQLITE_ACTIVE_PRAGMAS.test(st.text))) {
       read = false
@@ -92,8 +100,12 @@ async function readOnly(d, fn) {
   }
 }
 
+// Rough removal of string literals, so a keyword inside quotes doesn't count.
+const stripStrings = (sql) => sql.replace(/'(?:[^']|'')*'/g, "''")
+
 // First `limit` rows of a row-returning statement without reading the rest.
 async function firstRows(d, sql, limit) {
+  if (d.firstRows) return d.firstRows(sql, limit)
   if (d.dialect === 'mysql') {
     await d.execute(`set session sql_select_limit = ${limit}`)
     return d.execute(sql)

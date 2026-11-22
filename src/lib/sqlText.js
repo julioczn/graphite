@@ -7,7 +7,9 @@ const dialect = () => store.connection?.dialect
 
 export function quoteIdent(name) {
   const s = String(name)
-  return dialect() === 'mysql' ? '`' + s.replace(/`/g, '``') + '`' : `"${s.replace(/"/g, '""')}"`
+  if (dialect() === 'mysql') return '`' + s.replace(/`/g, '``') + '`'
+  if (dialect() === 'mssql') return '[' + s.replace(/]/g, ']]') + ']'
+  return `"${s.replace(/"/g, '""')}"`
 }
 
 export function qualifiedName(table, schema) {
@@ -23,7 +25,8 @@ export function tableName(table, schema) {
 export function literal(v) {
   if (v === null || v === undefined) return 'NULL'
   if (typeof v === 'number') return Number.isFinite(v) ? String(v) : `'${v}'`
-  if (typeof v === 'boolean') return dialect() === 'sqlite' ? (v ? '1' : '0') : (v ? 'TRUE' : 'FALSE')
+  // No boolean literals in SQLite, SQL Server (bit) or Oracle before 23ai.
+  if (typeof v === 'boolean') return ['sqlite', 'mssql', 'oracle'].includes(dialect()) ? (v ? '1' : '0') : (v ? 'TRUE' : 'FALSE')
   let s = String(v).replace(/'/g, "''")
   // MySQL treats backslash as an escape character inside strings by default.
   if (dialect() === 'mysql') s = s.replace(/\\/g, '\\\\')

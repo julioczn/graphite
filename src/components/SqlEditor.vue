@@ -6,7 +6,7 @@ import {
 } from '@codemirror/view'
 import { EditorState, Compartment, Prec, RangeSetBuilder } from '@codemirror/state'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { sql, PostgreSQL, MySQL, SQLite } from '@codemirror/lang-sql'
+import { sql, PostgreSQL, MySQL, SQLite, MSSQL, PLSQL } from '@codemirror/lang-sql'
 import { syntaxHighlighting, syntaxTree, HighlightStyle, bracketMatching, indentOnInput } from '@codemirror/language'
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap, snippet, snippetCompletion } from '@codemirror/autocomplete'
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
@@ -29,7 +29,7 @@ let view
 const langConf = new Compartment()
 const placeholderConf = new Compartment()
 
-const DIALECTS = { postgres: PostgreSQL, mysql: MySQL, sqlite: SQLite }
+const DIALECTS = { postgres: PostgreSQL, mysql: MySQL, sqlite: SQLite, mssql: MSSQL, oracle: PLSQL }
 
 // Monochrome syntax: hierarchy by weight, brightness and style instead of hue.
 const highlight = HighlightStyle.define([
@@ -77,7 +77,7 @@ const theme = EditorView.theme({
 }, { dark: true })
 
 function statementAt(doc, pos) {
-  const parts = splitStatements(doc)
+  const parts = splitStatements(doc, props.dialect)
   if (!parts.length) return null
   return parts.find((p) => pos >= p.start && pos <= p.end + 1) || parts.findLast((p) => p.end <= pos) || parts[0]
 }
@@ -89,7 +89,7 @@ const currentStatement = ViewPlugin.fromClass(class {
   build(v) {
     const builder = new RangeSetBuilder()
     const doc = v.state.doc.toString()
-    const parts = splitStatements(doc)
+    const parts = splitStatements(doc, props.dialect)
     if (parts.length < 2) return builder.finish()
     const st = statementAt(doc, v.state.selection.main.head)
     if (!st) return builder.finish()

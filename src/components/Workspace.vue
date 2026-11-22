@@ -155,7 +155,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       </span>
       <span class="sb-item">{{ conn.version }}</span>
       <span v-if="conn.database" class="sb-item">
-        <Icon name="database" :size="13" /> {{ conn.database }}<template v-if="conn.dialect === 'postgres' && conn.schema"> · {{ conn.schema }}</template>
+        <Icon name="database" :size="13" /> {{ conn.database }}<template v-if="conn.caps?.schemas === 'schema' && conn.schema && conn.schema !== conn.database"> · {{ conn.schema }}</template>
       </span>
       <span class="sb-item" :class="{ strong: store.tx.open }" :title="t('Modo de commit')">
         <template v-if="store.tx.open"><span class="tx-dot" /> {{ t('Transação aberta') }} · {{ t('{n} alteração|{n} alterações', { n: store.tx.statements }) }}</template>

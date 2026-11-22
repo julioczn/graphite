@@ -5,6 +5,17 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- **SQL Server** (2016+ / Azure SQL, via tedious) and **Oracle Database** (12c+, Thin mode — no Instant Client),
+  tested against SQL Server 2022 and Oracle Database 23ai. Paging with `OFFSET … FETCH`, generated SQL and snippets
+  use `TOP` / `FETCH FIRST`, scripts understand `GO` batches and PL/SQL blocks ending in `/`.
+- AI reads on Oracle run in `SET TRANSACTION READ ONLY`; on SQL Server they run in a transaction that is always
+  rolled back, and `SELECT … INTO` needs approval.
+
+### Known limitations
+- SQL Server: in free-form queries, `decimal`/`numeric` values beyond ~15 significant digits lose precision (driver
+  limitation); table browsing and exports read them as exact text. Only the last result set of a batch is shown.
+
 ## [0.6.0] - 2026-11-21
 
 ### Added

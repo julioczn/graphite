@@ -9,11 +9,14 @@ import { ai } from '../lib/ai'
 import { ENGINES, engineOf } from '../../shared/engines.mjs'
 
 const engine = (id) => engineOf(id) || engineOf('postgres')
+// Oracle: the service name; SQL Server: the initial database.
+const DB_PLACEHOLDER = { postgres: 'postgres', oracle: 'FREEPDB1', mssql: 'master' }
 const GROUPS = computed(() => [
   { label: t('Compatíveis com MySQL'), family: 'mysql' },
   { label: t('Compatíveis com PostgreSQL'), family: 'postgres' },
+  { label: t('Outros bancos SQL'), families: ['mssql', 'oracle'] },
   { label: t('SQLite e LibSQL'), family: 'sqlite' },
-].map((g) => ({ ...g, engines: ENGINES.filter((e) => e.family === g.family) })))
+].map((g) => ({ ...g, engines: ENGINES.filter((e) => (g.families || [g.family]).includes(e.family)) })))
 
 const saved = ref([])
 const selectedId = ref(null)
@@ -219,7 +222,7 @@ onMounted(load)
           <div class="field span-2">
             <label for="f-type">{{ t('Tipo de banco') }}</label>
             <select id="f-type" class="input" :value="form.type" @change="setType($event.target.value)">
-              <optgroup v-for="g in GROUPS" :key="g.family" :label="g.label">
+              <optgroup v-for="g in GROUPS" :key="g.label" :label="g.label">
                 <option v-for="e in g.engines" :key="e.id" :value="e.id">{{ e.label }}{{ e.status === 'beta' ? ' (beta)' : '' }}</option>
               </optgroup>
             </select>
@@ -271,8 +274,8 @@ onMounted(load)
               <input id="f-pass" v-model="form.password" class="input" type="password" autocomplete="off" />
             </div>
             <div class="field span-2">
-              <label for="f-db">{{ t('Banco de dados') }}</label>
-              <input id="f-db" v-model="form.database" class="input" :placeholder="current.family === 'postgres' ? 'postgres' : t('opcional')" />
+              <label for="f-db">{{ current.family === 'oracle' ? t('Nome do serviço') : t('Banco de dados') }}</label>
+              <input id="f-db" v-model="form.database" class="input" :placeholder="DB_PLACEHOLDER[current.family] || t('opcional')" />
             </div>
             <div class="checks span-2">
               <label class="check"><input v-model="form.ssl" type="checkbox" /> {{ t('Usar SSL') }}</label>
