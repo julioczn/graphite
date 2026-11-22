@@ -42,7 +42,7 @@ function classify(sql, dialect, caps) {
     const command = commandOf(st.text)
     let read = READ[dialect]?.has(command) ?? false
     let why = read ? null : command ? t('{command} altera o banco ou não é reconhecido como leitura', { command }) : t('instrução não reconhecida')
-    if (read && !guarded) {
+    if (!guarded) {
       read = false
       why = t('este banco não garante um modo somente leitura, então toda consulta precisa de aprovação')
     }

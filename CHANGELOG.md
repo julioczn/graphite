@@ -22,6 +22,13 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
   in beta, without SDKs. BigQuery tested against the open-source emulator; Snowflake against a mock of the documented
   API. Both: read-only grid, AI asks for approval on every query.
 
+- **Non-relational databases**: **MongoDB** (mongosh-style commands such as `db.orders.find({...}).sort({...})`,
+  parsed without evaluating code; JSON filters in the table tab), **Redis / Valkey** (redis-cli commands; keys
+  browsed by type), **Apache Cassandra** and **ScyllaDB** (CQL, keyspaces), **Amazon DynamoDB** (PartiQL over the
+  HTTP API with SigV4 signing, no SDK) and **SurrealDB** (SurrealQL over HTTP). Tested against MongoDB 8, Redis 7.4,
+  Cassandra 5, ScyllaDB 6.2, DynamoDB Local and SurrealDB 2.3. Read-only grid and every AI query needs approval.
+- Engines that can't count rows cheaply (Cassandra, DynamoDB) page without a total.
+
 ### Changed
 - The app is larger (~45 MB more per download) because DuckDB is embedded with its native library.
 

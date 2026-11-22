@@ -13,6 +13,8 @@ const TSQL_MODULE = /^(create|alter|create\s+or\s+alter)\s+(procedure|proc|funct
 // dialect 'oracle': a line with only / separates statements, and PL/SQL
 // blocks (DECLARE/BEGIN…, CREATE PROCEDURE…) run up to that line whole.
 export function splitStatements(input, dialect) {
+  // Redis: one command per line (redis-cli style), # starts a comment.
+  if (dialect === 'redis') return splitLines(input)
   const out = []
   let start = 0
   let i = 0
@@ -79,6 +81,17 @@ export function splitStatements(input, dialect) {
     } else i++
   }
   push(n)
+  return out
+}
+
+function splitLines(input) {
+  const out = []
+  let pos = 0
+  for (const line of input.split('\n')) {
+    const text = line.trim()
+    if (text && !text.startsWith('#')) out.push({ text, start: pos, end: pos + line.length })
+    pos += line.length + 1
+  }
   return out
 }
 

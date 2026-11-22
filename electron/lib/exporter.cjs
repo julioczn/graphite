@@ -31,7 +31,9 @@ async function writeOne(d, out, job, source, o) {
   }
   let first = true
   let fields = null
-  for await (const batch of d.stream(source.sql, { batch: 1000, raw: true })) {
+  // Non-SQL engines stream a table through their own API.
+  const rows = source.iter ? source.iter() : d.stream(source.sql, { batch: 1000, raw: true })
+  for await (const batch of rows) {
     job.check()
     if (!fields) {
       fields = batch.fields
@@ -72,6 +74,7 @@ async function exportData(d, opts, job) {
   const sources = opts.query
     ? [{ name: path.basename(opts.file), sql: opts.query, target: d.quote(opts.sqlTable || 'resultado'), file: opts.file }]
     : tableSources.map((t) => ({
+      iter: d.streamTable ? () => d.streamTable(t.name, t.schema, t.where?.trim() || '') : null,
       name: t.name,
       sql: `select ${t.cols} from ${d.qualified(t.name, t.schema)}${t.where?.trim() ? ` where ${t.where}` : ''}`,
       target: d.qualified(t.name, d.dialect === 'postgres' ? t.schema : null),

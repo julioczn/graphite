@@ -63,10 +63,13 @@ async function openMenu(e, tbl) {
   e.preventDefault()
   const { clientX: x, clientY: y } = e
   let gen = null
-  try {
-    gen = tableSnippets(tbl, await columnsOf(tbl))
-  } catch (err) {
-    toast(err.message, 'error')
+  // SQL generation only makes sense where the query language is SQL.
+  if (caps().sql !== false) {
+    try {
+      gen = tableSnippets(tbl, await columnsOf(tbl))
+    } catch (err) {
+      toast(err.message, 'error')
+    }
   }
   const isTable = tbl.type !== 'view'
   const g = (kind, label, body, extra = {}) => body && { label, icon: 'code', run: () => openGenerated(tbl, kind, body), ...extra }

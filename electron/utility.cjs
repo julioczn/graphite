@@ -32,6 +32,11 @@ const DRIVERS = {
   duckdb: () => require("./drivers/duckdb.cjs"),
   snowflake: () => require("./drivers/snowflake.cjs"),
   bigquery: () => require("./drivers/bigquery.cjs"),
+  mongo: () => require("./drivers/mongodb.cjs"),
+  redis: () => require("./drivers/redis.cjs"),
+  cql: () => require("./drivers/cassandra.cjs"),
+  partiql: () => require("./drivers/dynamodb.cjs"),
+  surql: () => require("./drivers/surrealdb.cjs"),
 };
 const MAX_ROWS = 5000;
 
@@ -386,6 +391,14 @@ const handlers = {
     where,
   }) => {
     const d = driver(sId);
+    // Non-SQL engines (MongoDB, Redis, CQL…) page through their own API.
+    if (d.page) {
+      const t0 = performance.now();
+      return session(sId).lock(async () => ({
+        ...(await d.page({ table, schema, limit: Number(limit), offset: Number(offset), orderBy, dir, where: where?.trim() || "" })),
+        durationMs: Math.round(performance.now() - t0),
+      }));
+    }
     const from = d.qualified(table, schema);
     const filter = where && where.trim() ? ` where ${where}` : "";
     const order = orderBy
