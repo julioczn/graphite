@@ -65,8 +65,17 @@ class SurrealDriver {
     if (this.config.user) headers.Authorization = 'Basic ' + Buffer.from(`${this.config.user}:${this.config.password || ''}`).toString('base64')
     const res = await fetch(`${this.base}/sql${qs ? '?' + qs : ''}`, { method: 'POST', headers, body: text })
     const raw = await res.text()
-    const body = raw ? parse(raw) : null
-    if (!res.ok) throw new Error(body?.information || body?.description || `SurrealDB ${res.status}`)
+    // Auth and other HTTP errors come back as plain text, not JSON.
+    let body = null
+    try {
+      body = raw ? parse(raw) : null
+    } catch {}
+    if (!res.ok) {
+      const detail = String(body?.information || body?.description || raw).replace(/^(There was a problem with (the database|authentication):?\s*)+/i, '').trim()
+      if (res.status === 401 || res.status === 403) throw new Error(t('Falha na autenticação do SurrealDB{detail}', { detail: detail ? ': ' + detail : '' }))
+      throw new Error(detail || `SurrealDB ${res.status}`)
+    }
+    if (!Array.isArray(body)) throw new Error(t('Resposta inesperada do servidor. Confira a URL do SurrealDB.'))
     // In a failed transaction every statement errors; report the one that caused it.
     const failed = body.find((r) => r.status === 'ERR' && !GENERIC_TX_ERROR.test(r.result)) || body.find((r) => r.status === 'ERR')
     if (failed) throw new Error(String(failed.result).replace(/^An error occurred: /, ''))
