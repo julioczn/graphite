@@ -14,6 +14,7 @@
 //   aiReadOnly    the database enforces a read-only mode for AI reads; when
 //                 false, every AI query needs the user's approval
 //   cursors       rows can be fetched in batches with DECLARE … CURSOR
+//   ssl           TLS options in the connection form (Firebird encrypts its own wire)
 //   edit          grid editing in the table tab (defaults to `transactions`); engines
 //                 without SQL transactions apply edits through driver.applyChanges
 //   sql           the query language is SQL (false: MongoDB, Redis, CQL…):
@@ -32,6 +33,7 @@
 // status: 'stable' (tested against a real server) or 'beta' (best effort).
 
 const BASE = {
+  ssl: true,
   sql: true,
   transactions: true,
   manualMode: true,
@@ -83,7 +85,7 @@ export const ENGINES = [
   engine('oracle', 'Oracle', 'oracle', { port: '1521', caps: { schemas: 'schema', restore: false } }),
   // "Database" = path or alias on the server. Failed statements roll back on
   // their own, so no savepoints; READ ONLY transactions are enforced.
-  engine('firebird', 'Firebird', 'firebird', { port: '3050', user: 'SYSDBA', caps: { restore: false } }),
+  engine('firebird', 'Firebird', 'firebird', { port: '3050', user: 'SYSDBA', caps: { restore: false, ssl: false } }),
   // HTTP interface; the picker switches databases. No interactive transactions;
   // AI reads run with readonly=1, enforced by the server.
   engine('clickhouse', 'ClickHouse', 'clickhouse', { port: '8123', user: 'default', caps: { schemas: 'database', transactions: false, manualMode: false, restore: false } }),

@@ -10,6 +10,8 @@
 // - With a password, the server requires HTTPS (Basic auth).
 const { normaliseRows, erFrom } = require('../lib/sql.cjs')
 const { t } = require('../../shared/i18n.mjs')
+const { tlsOptions } = require('../lib/tls.cjs')
+const { request } = require('../lib/http.cjs')
 
 const literal = (v) => (v === null || v === undefined ? 'NULL' : typeof v === 'number' ? String(v) : typeof v === 'boolean' ? (v ? 'TRUE' : 'FALSE') : `'${String(v).replace(/'/g, "''")}'`)
 
@@ -71,6 +73,7 @@ class TrinoDriver {
   // false to stop early (the query is then cancelled).
   async run(sql, onPage, extraHeaders = {}) {
     const signal = this.timeoutMs ? AbortSignal.timeout(this.timeoutMs) : undefined
+    const fetch = this.fetch
     let res = await fetch(this.base + '/v1/statement', { method: 'POST', body: sql, headers: { ...this.headers(), ...extraHeaders }, signal })
     if (!res.ok && res.status !== 200) throw new Error(`Trino ${res.status}: ${(await res.text()).slice(0, 300)}`)
     this.track(res)
@@ -89,6 +92,12 @@ class TrinoDriver {
       body = await res.json()
     }
     return { columns: columns || [], updateType: body.updateType, updateCount: body.updateCount }
+  }
+
+  // HTTPS with our TLS settings; plain fetch otherwise.
+  get fetch() {
+    const tls = this.base.startsWith('https:') ? tlsOptions({ ...this.config, ssl: true }) : null
+    return tls ? (url, init = {}) => request(url, { ...init, tls }) : globalThis.fetch
   }
 
   async connect() {

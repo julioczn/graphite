@@ -144,6 +144,13 @@ sudo apt remove graphite                          # uninstall
 Or use the portable `Graphite-<version>.AppImage` (`chmod +x` and run). The `.deb` adds an AppArmor profile so
 Electron's sandbox works on Ubuntu 23.10+.
 
+### TLS / SSL
+
+With **Use SSL**, pick how the server certificate is checked: *encrypt only*, *verify the CA*, or *verify the CA and
+host name* (the default for new connections). Point to a **CA certificate** (else the system's trusted CAs are used)
+and, for mutual TLS, a **client certificate and key** (PEM files; Graphite stores only their paths). Firebird encrypts
+its own protocol instead; MongoDB takes its TLS options in the connection URL (`tls=true&tlsCAFile=…`).
+
 ### Where your data lives
 
 Saved connections, history and settings stay on your machine: `~/Library/Application Support/Graphite` (macOS) or

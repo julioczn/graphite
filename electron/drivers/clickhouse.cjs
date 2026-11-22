@@ -17,6 +17,7 @@ const FORMAT = 'JSONCompactEachRowWithNamesAndTypes'
 
 let clientModule = null
 const loadClient = () => (clientModule ||= require('@clickhouse/client'))
+const { tlsOptions, modeOf } = require('../lib/tls.cjs')
 
 // ClickHouse string literal: backslash escapes.
 function literal(v) {
@@ -63,6 +64,8 @@ class ClickhouseDriver {
       database: c.database || 'default',
       session_id: randomUUID(),
       request_timeout: 300000,
+      // HTTPS with our TLS settings (CA, client certificate, verification mode).
+      ...(url.startsWith('https:') && { http_agent: new (require('node:https').Agent)({ keepAlive: true, ...(tlsOptions({ ...c, ssl: true }) || {}) }) }),
       // Errors reach the user through the rejected promise; no console noise.
       log: { level: ClickHouseLogLevel.OFF },
       clickhouse_settings: {

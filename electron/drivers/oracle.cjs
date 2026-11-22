@@ -8,6 +8,7 @@
 // - AI reads run in SET TRANSACTION READ ONLY, which Oracle enforces.
 const oracledb = require('oracledb')
 const { normaliseRows, erFrom, commandOf } = require('../lib/sql.cjs')
+const { tlsOptions, modeOf } = require('../lib/tls.cjs')
 
 // PL/SQL blocks keep their final semicolon; plain SQL must not have one.
 const PLSQL = /^\s*(declare|begin|create\s+(or\s+replace\s+)?(editionable\s+|noneditionable\s+)?(procedure|function|package|trigger|type))\b/i
@@ -35,6 +36,12 @@ function fetchTypeHandler(meta) {
   if (meta.dbType === oracledb.DB_TYPE_CLOB || meta.dbType === oracledb.DB_TYPE_NCLOB) return { type: oracledb.STRING }
   if (meta.dbType === oracledb.DB_TYPE_BLOB) return { type: oracledb.BUFFER }
   return undefined
+}
+
+function oracleTls(c) {
+  const o = tlsOptions(c)
+  const pem = [o.ca, o.cert, o.key].filter(Boolean).map((b) => b.toString('utf8').trim()).join('\n')
+  return { sslServerDNMatch: modeOf(c) === 'verify-full', ...(pem && { walletContent: pem }) }
 }
 
 const SYSTEM_SCHEMA_SQL = "oracle_maintained = 'Y'"
@@ -65,7 +72,11 @@ class OracleDriver {
     this.conn = await oracledb.getConnection({
       user: c.user,
       password: c.password,
-      connectString: `${c.host || 'localhost'}:${Number(c.port) || 1521}/${c.database || 'FREEPDB1'}`,
+      // TLS = tcps. The Thin driver always verifies the server's certificate
+      // (system CAs, or the PEM "wallet": CA + client certificate and key);
+      // only the host name match depends on the mode.
+      connectString: `${c.ssl ? 'tcps://' : ''}${c.host || 'localhost'}:${Number(c.port) || 1521}/${c.database || 'FREEPDB1'}`,
+      ...(c.ssl && oracleTls(c)),
       connectTimeout: 15,
     })
     await this.conn.execute(
