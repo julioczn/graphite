@@ -6,6 +6,11 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 ## [Unreleased]
 
 ### Added
+- **TLS certificates**: with "Use SSL" on, choose how the server certificate is checked (encrypt only, verify the CA,
+  or verify the CA and host name — the default for new connections) and point to a CA certificate and a client
+  certificate + key (PEM) for mutual TLS. Supported by PostgreSQL and compatibles, MySQL and compatibles, SQL Server,
+  Oracle (`tcps`), Redis, Cassandra/ScyllaDB, ClickHouse and Trino. Connections saved before keep their previous
+  behaviour (encrypt, don't verify).
 - Grid editing for **MongoDB** and **Redis**. MongoDB keeps each field's BSON type (number, Decimal128, Date,
   ObjectId, Long, arrays/objects as Extended JSON) and applies a batch in a transaction on replica sets (Atlas); on a
   standalone server it applies in order and reports how many changes went in if one fails. Redis applies the batch as
@@ -41,6 +46,9 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ### Changed
 - The app is larger (~45 MB more per download) because DuckDB is embedded with its native library.
+
+### Fixed
+- "Use SSL" used to accept any server certificate silently; new connections now verify it.
 
 ### Known limitations
 - SQL Server: in free-form queries, `decimal`/`numeric` values beyond ~15 significant digits lose precision (driver
