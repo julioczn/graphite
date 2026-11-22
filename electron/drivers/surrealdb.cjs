@@ -70,12 +70,14 @@ class SurrealDriver {
     try {
       body = raw ? parse(raw) : null
     } catch {}
+    // Something other than SurrealDB answered (a web page, a proxy error…).
+    const foreign = body === null && /^\s*</.test(raw)
+    if (foreign || (res.ok && !Array.isArray(body))) throw new Error(t('Resposta inesperada do servidor (HTTP {status}). Confira a URL do SurrealDB.', { status: res.status }))
     if (!res.ok) {
       const detail = String(body?.information || body?.description || raw).replace(/^(There was a problem with (the database|authentication):?\s*)+/i, '').trim()
       if (res.status === 401 || res.status === 403) throw new Error(t('Falha na autenticação do SurrealDB{detail}', { detail: detail ? ': ' + detail : '' }))
       throw new Error(detail || `SurrealDB ${res.status}`)
     }
-    if (!Array.isArray(body)) throw new Error(t('Resposta inesperada do servidor. Confira a URL do SurrealDB.'))
     // In a failed transaction every statement errors; report the one that caused it.
     const failed = body.find((r) => r.status === 'ERR' && !GENERIC_TX_ERROR.test(r.result)) || body.find((r) => r.status === 'ERR')
     if (failed) throw new Error(String(failed.result).replace(/^An error occurred: /, ''))
