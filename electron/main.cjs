@@ -266,6 +266,27 @@ function setupAi() {
   applyMcp().catch((e) => console.error("[main] MCP server", e));
 }
 
+// --- updates -------------------------------------------------------------------
+let updater = null;
+function setupUpdater() {
+  const { Updater } = require("./updater.cjs");
+  updater = new Updater({
+    getPref: (k) => prefs[k],
+    setPref: (k, v) => {
+      prefs[k] = v;
+      require("node:fs").writeFileSync(prefsFile(), JSON.stringify(prefs, null, 2));
+    },
+  });
+  updater.on("state", (s) => broadcast("update:state", s));
+  updater.start();
+}
+ipcMain.handle("update:state", () => updater.publicState());
+ipcMain.handle("update:check", () => updater.check());
+ipcMain.handle("update:download", () => updater.download());
+ipcMain.handle("update:install", () => updater.installAndRestart());
+ipcMain.handle("update:setAuto", (_e, on) => updater.setAuto(on));
+ipcMain.handle("update:openPage", () => updater.openReleasePage());
+
 ipcMain.handle("app:info", () => ({
   version: app.getVersion(),
   platform: process.platform,
@@ -291,6 +312,7 @@ app.whenReady().then(() => {
     Menu.setApplicationMenu(null);
   }
   setupAi();
+  setupUpdater();
   startUtility();
   createWindow();
   app.on("activate", () => {

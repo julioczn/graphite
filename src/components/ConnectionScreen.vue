@@ -4,6 +4,7 @@ import { call, bridge } from '../lib/api'
 import { openConnection, toast } from '../lib/store'
 import Icon from './Icon.vue'
 import LanguageMenu from './LanguageMenu.vue'
+import UpdateButton from './UpdateButton.vue'
 import { t } from '../lib/i18n'
 import { ai } from '../lib/ai'
 import { ENGINES, engineOf } from '../../shared/engines.mjs'
@@ -265,7 +266,7 @@ onMounted(load)
           <button class="btn ghost icon sm del" :title="t('Remover')" @click.stop="remove(c)"><Icon name="trash" :size="13" /></button>
         </div>
       </div>
-      <div class="side-foot"><LanguageMenu /></div>
+      <div class="side-foot"><UpdateButton /><LanguageMenu /></div>
     </aside>
 
     <main class="main">

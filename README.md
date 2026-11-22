@@ -151,10 +151,19 @@ host name* (the default for new connections). Point to a **CA certificate** (els
 and, for mutual TLS, a **client certificate and key** (PEM files; Graphite stores only their paths). Firebird encrypts
 its own protocol instead; MongoDB takes its TLS options in the connection URL (`tls=true&tlsCAFile=…`).
 
+### Updates
+
+Graphite checks this repository's releases when it opens and every 6 hours, shows **Update available** in the
+sidebar, and downloads and installs the new version for you: the file is checked against the SHA-256 that GitHub
+publishes for it, then Graphite restarts on the new version (macOS `.app`, AppImage, or `.deb` via `pkexec`). Turn the
+automatic check off in the same dialog; the check is a plain request to the GitHub API with nothing about you or your
+databases.
+
 ### Where your data lives
 
 Saved connections, history and settings stay on your machine: `~/Library/Application Support/Graphite` (macOS) or
-`~/.config/Graphite` (Linux). Graphite has no telemetry; it only talks to your databases and, if you set one up, to your AI provider.
+`~/.config/Graphite` (Linux). Graphite has no telemetry; it only talks to your databases, to your AI provider if you set one up, and to GitHub to
+check for updates (can be turned off).
 
 ## Build from source
 

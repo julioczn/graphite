@@ -5,6 +5,13 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- **In-app updates**: Graphite checks GitHub Releases on start and every 6 hours (can be turned off), shows
+  "Update available" with the release notes, downloads the package for this install with a progress bar, verifies it
+  against the SHA-256 digest GitHub publishes (refuses it otherwise), and restarts on the new version. macOS swaps the
+  `.app` (restoring the old one if the swap fails); Linux replaces the AppImage or installs the `.deb` with `pkexec`.
+  Works without an Apple Developer ID signature, unlike Squirrel/electron-updater.
+
 ## [0.8.0] - 2026-11-22
 
 ### Added

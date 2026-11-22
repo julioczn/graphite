@@ -9,10 +9,13 @@ import Icon from './components/Icon.vue'
 import AiApproval from './components/AiApproval.vue'
 import AiSettings from './components/AiSettings.vue'
 import { ai, initAi } from './lib/ai'
+import UpdateDialog from './components/UpdateDialog.vue'
+import { update, initUpdate } from './lib/update'
 
 let off
 onMounted(() => {
   initAi().catch((e) => console.error('AI init', e))
+  initUpdate().catch((e) => console.error('update init', e))
   off = bridge.onEvent((ev) => {
     if (ev === 'util-restarted') {
       store.connection = null
@@ -29,6 +32,7 @@ onBeforeUnmount(() => off?.())
   <ConnectionScreen v-else />
   <AiSettings v-if="ai.showSettings" />
   <AiApproval />
+  <UpdateDialog v-if="update.dialog" />
 
   <div class="toasts">
     <TransitionGroup name="toast">
