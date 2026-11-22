@@ -5,6 +5,8 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-22
+
 ### Added
 - **TLS certificates**: with "Use SSL" on, choose how the server certificate is checked (encrypt only, verify the CA,
   or verify the CA and host name — the default for new connections) and point to a CA certificate and a client
@@ -17,6 +19,10 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
   one `MULTI/EXEC` under `WATCH` (nothing is written if the key changes meanwhile), per key type: hash fields
   (including renames), list items, set and sorted-set members and scores, strings (keeping the TTL) and stream entries
   (delete).
+
+### Fixed
+- "Use SSL" used to accept any server certificate silently; new connections now verify it. MySQL also checks the host
+  name when connecting by IP address.
 
 ## [0.7.0] - 2026-11-22
 
@@ -46,9 +52,6 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ### Changed
 - The app is larger (~45 MB more per download) because DuckDB is embedded with its native library.
-
-### Fixed
-- "Use SSL" used to accept any server certificate silently; new connections now verify it.
 
 ### Known limitations
 - SQL Server: in free-form queries, `decimal`/`numeric` values beyond ~15 significant digits lose precision (driver
@@ -116,7 +119,8 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/julioczn/graphite/releases/tag/v0.8.0
 [0.7.0]: https://github.com/julioczn/graphite/releases/tag/v0.7.0
 [0.6.0]: https://github.com/julioczn/graphite/releases/tag/v0.6.0
 [0.5.0]: https://github.com/julioczn/graphite/releases/tag/v0.5.0
