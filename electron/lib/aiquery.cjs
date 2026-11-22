@@ -24,6 +24,8 @@ const READ = {
   // EXECUTE BLOCK can write: not a read.
   firebird: new Set(['SELECT', 'WITH']),
   duckdb: new Set(['SELECT', 'WITH', 'VALUES', 'TABLE', 'FROM', 'EXPLAIN', 'SHOW', 'DESCRIBE', 'SUMMARIZE']),
+  snowflake: new Set(['SELECT', 'WITH', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN']),
+  bigquery: new Set(['SELECT', 'WITH']),
 }
 // Statements that return rows and can be read in batches (cursor / iterator /
 // sql_select_limit), so a huge result never has to fit in memory.

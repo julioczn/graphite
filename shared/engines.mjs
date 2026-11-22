@@ -15,7 +15,11 @@
 //                 false, every AI query needs the user's approval
 //   cursors       rows can be fetched in batches with DECLARE … CURSOR
 //
-// families: 'mysql' | 'postgres' | 'sqlite' | 'mssql' | 'oracle' | 'clickhouse' | 'trino' | 'firebird' | 'duckdb'.
+// families: 'mysql' | 'postgres' | 'sqlite' | 'mssql' | 'oracle' | 'clickhouse' | 'trino' | 'firebird' |
+// 'duckdb' | 'snowflake' | 'bigquery'.
+//
+// form: engines with their own connection form list its inputs ({ key, type:
+// 'text' | 'secret' | 'file', optional, wide }); labels live in ConnectionScreen.
 //
 // fields: what the connection form asks for ('server' = host/port/user/
 // password/database/ssl, 'file' = a local file, 'url' = URL + auth token).
@@ -78,6 +82,31 @@ export const ENGINES = [
   // Federated queries over catalogs; "database" = catalog or catalog.schema.
   // AI reads run in START TRANSACTION READ ONLY, which Trino enforces.
   engine('trino', 'Trino', 'trino', { port: '8080', user: 'graphite', caps: { schemas: 'schema', transactions: false, manualMode: false, restore: false } }),
+  // Cloud warehouses over their REST APIs. No interactive transactions and no
+  // read-only mode: read-only grid, every AI query needs approval.
+  engine('snowflake', 'Snowflake', 'snowflake', {
+    status: 'beta',
+    form: [
+      { key: 'account', wide: true, placeholder: 'xy12345.us-east-1' },
+      { key: 'user' },
+      { key: 'token', type: 'secret' },
+      { key: 'warehouse', optional: true },
+      { key: 'role', optional: true },
+      { key: 'database', wide: true, placeholder: 'ANALYTICS.PUBLIC' },
+    ],
+    caps: { schemas: 'schema', transactions: false, manualMode: false, aiReadOnly: false, restore: false },
+  }),
+  engine('bigquery', 'BigQuery', 'bigquery', {
+    status: 'beta',
+    form: [
+      { key: 'keyFile', type: 'file', wide: true, exts: ['json'], placeholder: '/path/service-account.json' },
+      { key: 'project', optional: true },
+      { key: 'database', optional: true, placeholder: 'dataset' },
+      { key: 'location', optional: true, placeholder: 'US' },
+      { key: 'endpoint', optional: true, wide: true, placeholder: 'http://localhost:9050' },
+    ],
+    caps: { schemas: 'schema', transactions: false, manualMode: false, aiReadOnly: false, restore: false },
+  }),
   engine('sqlite', 'SQLite', 'sqlite', { fields: 'file', exts: ['db', 'sqlite', 'sqlite3', 'db3'], caps: { backup: true } }),
   // Embedded (native binary). No read-only transactions, and reads can reach
   // local files (read_csv…), so every AI query needs approval.
