@@ -22,5 +22,6 @@ if (missing.length) {
   const specs = missing.map((name) => `${name}@${version}`)
   console.log('installing', specs.join(' '))
   // --force: install bindings for another OS/CPU than this machine's.
-  execFileSync('npm', ['install', '--no-save', '--force', '--no-audit', '--no-fund', ...specs], { cwd: root, stdio: 'inherit' })
+  // npm is npm.cmd on Windows, which needs a shell.
+  execFileSync('npm', ['install', '--no-save', '--force', '--no-audit', '--no-fund', ...specs], { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' })
 }

@@ -5,11 +5,14 @@
 //  1. check  — GET the latest release from the GitHub API (on start, then
 //               every 6 h while enabled; the user can turn it off);
 //  2. download — the asset for this install (macOS zip for the CPU, the
-//               AppImage, or the .deb), verified against the SHA-256 digest
-//               GitHub publishes for it; anything else is refused;
+//               AppImage, .deb, .rpm, pacman package or Windows installer),
+//               verified against the SHA-256 digest GitHub publishes for it;
+//               anything else is refused;
 //  3. install — after the app quits, a small script swaps the new version in
 //               (macOS: the .app bundle, restoring the old one if the swap
-//               fails; AppImage: the file; .deb: pkexec dpkg -i) and relaunches.
+//               fails; AppImage: the file; .deb / .rpm / pacman: the package
+//               manager through pkexec; Windows: the installer, silently) and
+//               relaunches.
 //
 // GRAPHITE_UPDATE_FEED points the check at another API base (used by tests).
 const { app, shell } = require('electron')
@@ -19,7 +22,7 @@ const os = require('node:os')
 const https = require('node:https')
 const http = require('node:http')
 const crypto = require('node:crypto')
-const { spawn, execFile } = require('node:child_process')
+const { spawn, execFile, execFileSync } = require('node:child_process')
 const { EventEmitter } = require('node:events')
 const { t } = require('../shared/i18n.mjs')
 
@@ -49,9 +52,32 @@ function installKind() {
   }
   if (process.platform === 'linux') {
     if (process.env.APPIMAGE) return { kind: 'appimage', target: process.env.APPIMAGE }
-    if (app.getPath('exe').startsWith('/opt/')) return { kind: 'deb', target: path.dirname(app.getPath('exe')) }
+    const exe = app.getPath('exe')
+    if (exe.startsWith('/opt/')) {
+      const kind = linuxPackageKind(exe)
+      if (kind) return { kind, target: path.dirname(exe) }
+    }
+  }
+  if (process.platform === 'win32') {
+    // The NSIS installer leaves its uninstaller next to the app; the zip doesn't.
+    const exe = app.getPath('exe')
+    if (fs.existsSync(path.join(path.dirname(exe), 'Uninstall Graphite.exe'))) return { kind: 'nsis', target: exe }
   }
   return { kind: 'manual' }
+}
+
+// The .deb, .rpm and pacman packages all install to /opt: ask which package
+// manager owns the app.
+function linuxPackageKind(exe) {
+  if (fs.existsSync('/var/lib/dpkg/info/graphite.list')) return 'deb'
+  try {
+    execFileSync('rpm', ['-qf', exe], { stdio: 'ignore', timeout: 5000 })
+    return 'rpm'
+  } catch {}
+  try {
+    if (fs.readdirSync('/var/lib/pacman/local').some((d) => /^graphite-\d/.test(d))) return 'pacman'
+  } catch {}
+  return null
 }
 
 function assetFor(kind, version, assets) {
@@ -59,6 +85,9 @@ function assetFor(kind, version, assets) {
     mac: `Graphite-${version}-${process.arch === 'arm64' ? 'arm64' : 'x64'}.zip`,
     appimage: `Graphite-${version}.AppImage`,
     deb: `graphite_${version}_amd64.deb`,
+    rpm: `graphite-${version}.x86_64.rpm`,
+    pacman: `graphite-${version}-x86_64.pacman`,
+    nsis: `Graphite-Setup-${version}.exe`,
   }[kind]
   return want ? assets.find((a) => a.name === want) || null : null
 }
@@ -108,7 +137,7 @@ class Updater extends EventEmitter {
       progress: null, // { received, total }
       error: null,
       auto: this.getPref('autoUpdate') !== false,
-      canInstall: ['mac', 'appimage', 'deb'].includes(this.install.kind),
+      canInstall: ['mac', 'appimage', 'deb', 'rpm', 'pacman', 'nsis'].includes(this.install.kind),
       installKind: this.install.kind,
       checkedAt: null,
     }
@@ -233,6 +262,7 @@ class Updater extends EventEmitter {
   async installAndRestart() {
     if (this.state.status !== 'ready' || !this.downloaded) throw new Error(t('Baixe a atualização primeiro'))
     const { kind, target } = this.install
+    if (kind === 'nsis') return this.installWindows()
     const script = path.join(this.downloaded.dir, 'install.sh')
     const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`
     const wait = `while kill -0 ${process.pid} 2>/dev/null; do sleep 0.3; done`
@@ -255,9 +285,10 @@ rm -rf ${q(this.downloaded.dir)}`
 chmod +x ${q(this.downloaded.file)} && mv -f ${q(this.downloaded.file)} ${q(target)}
 nohup ${q(target)} >/dev/null 2>&1 &
 rm -rf ${q(this.downloaded.dir)}`
-    } else if (kind === 'deb') {
+    } else if (kind === 'deb' || kind === 'rpm' || kind === 'pacman') {
+      const cmd = { deb: 'dpkg -i', rpm: 'rpm -U --replacepkgs', pacman: 'pacman -U --noconfirm' }[kind]
       body = `${wait}
-pkexec dpkg -i ${q(this.downloaded.file)}
+pkexec ${cmd} ${q(this.downloaded.file)}
 nohup ${q(path.join(target, 'graphite'))} >/dev/null 2>&1 &
 rm -rf ${q(this.downloaded.dir)}`
     } else {
@@ -265,6 +296,30 @@ rm -rf ${q(this.downloaded.dir)}`
     }
     fs.writeFileSync(script, `#!/bin/sh\n${body}\n`, { mode: 0o700 })
     spawn('/bin/sh', [script], { detached: true, stdio: 'ignore' }).unref()
+    this.set({ status: 'installing' })
+    setTimeout(() => app.quit(), 150)
+  }
+
+  // Windows: run the downloaded installer silently (/S keeps the folder the
+  // user chose, per-user, no admin prompt) once this process has exited, then
+  // start the new version.
+  installWindows() {
+    const script = path.join(this.downloaded.dir, 'install.ps1')
+    const q = (s) => `'${String(s).replace(/'/g, "''")}'`
+    const keep = ['GRAPHITE_PROFILE_DIR', 'GRAPHITE_UPDATE_FEED'].filter((k) => process.env[k])
+    const body = [
+      `while (Get-Process -Id ${process.pid} -ErrorAction SilentlyContinue) { Start-Sleep -Milliseconds 300 }`,
+      `Start-Process -FilePath ${q(this.downloaded.file)} -ArgumentList '/S' -Wait`,
+      ...keep.map((k) => `$env:${k} = ${q(process.env[k])}`),
+      `Start-Process -FilePath ${q(this.install.target)}`,
+      `Remove-Item -LiteralPath ${q(this.downloaded.file)} -Force -ErrorAction SilentlyContinue`,
+    ].join('\r\n')
+    fs.writeFileSync(script, body + '\r\n')
+    spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', script], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    }).unref()
     this.set({ status: 'installing' })
     setTimeout(() => app.quit(), 150)
   }
