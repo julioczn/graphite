@@ -5,6 +5,8 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-23
+
 ### Added
 - **Import from other tools**: connections saved by DBeaver, DataGrip / IntelliJ, Beekeeper Studio, TablePlus,
   pgAdmin 4, MySQL Workbench, Sequel Ace / Sequel Pro, DbGate, MongoDB Compass, RedisInsight and VS Code SQLTools /
@@ -207,7 +209,8 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/julioczn/graphite/releases/tag/v0.13.0
 [0.12.0]: https://github.com/julioczn/graphite/releases/tag/v0.12.0
 [0.11.0]: https://github.com/julioczn/graphite/releases/tag/v0.11.0
 [0.10.2]: https://github.com/julioczn/graphite/releases/tag/v0.10.2
