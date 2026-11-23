@@ -72,6 +72,7 @@
     "oracledb": "26.0.0",
     "pg": "^8.23.1",
     "tedious": "20.3.9",
+    "yaml": "2.9.1",
     "zod": "4.6.7"
   },
   "productName": "Graphite",

@@ -5,11 +5,12 @@ import { store, newQueryTab } from '../lib/store'
 import Icon from './Icon.vue'
 import { key } from '../lib/keys'
 import { t } from '../lib/i18n'
+import { workspaces, activeId, touched } from '../lib/workspaces'
 
 const items = ref([])
 
 async function load() {
-  items.value = await call('app/savedQueries')
+  items.value = await call('app/savedQueries', { workspaceId: activeId() })
 }
 
 function open(q) {
@@ -21,11 +22,12 @@ function open(q) {
 async function remove(q) {
   if (!confirm(t('Excluir a consulta "{title}"?', { title: q.title }))) return
   await call('app/deleteQuery', { id: q.id })
+  touched()
   for (const tab of store.tabs) if (tab.savedId === q.id) tab.savedId = null
   load()
 }
 
-watch(() => store.savedVersion, load)
+watch(() => [store.savedVersion, workspaces.version], load)
 onMounted(load)
 </script>
 

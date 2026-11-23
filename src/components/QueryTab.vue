@@ -11,6 +11,7 @@ import ResultGrid from './ResultGrid.vue'
 import TxControls from './TxControls.vue'
 import SnippetPicker from './SnippetPicker.vue'
 import { ai, ask } from '../lib/ai'
+import { activeId, touched } from '../lib/workspaces'
 
 const props = defineProps({ tab: Object, active: Boolean })
 const tab = props.tab
@@ -226,6 +227,7 @@ const runCurrent = () => execute(editor.value.currentStatement())
 async function save() {
   if (tab.savedId) {
     await call('app/saveQuery', { query: { id: tab.savedId, title: tab.title, sql: tab.sql } })
+    touched()
     savedSql = tab.sql
     tab.dirty = false
     store.savedVersion++
@@ -241,7 +243,8 @@ async function save() {
 async function confirmSave() {
   const title = saveDialog.value.title.trim()
   if (!title) return
-  tab.savedId = await call('app/saveQuery', { query: { title, sql: tab.sql } })
+  tab.savedId = await call('app/saveQuery', { query: { title, sql: tab.sql, workspaceId: activeId() } })
+  touched()
   tab.title = title
   savedSql = tab.sql
   tab.dirty = false

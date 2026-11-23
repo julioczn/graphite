@@ -1,10 +1,12 @@
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
 import { call, bridge } from '../lib/api'
 import { openConnection, toast } from '../lib/store'
 import Icon from './Icon.vue'
 import LanguageMenu from './LanguageMenu.vue'
 import UpdateButton from './UpdateButton.vue'
+import WorkspaceMenu from './WorkspaceMenu.vue'
+import { workspaces, activeId, touched, loadWorkspaces } from '../lib/workspaces'
 import { t } from '../lib/i18n'
 import { ai } from '../lib/ai'
 import { ENGINES, engineOf } from '../../shared/engines.mjs'
@@ -71,8 +73,14 @@ const engineHint = computed(() => [
 const title = computed(() => (form.id ? form.name || t('Conexão') : t('Nova conexão')))
 
 async function load() {
-  saved.value = await call('app/connections')
+  saved.value = await call('app/connections', { workspaceId: activeId() })
 }
+
+// Another workspace picked (or this one changed by a sync): its connections.
+watch(() => [workspaces.activeId, workspaces.version], (now, before) => {
+  if (before && now[0] !== before[0]) newConnection()
+  load()
+})
 
 // Switching engine keeps what the user typed, but replaces values that were
 // just the previous engine's defaults.
@@ -222,8 +230,11 @@ const save = () => run('save', async () => {
     type: form.type,
     config: cfg,
     password: form.savePassword && password ? await bridge.encrypt(password) : null,
+    workspaceId: activeId(),
   }
   form.id = await call('app/saveConnection', { conn })
+  touched()
+  loadWorkspaces()
   form.name = conn.name
   selectedId.value = form.id
   await load()
@@ -243,6 +254,8 @@ const openDemo = () => run('demo', async () => {
 async function remove(c) {
   if (!confirm(t('Remover a conexão "{name}"?', { name: c.name }))) return
   await call('app/deleteConnection', { id: c.id })
+  touched()
+  loadWorkspaces()
   if (form.id === c.id) newConnection()
   await load()
 }
@@ -282,6 +295,8 @@ onMounted(load)
           <div class="brand-sub">{{ t('cliente de bancos de dados') }}</div>
         </div>
       </div>
+
+      <WorkspaceMenu />
 
       <div class="side-actions">
         <button class="btn primary" @click="newConnection"><Icon name="plus" :size="14" /> {{ t('Nova conexão') }}</button>

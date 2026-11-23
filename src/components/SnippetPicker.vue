@@ -5,6 +5,7 @@ import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import Icon from './Icon.vue'
 import { snippetsFor, preview } from '../lib/snippets'
 import { t } from '../lib/i18n'
+import { workspaces } from '../lib/workspaces'
 
 const props = defineProps({ anchor: Object, dialect: String }) // anchor: DOMRect of the button
 const emit = defineEmits(['pick', 'close'])
@@ -108,6 +109,7 @@ onBeforeUnmount(() => {
         <span><span class="kbd">↑</span><span class="kbd">↓</span> {{ t('navegar') }}</span>
         <span><span class="kbd">↩</span> {{ t('inserir') }}</span>
         <span>{{ t('no editor:') }} <span class="kbd">Tab</span> {{ t('próximo campo') }}</span>
+        <button type="button" class="own" @click="emit('close'); workspaces.dialog = 'snippets'">{{ t('Meus snippets…') }}</button>
       </div>
     </div>
   </Teleport>
@@ -166,4 +168,6 @@ onBeforeUnmount(() => {
   font-size: 11px; color: var(--fg-4);
 }
 .foot .kbd { margin-right: 3px; }
+.foot .own { margin-left: auto; padding: 0; border: 0; background: none; color: var(--fg-2); font: inherit; text-decoration: underline; cursor: pointer; }
+.foot .own:hover { color: var(--fg); }
 </style>

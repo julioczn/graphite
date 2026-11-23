@@ -11,11 +11,15 @@ import AiSettings from './components/AiSettings.vue'
 import { ai, initAi } from './lib/ai'
 import UpdateDialog from './components/UpdateDialog.vue'
 import { update, initUpdate } from './lib/update'
+import WorkspaceSync from './components/WorkspaceSync.vue'
+import SnippetsDialog from './components/SnippetsDialog.vue'
+import { workspaces, initWorkspaces } from './lib/workspaces'
 
 let off
 onMounted(() => {
   initAi().catch((e) => console.error('AI init', e))
   initUpdate().catch((e) => console.error('update init', e))
+  initWorkspaces().catch((e) => console.error('workspaces init', e))
   off = bridge.onEvent((ev) => {
     if (ev === 'util-restarted') {
       store.connection = null
@@ -33,6 +37,8 @@ onBeforeUnmount(() => off?.())
   <AiSettings v-if="ai.showSettings" />
   <AiApproval />
   <UpdateDialog v-if="update.dialog" />
+  <WorkspaceSync v-if="workspaces.dialog === 'github'" />
+  <SnippetsDialog v-if="workspaces.dialog === 'snippets'" />
 
   <div class="toasts">
     <TransitionGroup name="toast">

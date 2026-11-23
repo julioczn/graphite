@@ -81,6 +81,31 @@ contextBridge.exposeInMainWorld('graphite', {
     },
   },
 
+  // Workspaces: export / import files and GitHub sync. The GitHub token goes
+  // in (githubToken) and never comes back.
+  workspaces: {
+    exportFile: (id, format) => ipcRenderer.invoke('ws:export', { id, format }),
+    importFile: () => ipcRenderer.invoke('ws:import'),
+    github: () => ipcRenderer.invoke('ws:github'),
+    githubLogin: () => ipcRenderer.invoke('ws:githubLogin'),
+    githubCancel: () => ipcRenderer.invoke('ws:githubCancel'),
+    githubToken: (token) => ipcRenderer.invoke('ws:githubToken', token),
+    githubLogout: () => ipcRenderer.invoke('ws:githubLogout'),
+    repos: () => ipcRenderer.invoke('ws:githubRepos'),
+    link: (id, repo, dir) => ipcRenderer.invoke('ws:link', { id, repo, dir }),
+    unlink: (id) => ipcRenderer.invoke('ws:unlink', id),
+    sync: (id) => ipcRenderer.invoke('ws:sync', id),
+    setAuto: (id, on) => ipcRenderer.invoke('ws:setAuto', { id, on }),
+    touched: (id) => ipcRenderer.invoke('ws:touched', id),
+    open: (url) => ipcRenderer.invoke('ws:open', url),
+    on(event, fn) {
+      const channel = { github: 'ws:github', error: 'ws:githubError', changed: 'ws:changed' }[event]
+      const listener = (_e, d) => fn(d)
+      ipcRenderer.on(channel, listener)
+      return () => ipcRenderer.removeListener(channel, listener)
+    },
+  },
+
   // Updates from GitHub Releases: check, download (SHA-256 verified), install and relaunch.
   update: {
     state: () => ipcRenderer.invoke('update:state'),

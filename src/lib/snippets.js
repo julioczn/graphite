@@ -11,6 +11,7 @@
 import { quoteIdent, tableName } from './sqlText'
 import { t } from './i18n'
 import { store } from './store'
+import { activeWorkspace } from './workspaces'
 
 // SQL Server and Oracle have no LIMIT: rewrite the templates' row limits.
 //   SQL Server: SELECT TOP n … / OFFSET … ROWS FETCH NEXT … ROWS ONLY
@@ -185,7 +186,9 @@ function localizeFields(body, names) {
 
 export function snippetsFor(dialect) {
   const names = fieldNames()
-  const out = []
+  // The workspace's own snippets come first (Meus snippets dialog).
+  const own = t('Meus snippets')
+  const out = (activeWorkspace()?.snippets || []).map((s) => ({ group: own, trigger: s.trigger, title: s.title || s.trigger, body: s.body, own: true }))
   for (const [group, items] of groups()) {
     for (const [trigger, title, body] of items) {
       const text = typeof body === 'string' ? body : body[dialect]

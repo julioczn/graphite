@@ -14,6 +14,7 @@ import { tags } from '@lezer/highlight'
 import { splitStatements } from '../../shared/sql.mjs'
 import { shortcut } from '../lib/keys'
 import { snippetsFor, plain } from '../lib/snippets'
+import { activeWorkspace } from '../lib/workspaces'
 import { t, i18n } from '../lib/i18n'
 
 const props = defineProps({
@@ -177,7 +178,7 @@ onMounted(() => {
   })
 })
 
-watch(() => [props.schema, props.dialect], () => {
+watch(() => [props.schema, props.dialect, activeWorkspace()?.snippets], () => {
   view?.dispatch({ effects: langConf.reconfigure(language()) })
 })
 
