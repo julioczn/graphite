@@ -135,6 +135,10 @@ export async function initWorkspaces() {
   workspaces.github = await api().github()
   api().on('github', (s) => (workspaces.github = s))
   api().on('error', (msg) => toast(msg, 'error', 8000))
+  api().on('syncing', ({ id, on }) => {
+    if (on) workspaces.syncing[id] = true
+    else delete workspaces.syncing[id]
+  })
   api().on('changed', async (d) => {
     await loadWorkspaces()
     if (d.id === workspaces.activeId && !d.remoteOnly && d.pulled) workspaces.version++

@@ -98,8 +98,11 @@ contextBridge.exposeInMainWorld('graphite', {
     setAuto: (id, on) => ipcRenderer.invoke('ws:setAuto', { id, on }),
     touched: (id) => ipcRenderer.invoke('ws:touched', id),
     open: (url) => ipcRenderer.invoke('ws:open', url),
+    detectTools: () => ipcRenderer.invoke('imp:detect'),
+    toolFile: () => ipcRenderer.invoke('imp:file'),
+    importTool: (opts) => ipcRenderer.invoke('imp:apply', opts),
     on(event, fn) {
-      const channel = { github: 'ws:github', error: 'ws:githubError', changed: 'ws:changed' }[event]
+      const channel = { github: 'ws:github', error: 'ws:githubError', changed: 'ws:changed', syncing: 'ws:syncing' }[event]
       const listener = (_e, d) => fn(d)
       ipcRenderer.on(channel, listener)
       return () => ipcRenderer.removeListener(channel, listener)

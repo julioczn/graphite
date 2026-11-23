@@ -174,7 +174,15 @@ o que você já tinha está no primeiro.
   com um token "fine-grained" que só escreve no conteúdo desse repositório. O workspace vira arquivos legíveis
   (`<pasta>/workspace.yml`, `<pasta>/queries/*.sql`, um commit por sincronização). O Graphite sincroniza ao abrir, a
   cada 10 minutos e logo depois de uma mudança. Uma consulta editada em duas máquinas ao mesmo tempo mantém as duas
-  versões em vez de sobrescrever uma.
+  versões em vez de sobrescrever uma. O estado da sincronização (sincronizado, sincronizando, falhou, desconectado)
+  aparece embaixo do seletor de workspace e na barra de status.
+- **Importar de outras ferramentas**: o Graphite encontra as conexões salvas no DBeaver, DataGrip / IntelliJ,
+  Beekeeper Studio, TablePlus, pgAdmin 4, MySQL Workbench, Sequel Ace / Sequel Pro, DbGate, MongoDB Compass,
+  RedisInsight e VS Code SQLTools / Azure Data Studio deste computador, ou lê um arquivo que você escolher (também
+  Navicat `.ncx` e configurações exportadas do HeidiSQL). Você escolhe quais conexões trazer, para o workspace atual
+  ou um novo. As senhas salvas vêm junto quando a ferramenta as guarda nos próprios arquivos (DBeaver, Beekeeper,
+  DbGate, Navicat, HeidiSQL); as que estão no chaveiro do sistema ficam lá. Scripts do DBeaver e favoritas do
+  Beekeeper viram consultas salvas. Túneis SSH ainda não são suportados e aparecem sinalizados.
 - **Senhas e tokens nunca saem do seu computador**: ficam fora das exportações e do repositório. Em outra máquina você
   digita cada senha uma vez. Repositórios públicos são recusados.
 

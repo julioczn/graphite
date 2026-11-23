@@ -200,6 +200,23 @@ function handlers(db) {
       return applyWorkspaceDoc(db, id, fresh);
     },
 
+    // Connections (and saved queries) read from another tool, into an existing
+    // workspace or a new one. Passwords arrive already encrypted.
+    "app/importConnections": ({ workspaceId, newName, connections = [], queries = [] }) =>
+      tx(db, () => {
+        let id = workspaceId;
+        if (!id) {
+          let name = String(newName || "").trim() || t("Importado");
+          if (db.prepare("select 1 from workspaces where name = ?").get(name)) name = t("{name} (importado)", { name });
+          id = Number(db.prepare("insert into workspaces (uid, name) values (?, ?)").run(crypto.randomUUID(), name).lastInsertRowid);
+        } else if (!db.prepare("select 1 from workspaces where id = ?").get(id)) throw new Error(t("Workspace não encontrado"));
+        const insConn = db.prepare("insert into connections (workspace_id, uid, name, type, config, password) values (?, ?, ?, ?, ?, ?)");
+        for (const c of connections) insConn.run(id, crypto.randomUUID(), String(c.name).slice(0, 200), c.type, JSON.stringify(c.config), c.password || null);
+        const insQuery = db.prepare("insert into saved_queries (workspace_id, uid, title, sql) values (?, ?, ?, ?)");
+        for (const q of queries) insQuery.run(id, crypto.randomUUID(), String(q.title).slice(0, 200), String(q.sql));
+        return { workspaceId: id, connections: connections.length, queries: queries.length };
+      }),
+
     // --- connections ---
     // Without workspaceId: every workspace (AI agents see all saved connections).
     "app/connections": ({ workspaceId } = {}) =>

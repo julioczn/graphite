@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { store, closeConnection, closeTab, newQueryTab } from '../lib/store'
 import { t } from '../lib/i18n'
 import Icon from './Icon.vue'
+import SyncStatus from './SyncStatus.vue'
 import { key, shortcut } from '../lib/keys'
 import EntitySidebar from './EntitySidebar.vue'
 import HistoryPanel from './HistoryPanel.vue'
@@ -167,6 +168,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       <template v-if="activeTab?.status">
         <span v-for="(s, i) in activeTab.status" :key="i" class="sb-item">{{ s }}</span>
       </template>
+      <SyncStatus variant="bar" />
     </footer>
 
     <QuickSearch v-if="store.quickSearch" />

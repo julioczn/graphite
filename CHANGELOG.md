@@ -5,6 +5,20 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- **Import from other tools**: connections saved by DBeaver, DataGrip / IntelliJ, Beekeeper Studio, TablePlus,
+  pgAdmin 4, MySQL Workbench, Sequel Ace / Sequel Pro, DbGate, MongoDB Compass, RedisInsight and VS Code SQLTools /
+  Azure Data Studio are found on this machine; a picked file works too, including Navicat `.ncx` exports and HeidiSQL
+  exported settings. A preview lists each connection (engine, address, folder, whether a password comes along, what
+  Graphite can't do, like SSH tunnels) and imports the chosen ones into the current workspace or a new one. Passwords
+  the tool stores in its own files are decrypted in the main process and stored encrypted by the OS keychain; DBeaver
+  scripts and Beekeeper favorite queries become saved queries. Also offered from the empty connection list.
+- **GitHub sync status** under the workspace picker and in the status bar: synced (with how long ago), syncing
+  (background syncs included), failed or signed out, with a button to sync now.
+
+### Fixed
+- Saved file connections showed their path with the leading `/` moved to the end in the sidebar.
+
 ## [0.12.0] - 2026-11-23
 
 ### Added

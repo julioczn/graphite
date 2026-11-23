@@ -308,13 +308,16 @@ onMounted(load)
 
       <div class="side-heading">{{ t('Conexões salvas') }} <span class="count">{{ saved.length }}</span></div>
       <div class="saved">
-        <div v-if="!saved.length" class="saved-empty">{{ t('Nenhuma conexão salva ainda.') }}</div>
+        <div v-if="!saved.length" class="saved-empty">
+          {{ t('Nenhuma conexão salva ainda.') }}
+          <button class="link-btn" @click="workspaces.dialog = 'tools'"><Icon name="download" :size="13" /> <span>{{ t('Importar do DBeaver, DataGrip, Beekeeper…') }}</span></button>
+        </div>
         <div v-for="c in saved" :key="c.id" class="saved-item" :class="{ active: selectedId === c.id }"
              @click="pick(c)" @dblclick="pick(c).then(connect)">
           <div class="saved-icon"><Icon :name="iconOf(c.type)" :size="15" /></div>
           <div class="saved-text">
             <div class="saved-name">{{ c.name }}</div>
-            <div class="saved-sub">{{ subtitle(c) }}</div>
+            <div class="saved-sub"><bdi>{{ subtitle(c) }}</bdi></div>
           </div>
           <span class="badge">{{ typeLabel(c.type) }}</span>
           <button class="btn ghost icon sm del" :title="t('Remover')" @click.stop="remove(c)"><Icon name="trash" :size="13" /></button>
@@ -491,7 +494,9 @@ onMounted(load)
 }
 .count { color: var(--fg-4); }
 .saved { flex: 1; overflow-y: auto; padding: 0 8px 12px; }
-.saved-empty { padding: 12px; color: var(--fg-4); }
+.saved-empty { padding: 12px; color: var(--fg-4); display: grid; gap: 10px; justify-items: start; }
+.link-btn { display: inline-flex; align-items: flex-start; gap: 6px; padding: 0; text-align: left; line-height: 1.45; border: 0; background: none; color: var(--fg-2); font: 12.5px var(--font); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.link-btn:hover { color: var(--fg); }
 .saved-item {
   position: relative;
   display: flex; align-items: center; gap: 10px;
