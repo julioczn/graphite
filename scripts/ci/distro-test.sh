@@ -10,7 +10,7 @@ case "$distro" in
           install="dnf install -y /r/$(basename "$pkg") xorg-x11-server-Xvfb" ;;
   fedora) image=fedora:latest;  pkg=$(ls "$dir"/graphite-*.x86_64.rpm)
           install="dnf install -y /r/$(basename "$pkg") xorg-x11-server-Xvfb" ;;
-  arch)   image=archlinux:latest; pkg=$(ls "$dir"/graphite-*-x86_64.pacman)
+  arch)   image=archlinux:latest; pkg=$(ls "$dir"/graphite-dbclient-*-x86_64.pacman)
           # Arch is rolling: a full upgrade first (-Syu), as any user would have
           install="pacman -Syu --noconfirm && pacman -U --noconfirm /r/$(basename "$pkg") && pacman -S --noconfirm xorg-server-xvfb" ;;
   ubuntu) image=ubuntu:24.04;   pkg=$(ls "$dir"/graphite_*_amd64.deb)

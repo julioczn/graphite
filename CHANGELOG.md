@@ -5,6 +5,21 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- **Windows** (x64, Windows 10 and 11): a per-user installer (no admin rights, choice of folder, Start menu and desktop
+  shortcuts) and a portable zip. In-app updates run the new installer silently and restart.
+- **Fedora / RHEL / Rocky / AlmaLinux / CentOS Stream** `.rpm` and **Arch / Manjaro** pacman packages, next to the
+  `.deb` and the AppImage. In-app updates use each one's package manager. On Arch the package is `graphite-dbclient`,
+  since `graphite` there is the SIL Graphite font library; the command is still `graphite`.
+- Every build is smoke-tested before a release: it starts, opens its local database, encrypts a secret and runs
+  queries on SQLite and DuckDB, on macOS, Windows (portable and installed) and Linux; the Linux packages are installed
+  and started in clean Rocky Linux 9, Fedora, Arch and Ubuntu containers.
+
+### Fixed
+- The `.deb` didn't declare the ALSA library and libgbm, which Electron needs: on a minimal Ubuntu 24.04 the app
+  didn't start (`libasound.so.2` missing). It now asks for the real ALSA library, not an OSS emulation of it.
+- Upgrading an `.rpm` would have removed the `graphite` command (the old version's removal script runs last).
+
 ## [0.13.0] - 2026-11-23
 
 ### Added

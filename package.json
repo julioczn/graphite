@@ -123,7 +123,7 @@
         "libatspi2.0-0 | libatspi2.0-0t64",
         "libuuid1",
         "libsecret-1-0",
-        "libasound2 | libasound2t64",
+        "libasound2t64 | libasound2",
         "libgbm1"
       ],
       "artifactName": "${name}_${version}_${arch}.${ext}"
@@ -148,7 +148,7 @@
       "artifactName": "${name}-${version}.x86_64.${ext}"
     },
     "pacman": {
-      "packageName": "graphite",
+      "packageName": "graphite-dbclient",
       "afterInstall": "build/linux/after-install.sh",
       "afterRemove": "build/linux/after-remove.sh",
       "depends": [
@@ -164,7 +164,7 @@
         "alsa-lib",
         "mesa"
       ],
-      "artifactName": "${name}-${version}-x86_64.${ext}"
+      "artifactName": "graphite-dbclient-${version}-x86_64.${ext}"
     },
     "mac": {
       "target": [

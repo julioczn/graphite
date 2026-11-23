@@ -138,15 +138,34 @@ xattr -dr com.apple.quarantine /Applications/Graphite.app
 
 No Mac os atalhos usam `⌘` no lugar de `Ctrl` (a interface já mostra `⌘`), e a tecla `⌫` da grade faz o papel do `Del`.
 
+### Windows (x64, Windows 10 ou 11)
+
+Execute o `Graphite-Setup-<versão>.exe`. Ele instala só para o seu usuário (sem pedir administrador), deixa escolher a
+pasta, cria atalhos no menu Iniciar e na área de trabalho, e as atualizações do app reinstalam em silêncio no mesmo
+lugar. Ou descompacte o `Graphite-<versão>-win-x64.zip` portátil e rode o `Graphite.exe` (cópias portáteis não se
+atualizam sozinhas).
+
+O instalador ainda não tem assinatura de código, então o SmartScreen pode mostrar "O Windows protegeu o computador":
+clique em **Mais informações → Executar assim mesmo**.
+
 ### Linux (x64)
 
 ```bash
-sudo apt install ./graphite_<versão>_amd64.deb   # Debian/Ubuntu: instala em /opt/Graphite e cria o comando `graphite`
-sudo apt remove graphite                         # desinstala
+sudo apt install ./graphite_<versão>_amd64.deb        # Debian, Ubuntu, Mint, Pop!_OS
+sudo dnf install ./graphite-<versão>.x86_64.rpm       # Fedora, RHEL, Rocky, AlmaLinux, CentOS Stream
+sudo pacman -U ./graphite-dbclient-<versão>-x86_64.pacman   # Arch, Manjaro, EndeavourOS
 ```
 
-Ou use o `Graphite-<versão>.AppImage` portátil (`chmod +x` e execute). O `.deb` cria um perfil do AppArmor
-(`/etc/apparmor.d/graphite`) para o sandbox do Electron funcionar no Ubuntu 23.10+, como fazem VS Code e Chrome.
+Os pacotes instalam em `/opt/Graphite` e criam o comando `graphite` e o atalho no menu; para remover, use
+`apt remove graphite`, `dnf remove graphite` ou `pacman -R graphite-dbclient` (no Arch o nome `graphite` é da
+biblioteca de fontes SIL Graphite). Cada um se atualiza pelo próprio gerenciador de
+pacotes (pede a sua senha). Ou use o `Graphite-<versão>.AppImage` portátil (`chmod +x` e execute) em qualquer
+distribuição. No Ubuntu 23.10+ o `.deb` cria um perfil do AppArmor (`/etc/apparmor.d/graphite`) para o sandbox do
+Electron funcionar, como fazem VS Code e Chrome.
+
+Toda versão passa por um teste antes de ser publicada: no macOS, no Windows (versão portátil e instalador) e no Linux,
+onde os pacotes `.rpm`, pacman e `.deb` são instalados e abertos em contêineres limpos de Rocky Linux 9, Fedora, Arch e
+Ubuntu.
 
 ### TLS / SSL
 

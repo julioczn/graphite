@@ -63,7 +63,7 @@ jobs:
           - **Windows** (x64, Windows 10 or 11): `Graphite-Setup-*.exe` installs for your user, no admin needed; or unzip the portable `-win-x64.zip`. The installer isn't code-signed yet: if SmartScreen stops it, click *More info → Run anyway*.
           - **Debian / Ubuntu**: `sudo apt install ./graphite_*_amd64.deb`
           - **Fedora / RHEL / Rocky / Alma / CentOS Stream**: `sudo dnf install ./graphite-*.x86_64.rpm`
-          - **Arch / Manjaro / EndeavourOS**: `sudo pacman -U ./graphite-*-x86_64.pacman`
+          - **Arch / Manjaro / EndeavourOS**: `sudo pacman -U ./graphite-dbclient-*-x86_64.pacman`
           - **Any Linux**: the portable `.AppImage`.
           NOTES
       - name: Create or update the draft release

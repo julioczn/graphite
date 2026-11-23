@@ -75,7 +75,8 @@ function linuxPackageKind(exe) {
     return 'rpm'
   } catch {}
   try {
-    if (fs.readdirSync('/var/lib/pacman/local').some((d) => /^graphite-\d/.test(d))) return 'pacman'
+    // Arch already has a "graphite" package (the SIL font library), hence graphite-dbclient
+    if (fs.readdirSync('/var/lib/pacman/local').some((d) => /^graphite-dbclient-\d/.test(d))) return 'pacman'
   } catch {}
   return null
 }
@@ -86,7 +87,7 @@ function assetFor(kind, version, assets) {
     appimage: `Graphite-${version}.AppImage`,
     deb: `graphite_${version}_amd64.deb`,
     rpm: `graphite-${version}.x86_64.rpm`,
-    pacman: `graphite-${version}-x86_64.pacman`,
+    pacman: `graphite-dbclient-${version}-x86_64.pacman`,
     nsis: `Graphite-Setup-${version}.exe`,
   }[kind]
   return want ? assets.find((a) => a.name === want) || null : null
