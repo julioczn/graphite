@@ -5,13 +5,15 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-23
+
 ### Added
 - **Workspaces**: named sets of saved connections, saved queries, snippets, open tabs and per-connection preferences
   (commit mode, last schema), picked at the top of the connection screen. Existing data moves into the first one.
 - **Export / import** a workspace as YAML or JSON. Passwords and tokens are never written; URLs lose embedded
   passwords.
-- **GitHub sync**: link a workspace to a folder in a private repository. Sign in with GitHub (device flow) or a
-  fine-grained personal token, stored encrypted by the OS keychain. Each sync is one commit of readable files
+- **GitHub sync**: link a workspace to a folder in a private repository. Sign in with GitHub through the Graphite
+  Sync app (device flow; it only sees the repositories you install it on) or a fine-grained personal token, stored encrypted by the OS keychain. Each sync is one commit of readable files
   (`workspace.yml`, `queries/*.sql`). A three-way merge against the last sync means edits on both sides keep both
   copies, deletions propagate, and other files in the folder are left alone. Syncs on open, every 10 minutes and
   20 s after a change. Public repositories are refused.
@@ -191,7 +193,8 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/julioczn/graphite/releases/tag/v0.12.0
 [0.11.0]: https://github.com/julioczn/graphite/releases/tag/v0.11.0
 [0.10.2]: https://github.com/julioczn/graphite/releases/tag/v0.10.2
 [0.10.0]: https://github.com/julioczn/graphite/releases/tag/v0.10.0
