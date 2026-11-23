@@ -1,7 +1,7 @@
 <script setup>
 // GitHub sync for the active workspace: sign in (GitHub App device flow or a
 // personal token), pick a private repository and folder, sync.
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import Modal from './Modal.vue'
 import Icon from './Icon.vue'
 import { t } from '../lib/i18n'
@@ -35,9 +35,19 @@ async function run(kind, fn) {
   }
 }
 
-async function loadRepos() {
-  if (!gh.value.login || w.value?.remote) return
+async function loadRepos({ quiet = false } = {}) {
+  if (!gh.value.login || w.value?.remote || loadingRepos.value) return
   loadingRepos.value = true
+  if (quiet) {
+    // coming back from the browser: refresh without flashing errors
+    try {
+      repos.value = await github.repos()
+      if (!repos.value.some((r) => r.fullName === repo.value)) repo.value = (repos.value.find((r) => /graphite/i.test(r.fullName)) || repos.value[0])?.fullName || ''
+      if (repos.value.length) error.value = ''
+    } catch {}
+    loadingRepos.value = false
+    return
+  }
   await run('repos', async () => {
     repos.value = await github.repos()
     if (!repo.value && repos.value.length) repo.value = (repos.value.find((r) => /graphite/i.test(r.fullName)) || repos.value[0]).fullName
@@ -69,8 +79,17 @@ const setAuto = (on) => github.setAuto(w.value.id, on).then(loadWorkspaces)
 const logout = () => run('logout', github.logout)
 const copyCode = () => navigator.clipboard.writeText(gh.value.pending.userCode).then(() => toast(t('Código copiado'), 'success'))
 
-watch(() => gh.value.login, loadRepos)
-onMounted(loadRepos)
+// The app only sees repositories it is installed on. The user installs it in
+// the browser, so refresh the list when the window gets focus back.
+const noAccess = computed(() => gh.value.method === 'app' && repos.value && !repos.value.length)
+const onFocus = () => loadRepos({ quiet: true })
+const install = () => github.open(gh.value.installUrl)
+watch(() => gh.value.login, () => loadRepos())
+onMounted(() => {
+  loadRepos()
+  window.addEventListener('focus', onFocus)
+})
+onBeforeUnmount(() => window.removeEventListener('focus', onFocus))
 </script>
 
 <template>
@@ -130,6 +149,20 @@ onMounted(loadRepos)
           <label class="check small"><input type="checkbox" :checked="w.remote.auto !== false" @change="setAuto($event.target.checked)" /> {{ t('Sincronizar sozinho (ao abrir o app, a cada 10 minutos e logo depois de mudanças)') }}</label>
         </div>
       </template>
+      <template v-else-if="gh.login && noAccess">
+        <div class="access">
+          <p>{{ t('O Graphite ainda não tem acesso a nenhum repositório seu. O GitHub só deixa o app ver os repositórios que você escolher:') }}</p>
+          <ol class="small">
+            <li>{{ t('Crie um repositório privado, se ainda não tiver') }} (<a href="#" @click.prevent="github.open(NEW_REPO)">{{ t('criar agora') }}</a>).</li>
+            <li>{{ t('Instale o Graphite Sync na sua conta e, em "Only select repositories", marque esse repositório.') }}</li>
+            <li>{{ t('Volte para cá: a lista atualiza sozinha.') }}</li>
+          </ol>
+          <div class="row">
+            <button class="btn primary" @click="install"><Icon name="link" :size="13" /> {{ t('Dar acesso a um repositório') }}</button>
+            <button class="btn" :disabled="loadingRepos" @click="loadRepos()"><Icon name="refresh" :size="13" /> {{ loadingRepos ? t('Verificando…') : t('Verificar de novo') }}</button>
+          </div>
+        </div>
+      </template>
       <template v-else-if="gh.login">
         <div class="field">
           <label>{{ t('Repositório privado') }}</label>
@@ -138,12 +171,12 @@ onMounted(loadRepos)
               <option v-for="r in repos" :key="r.fullName" :value="r.fullName">{{ r.fullName }}</option>
             </select>
             <input v-else v-model="repo" class="input mono" :placeholder="t('dono/nome')" spellcheck="false" />
-            <button class="btn" :title="t('Atualizar lista')" :disabled="loadingRepos" @click="loadRepos"><Icon name="refresh" :size="13" /></button>
+            <button class="btn" :title="t('Atualizar lista')" :disabled="loadingRepos" @click="loadRepos()"><Icon name="refresh" :size="13" /></button>
           </div>
           <div class="hint">
             <template v-if="repos && !repos.length">{{ t('Nenhum repositório privado disponível.') }} </template>
             <a href="#" @click.prevent="github.open(NEW_REPO)">{{ t('Criar um repositório privado') }}</a>
-            <template v-if="gh.method === 'app' && gh.installUrl"> · <a href="#" @click.prevent="github.open(gh.installUrl)">{{ t('Dar acesso do Graphite a um repositório') }}</a></template>
+            <template v-if="gh.method === 'app' && gh.installUrl"> · <a href="#" @click.prevent="install">{{ t('Dar acesso do Graphite a outro repositório') }}</a></template>
           </div>
         </div>
         <div class="field">
@@ -164,7 +197,7 @@ onMounted(loadRepos)
       <button v-if="w?.remote" class="btn primary" :disabled="!!busy || !gh.login || workspaces.syncing[w.id]" @click="sync">
         <Icon name="refresh" :size="13" /> {{ workspaces.syncing[w.id] ? t('Sincronizando…') : t('Sincronizar agora') }}
       </button>
-      <button v-else class="btn primary" :disabled="!!busy || !gh.login || !repo.trim()" @click="link">
+      <button v-else class="btn primary" :disabled="!!busy || !gh.login || noAccess || !repo.trim()" @click="link">
         {{ busy === 'link' ? t('Ligando…') : t('Ligar e sincronizar') }}
       </button>
     </template>
@@ -191,6 +224,9 @@ h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 
 .field label { display: block; margin-bottom: 6px; color: var(--fg-3); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
 .hint { margin-top: 6px; color: var(--fg-4); font-size: 12px; line-height: 1.45; }
 a { color: var(--fg-2); }
+.access { padding: 12px 14px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-2); font-size: 13px; line-height: 1.5; }
+.access p { margin: 0 0 8px; }
+.access ol { margin: 0 0 12px; padding-left: 18px; color: var(--fg-2); }
 .linked { display: grid; gap: 6px; font-size: 13px; }
 .linked > div:first-child { display: flex; align-items: center; gap: 6px; }
 .check { display: flex; align-items: center; gap: 8px; margin-top: 4px; color: var(--fg-2); }
