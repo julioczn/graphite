@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { call, bridge } from '../lib/api'
 import { openConnection, toast } from '../lib/store'
 import Icon from './Icon.vue'
@@ -8,6 +8,7 @@ import UpdateButton from './UpdateButton.vue'
 import { t } from '../lib/i18n'
 import { ai } from '../lib/ai'
 import { ENGINES, engineOf } from '../../shared/engines.mjs'
+import { parseConnectionUrl } from '../../shared/connurl.mjs'
 
 const engine = (id) => engineOf(id) || engineOf('postgres')
 // Oracle: the service name; SQL Server: the initial database.
@@ -131,6 +132,44 @@ function defaultName() {
   if (isUrl.value) return hostOf(form.url) || current.value.label
   if (isCustom.value) return [form.extra.user, form.extra.account || form.extra.project].filter(Boolean).join('@') || current.value.label
   return `${form.user ? form.user + '@' : ''}${form.host}${form.database ? '/' + form.database : ''}`
+}
+
+// --- Import from URL ------------------------------------------------------------
+const urlImport = reactive({ open: false, text: '' })
+const urlInput = ref(null)
+
+async function openUrlImport() {
+  urlImport.open = !urlImport.open
+  if (urlImport.open) {
+    await nextTick()
+    urlInput.value?.focus()
+  }
+}
+
+// Fills the form from a connection string; keeps the name and the saved id.
+function importUrl(text = urlImport.text) {
+  let r
+  try {
+    r = parseConnectionUrl(text, form.type)
+  } catch (e) {
+    message.value = { kind: 'error', text: e.i18n ? t(e.i18n.key, e.i18n.params) : e.message }
+    return
+  }
+  const keep = { id: form.id, name: form.name, savePassword: form.savePassword }
+  Object.assign(form, blank(r.type), keep, r.fields, { extra: { ...(r.fields.extra || {}) } })
+  urlImport.open = false
+  urlImport.text = ''
+  const ignored = r.ignored.length ? ' ' + t('Sem campo no Graphite, ignorado: {params}.', { params: r.ignored.join(', ') }) : ''
+  message.value = { kind: 'ok', text: t('Preenchido a partir da URL ({engine}). Confira e clique em Testar.', { engine: engine(r.type).label }) + ignored }
+}
+
+// A whole connection URL pasted into the Host field is imported instead.
+function onHostPaste(e) {
+  const text = e.clipboardData?.getData('text') || ''
+  if (/^\s*(jdbc:)?[a-z][a-z0-9+.-]*:\/\//i.test(text)) {
+    e.preventDefault()
+    importUrl(text)
+  }
 }
 
 const TLS_FILES = computed(() => [
@@ -272,9 +311,21 @@ onMounted(load)
     <main class="main">
       <form class="card" @submit.prevent="connect">
         <header class="card-head">
-          <h1>{{ title }}</h1>
+          <div class="head-row">
+            <h1>{{ title }}</h1>
+            <button type="button" class="btn sm" :class="{ on: urlImport.open }" @click="openUrlImport"><Icon name="link" :size="13" /> {{ t('Importar de URL') }}</button>
+          </div>
           <p class="muted">{{ t('Escolha o tipo de banco e preencha os dados de acesso.') }}</p>
         </header>
+
+        <div v-if="urlImport.open" class="url-import">
+          <div class="row">
+            <input ref="urlInput" v-model="urlImport.text" class="input mono" placeholder="postgres://user:password@host:5432/db" spellcheck="false" autocomplete="off"
+                   :aria-label="t('URL de conexão')" @keydown.enter.prevent="importUrl()" @keydown.esc="urlImport.open = false" />
+            <button type="button" class="btn primary" :disabled="!urlImport.text.trim()" @click="importUrl()">{{ t('Importar') }}</button>
+          </div>
+          <div class="hint">{{ t('Aceita postgres://, mysql://, sqlserver://, oracle://, mongodb+srv://, redis://, clickhouse://, snowflake://, libsql://, JDBC, DATABASE_URL=… e strings como "host=… dbname=…" ou "Server=…;Database=…". A senha vai para o campo de senha, que é salvo cifrado.') }}</div>
+        </div>
 
         <div class="grid">
           <div class="field span-2">
@@ -331,7 +382,7 @@ onMounted(load)
           <template v-else>
             <div class="field">
               <label for="f-host">Host</label>
-              <input id="f-host" v-model="form.host" class="input" placeholder="localhost" />
+              <input id="f-host" v-model="form.host" class="input" placeholder="localhost" @paste="onHostPaste" />
             </div>
             <div class="field">
               <label for="f-port">{{ t('Porta') }}</label>
@@ -472,6 +523,11 @@ onMounted(load)
 }
 .card-head h1 { margin: 0 0 4px; font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
 .card-head p { margin: 0 0 20px; }
+.head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.head-row .btn { flex: none; }
+.head-row .btn.on { border-color: var(--fg-4); color: var(--fg); }
+.url-import { margin: -6px 0 20px; padding: 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-2); }
+.url-import .input { flex: 1; min-width: 0; }
 
 .tls { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-1); }
 .hint { margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--fg-4); }

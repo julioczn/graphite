@@ -27,7 +27,8 @@
 ## Features
 
 - **SQLite, PostgreSQL, MySQL, MariaDB, TiDB, CockroachDB, GreengageDB and LibSQL/Turso** ([full list](#supported-databases)) with saved connections (passwords encrypted by the OS keychain), a
-  **Test** button and a ready-to-use **demo** database.
+  **Test** button, **Import from URL** (paste `postgres://…`, `mysql://…`, `mongodb+srv://…`, JDBC, `DATABASE_URL=…`,
+  libpq or ADO.NET strings and the form fills itself in) and a ready-to-use **demo** database.
 - **SQL editor** (CodeMirror 6): table/column autocomplete, current-statement highlight, several results per run,
   inline errors. `⌘/Ctrl+Enter` runs everything or the selection, `⌘/Ctrl+Shift+Enter` runs the statement under the cursor.
 - **SQL snippets**: type a shortcut (`sel`, `ij`, `ups`, `ct`…) and pick it from autocomplete; templates adapt to each database.

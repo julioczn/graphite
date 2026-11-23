@@ -27,7 +27,8 @@
 ## Recursos
 
 - **SQLite, PostgreSQL, MySQL, MariaDB, TiDB, CockroachDB, GreengageDB e LibSQL/Turso** ([lista completa](#bancos-suportados)) com conexões salvas (senhas cifradas pelo chaveiro do sistema), botão
-  **Testar** e um banco **demo** pronto.
+  **Testar**, **Importar de URL** (cole `postgres://…`, `mysql://…`, `mongodb+srv://…`, JDBC, `DATABASE_URL=…`, strings
+  libpq ou ADO.NET e o formulário se preenche sozinho) e um banco **demo** pronto.
 - **Editor SQL** (CodeMirror 6): autocomplete de tabelas e colunas, destaque da instrução atual, vários resultados por
   execução, erros inline. `⌘/Ctrl+Enter` executa tudo ou a seleção; `⌘/Ctrl+Shift+Enter`, a instrução sob o cursor.
 - **Snippets de SQL**: digite um atalho (`sel`, `ij`, `ups`, `ct`…) e escolha no autocomplete; os modelos mudam por banco.
