@@ -34,6 +34,7 @@
         <a href="#features" data-i18n="nav.features">Features</a>
         <a href="#databases" data-i18n="nav.dbs">Databases</a>
         <a href="#ai" data-i18n="nav.ai">AI &amp; agents</a>
+        <a href="#compare" data-i18n="nav.compare">Compare</a>
         <a href="#download" data-i18n="nav.download">Download</a>
       </nav>
       <div class="nav-end">
@@ -160,6 +161,21 @@
           <h3 data-i18n="f9.t">Secure connections</h3>
           <p data-i18n="f9.d">TLS that verifies the server's certificate by default, your own CA, and client certificates for mutual TLS. Passwords and keys stay encrypted on your machine.</p>
         </article>
+        <article class="card reveal">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+          <h3 data-i18n="f10.t">Workspaces in your own GitHub</h3>
+          <p data-i18n="f10.d">Group connections, saved queries, snippets and open tabs per project, and sync them through a private repository of yours — readable files, one commit per sync. Passwords never leave your machine.</p>
+        </article>
+        <article class="card reveal">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+          <h3 data-i18n="f11.t">Bring your connections</h3>
+          <p data-i18n="f11.d">Import from DBeaver, DataGrip, TablePlus, Beekeeper Studio, pgAdmin, Navicat, MySQL Workbench, HeidiSQL and 5 more. Saved passwords come along when the tool keeps them in its own files.</p>
+        </article>
+        <article class="card reveal">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/></svg>
+          <h3 data-i18n="f12.t">Picks up where you left off</h3>
+          <p data-i18n="f12.d">Tabs come back when you reconnect, even on another computer. Your own snippets expand in the editor. And the app updates itself, checked against GitHub's SHA-256.</p>
+        </article>
       </div>
     </section>
 
@@ -211,6 +227,48 @@
     http://127.0.0.1:7329/mcp \
     --header "Authorization: Bearer &lt;token&gt;"</code></pre>
       </div>
+    </section>
+
+    <section id="compare" class="wrap section">
+      <p class="eyebrow reveal" data-i18n="cmp.eyebrow">Benchmark</p>
+      <h2 class="reveal" data-i18n="cmp.title">How Graphite compares</h2>
+      <p class="sub" data-i18n="cmp.sub">The free versions of the database clients people use most, side by side — including where Graphite falls short.</p>
+      <div class="cmp-scroll reveal" tabindex="0" role="region" aria-labelledby="cmp-cap">
+        <table class="cmp">
+          <caption id="cmp-cap" class="sr" data-i18n="cmp.title">How Graphite compares</caption>
+          <thead><tr><th scope="col" data-i18n="cmp.feature">Free version</th><th scope="col" class="me">Graphite</th><th scope="col">DBeaver CE</th><th scope="col">DataGrip</th><th scope="col">TablePlus</th><th scope="col">Beekeeper Studio</th><th scope="col">pgAdmin 4</th><th scope="col">Navicat</th><th scope="col">DbGate</th></tr></thead>
+          <tbody>
+            <tr><th scope="row" data-i18n="cmp.r.price">Price</th><td class="y"><span data-i18n="cmp.free">Free</span></td><td class="t"><span data-i18n="cmp.p.dbeaver">Free · PRO from $113/yr</span></td><td class="t"><span data-i18n="cmp.p.datagrip">Free for non-commercial use · $109/yr</span></td><td class="t"><span data-i18n="cmp.p.tableplus">Free with limits (2 tabs) · from $99</span></td><td class="t"><span data-i18n="cmp.p.beekeeper">Free · paid from $9/mo</span></td><td class="t"><span data-i18n="cmp.free">Free</span></td><td class="t"><span data-i18n="cmp.p.navicat">Lite free · Premium $749.99/yr</span></td><td class="t"><span data-i18n="cmp.p.dbgate">Free · Premium $120/yr</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.oss">Open source</th><td class="y"><span>MIT</span></td><td class="t"><span>Apache-2.0</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="t"><span data-i18n="cmp.o.bk">GPL-3.0 (Community)</span></td><td class="t"><span>PostgreSQL License</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="t"><span>GPL-3.0</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.os">Platforms</th><td class="p"><span>macOS · Linux</span></td><td class="t"><span>macOS · Windows · Linux</span></td><td class="t"><span>macOS · Windows · Linux</span></td><td class="t"><span>macOS · Windows · Linux</span></td><td class="t"><span>macOS · Windows · Linux</span></td><td class="t"><span>macOS · Windows · Linux</span></td><td class="t"><span>macOS · Windows · Linux</span></td><td class="t"><span>macOS · Windows · Linux</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.nosql">MongoDB and Redis, free</th><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="p"><span data-i18n="cmp.pro">PRO only</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="p"><span data-i18n="cmp.n.bk">Redis; MongoDB paid</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.wh">Snowflake and BigQuery, free</th><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="p"><span data-i18n="cmp.w.bk">BigQuery; Snowflake paid</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="p"><span data-i18n="cmp.w.nv">Snowflake</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.more">DynamoDB, SurrealDB, Turso, free</th><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="p"><span data-i18n="cmp.m.db">Turso</span></td><td class="p"><span data-i18n="cmp.m.dg">DynamoDB</span></td><td class="p"><span data-i18n="cmp.m.tp">DynamoDB, Turso</span></td><td class="p"><span data-i18n="cmp.paid">Paid</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="p"><span data-i18n="cmp.paid">Paid</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.ai">Built-in AI with your own key or a local model, free</th><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="p"><span data-i18n="cmp.a.db">OpenAI or Copilot; others PRO</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="y"><span data-i18n="cmp.yes1">✓ ¹</span></td><td class="p"><span data-i18n="cmp.paid">Paid</span></td><td class="y"><span data-i18n="cmp.a.pg">✓ off by default</span></td><td class="p"><span data-i18n="cmp.paid">Paid</span></td><td class="p"><span data-i18n="cmp.paid">Paid</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.mcp">MCP server for agents (Claude Code, Cursor…)</th><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="p"><span data-i18n="cmp.pro">PRO only</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="y"><span data-i18n="cmp.yes1">✓ ¹</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="p"><span data-i18n="cmp.ro">Read-only</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.sync">Sync connections and saved queries</th><td class="y"><span data-i18n="cmp.s.g">Your private GitHub repo, free</span></td><td class="p"><span data-i18n="cmp.s.db">Git in Enterprise and Ultimate</span></td><td class="p"><span data-i18n="cmp.s.dg">Project files in your VCS</span></td><td class="p"><span data-i18n="cmp.s.tp">Connections via iCloud or Dropbox</span></td><td class="p"><span data-i18n="cmp.s.bk">Cloud workspaces, paid</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="p"><span data-i18n="cmp.s.nv">Navicat Cloud</span></td><td class="p"><span data-i18n="cmp.s.dbg">Cloud, 5 free connections</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.import">Import connections from other tools</th><td class="y"><span data-i18n="cmp.i.g">13 tools</span></td><td class="p"><span data-i18n="cmp.i.db">6 tools</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td><td class="n"><span aria-hidden="true">—</span><span class="sr" data-i18n="cmp.no">No</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.er">ER diagrams, free</th><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="p"><span data-i18n="cmp.paid">Paid</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="p"><span data-i18n="cmp.prem">Premium only</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.backup">Backup and restore</th><td class="y"><span data-i18n="cmp.b.g">Built in, no pg_dump needed</span></td><td class="p"><span data-i18n="cmp.b.db">Via pg_dump / mysqldump</span></td><td class="p"><span data-i18n="cmp.b.dg">Via external tools</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="p"><span data-i18n="cmp.paid">Paid</span></td><td class="y"><span aria-hidden="true">✓</span><span class="sr" data-i18n="cmp.yes">Yes</span></td><td class="p"><span data-i18n="cmp.prem">Premium only</span></td><td class="p"><span data-i18n="cmp.b.dbg">Partly</span></td></tr>
+            <tr><th scope="row" data-i18n="cmp.r.size">macOS download (Apple Silicon)</th><td class="num">173 MB</td><td class="num">124 MB</td><td class="num">1.18 GB</td><td class="num">165 MB</td><td class="num">378 MB</td><td class="num">234 MB</td><td class="num">331 MB</td><td class="num">202 MB</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sizes reveal">
+        <h3 data-i18n="cmp.size.t">Download size</h3>
+        <p data-i18n="cmp.size.d">macOS, Apple Silicon, latest release of each. Smaller is better.</p>
+        <ol class="bars" aria-label="Download size">
+          <li class="bar" title="DBeaver CE 26.2.5: 124 MB"><span class="bn">DBeaver CE <small>26.2.5</small></span><span class="bt"><span class="bf" style="width:10.6%"></span></span><span class="bv">124 MB</span></li>
+          <li class="bar" title="TablePlus 27.4.0: 165 MB"><span class="bn">TablePlus <small>27.4.0</small></span><span class="bt"><span class="bf" style="width:14.0%"></span></span><span class="bv">165 MB</span></li>
+          <li class="bar me" title="Graphite 0.13.0: 173 MB"><span class="bn">Graphite <small>0.13.0</small></span><span class="bt"><span class="bf" style="width:14.7%"></span></span><span class="bv">173 MB</span></li>
+          <li class="bar" title="DbGate 7.3.6: 202 MB"><span class="bn">DbGate <small>7.3.6</small></span><span class="bt"><span class="bf" style="width:17.2%"></span></span><span class="bv">202 MB</span></li>
+          <li class="bar" title="pgAdmin 4 9.19: 234 MB"><span class="bn">pgAdmin 4 <small>9.19</small></span><span class="bt"><span class="bf" style="width:19.9%"></span></span><span class="bv">234 MB</span></li>
+          <li class="bar" title="Navicat 18: 331 MB"><span class="bn">Navicat <small>18</small></span><span class="bt"><span class="bf" style="width:28.1%"></span></span><span class="bv">331 MB</span></li>
+          <li class="bar" title="Beekeeper Studio 6.3.3: 378 MB"><span class="bn">Beekeeper Studio <small>6.3.3</small></span><span class="bt"><span class="bf" style="width:32.1%"></span></span><span class="bv">378 MB</span></li>
+          <li class="bar" title="DataGrip 2026.3: 1.18 GB"><span class="bn">DataGrip <small>2026.3</small></span><span class="bt"><span class="bf" style="width:100.0%"></span></span><span class="bv">1.18 GB</span></li>
+        </ol>
+      </div>
+      <p class="cmp-note"><span data-i18n="cmp.note">Checked on 23 November 2026 against each vendor&#x27;s own site, pricing page, docs and releases. ✓ means included in the free version; — means not offered, or not found in the vendor&#x27;s docs. Prices in US dollars, lowest paid tier. ¹ TablePlus doesn&#x27;t say whether AI and MCP work in its free version.</span> <a href="https://github.com/julioczn/graphite/issues/new" data-i18n="cmp.fix">Something out of date? Open an issue.</a></p>
     </section>
 
     <section id="download" class="wrap section">
