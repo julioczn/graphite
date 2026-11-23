@@ -5,7 +5,7 @@
 <h1 align="center">Graphite</h1>
 
 <p align="center">
-  A fast, keyboard-friendly desktop SQL client for <b>SQLite</b>, <b>PostgreSQL</b>, <b>MySQL</b> and friends<br>
+  A fast, keyboard-friendly desktop client for <b>24 databases</b>: SQL, NoSQL and cloud warehouses<br>
   with an AI assistant and an MCP server for your own agents.
 </p>
 
