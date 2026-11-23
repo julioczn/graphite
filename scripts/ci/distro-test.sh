@@ -11,7 +11,8 @@ case "$distro" in
   fedora) image=fedora:latest;  pkg=$(ls "$dir"/graphite-*.x86_64.rpm)
           install="dnf install -y /r/$(basename "$pkg") xorg-x11-server-Xvfb" ;;
   arch)   image=archlinux:latest; pkg=$(ls "$dir"/graphite-*-x86_64.pacman)
-          install="pacman -Sy --noconfirm archlinux-keyring && pacman -U --noconfirm /r/$(basename "$pkg") && pacman -S --noconfirm xorg-server-xvfb" ;;
+          # Arch is rolling: a full upgrade first (-Syu), as any user would have
+          install="pacman -Syu --noconfirm && pacman -U --noconfirm /r/$(basename "$pkg") && pacman -S --noconfirm xorg-server-xvfb" ;;
   ubuntu) image=ubuntu:24.04;   pkg=$(ls "$dir"/graphite_*_amd64.deb)
           install="apt-get update -q && DEBIAN_FRONTEND=noninteractive apt-get install -y -q /r/$(basename "$pkg") xvfb" ;;
   *) echo "unknown distro $distro" >&2; exit 2 ;;
@@ -33,4 +34,16 @@ docker run -d --name "$name" --network host -v "$dir:/r:ro" "$image" bash -c "
 "
 cleanup() { docker logs "$name" 2>&1 | tail -40; docker rm -f "$name" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
-SMOKE_ATTACH=1 node "$(dirname "$0")/../smoke.mjs"
+SMOKE_ATTACH=1 node "$(dirname "$0")/../smoke.mjs" &
+smoke=$!
+# The app runs in the foreground of the container: if the container stops
+# (install failed, the app crashed), fail now instead of waiting for the timeout.
+while kill -0 "$smoke" 2>/dev/null; do
+  if [ "$(docker inspect -f '{{.State.Running}}' "$name" 2>/dev/null)" != true ]; then
+    echo "container stopped before the smoke test finished" >&2
+    kill "$smoke" 2>/dev/null || true
+    exit 1
+  fi
+  sleep 3
+done
+wait "$smoke"

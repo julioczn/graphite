@@ -70,6 +70,17 @@ jobs:
       - name: Smoke test (macOS, Windows)
         if: runner.os != 'Linux'
         run: node scripts/smoke.mjs ${{ matrix.app }}
+      # The installer itself: silent per-user install (what in-app updates run),
+      # then the installed copy, with the uninstaller the updater looks for.
+      - name: Install with the Windows installer and smoke test it
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem release -Filter 'Graphite-Setup-*.exe' | Where-Object { $_.Name -notmatch 'uninstaller' } | Select-Object -First 1
+          Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait
+          $dir = Join-Path $env:LOCALAPPDATA 'Programs\Graphite'
+          if (-not (Test-Path (Join-Path $dir 'Uninstall Graphite.exe'))) { throw "not installed in $dir" }
+          node scripts/smoke.mjs (Join-Path $dir 'Graphite.exe')
       - name: Smoke test (Linux)
         if: runner.os == 'Linux'
         run: xvfb-run -a node scripts/smoke.mjs ${{ matrix.app }} --no-sandbox
@@ -80,6 +91,7 @@ jobs:
             release/*.dmg
             release/*.zip
             release/Graphite-Setup-*.exe
+            !release/*__uninstaller*
             release/*.AppImage
             release/*.deb
             release/*.rpm

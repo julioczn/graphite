@@ -122,7 +122,9 @@
         "xdg-utils",
         "libatspi2.0-0 | libatspi2.0-0t64",
         "libuuid1",
-        "libsecret-1-0"
+        "libsecret-1-0",
+        "libasound2 | libasound2t64",
+        "libgbm1"
       ],
       "artifactName": "${name}_${version}_${arch}.${ext}"
     },
@@ -139,7 +141,9 @@
         "xdg-utils",
         "at-spi2-core",
         "libuuid",
-        "libsecret"
+        "libsecret",
+        "alsa-lib",
+        "mesa-libgbm"
       ],
       "artifactName": "${name}-${version}.x86_64.${ext}"
     },
@@ -156,7 +160,9 @@
         "xdg-utils",
         "at-spi2-core",
         "util-linux-libs",
-        "libsecret"
+        "libsecret",
+        "alsa-lib",
+        "mesa"
       ],
       "artifactName": "${name}-${version}-x86_64.${ext}"
     },
