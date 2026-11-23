@@ -5,6 +5,16 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- **Import from URL** on the connection form: paste a connection string and the form fills itself in, engine
+  included. Understands `postgres://`, `mysql://`, `mariadb://`, `sqlserver://`, `oracle://`, `redis(s)://`,
+  `mongodb(+srv)://`, `clickhouse://`, `trino://`, `cassandra://`, `snowflake://`, `libsql://`, `ws(s)://` (SurrealDB),
+  `sqlite:///` and `duckdb:///` URLs, a `jdbc:` prefix, SQLAlchemy driver suffixes, JDBC SQL Server/Oracle syntax,
+  libpq `host=… dbname=…` and ADO.NET `Server=…;Database=…` strings, and a pasted `DATABASE_URL=…` line. TLS
+  parameters (`sslmode`, `ssl-mode`, `encrypt`, `rediss://`…) set the certificate check; Redshift, CockroachDB Cloud
+  and TiDB Cloud hosts pick their engine. Credentials move to the encrypted password field, never into a stored
+  URL, and parameters without a matching field are listed. Pasting a URL into the Host field does the same.
+
 ## [0.10.2] - 2026-11-22
 
 0.10.1 was built but never published; its changes ship here.
