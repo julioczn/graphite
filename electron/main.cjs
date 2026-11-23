@@ -176,13 +176,14 @@ ipcMain.handle(
 ipcMain.handle("shell:showItem", (_e, file) => shell.showItemInFolder(file));
 
 // Passwords never hit disk in plain text when the OS keyring is available.
-ipcMain.handle("secret:encrypt", (_e, plain) => {
+function encryptSecret(plain) {
   if (!plain) return "";
   if (safeStorage.isEncryptionAvailable()) {
     return "enc:" + safeStorage.encryptString(plain).toString("base64");
   }
   return "b64:" + Buffer.from(plain, "utf8").toString("base64");
-});
+}
+ipcMain.handle("secret:encrypt", (_e, plain) => encryptSecret(plain));
 
 ipcMain.handle("secret:decrypt", (_e, stored) => {
   if (!stored) return "";
@@ -301,6 +302,7 @@ function setupSync() {
   sync.on("state", (s) => broadcast("ws:github", s));
   sync.on("error", (msg) => broadcast("ws:githubError", msg));
   sync.on("changed", (d) => broadcast("ws:changed", d));
+  sync.on("syncing", (d) => broadcast("ws:syncing", d));
   sync.start();
 }
 const W = require("./lib/workspace.cjs");
@@ -323,6 +325,28 @@ ipcMain.handle("ws:import", async (e) => {
   if (res.canceled || !res.filePaths[0]) return null;
   const doc = W.parseFile(await fs.readFile(res.filePaths[0], "utf8"));
   return syncUtil.call("app/importWorkspace", { doc });
+});
+// Connections from other tools (DBeaver, DataGrip, Beekeeper…): electron/importers.
+const importers = require("./importers/index.cjs");
+ipcMain.handle("imp:detect", () => importers.detect());
+ipcMain.handle("imp:file", async (e) => {
+  const res = await dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender), {
+    properties: ["openFile", "showHiddenFiles"],
+    title: t("Arquivo de conexões de outra ferramenta"),
+  });
+  if (res.canceled || !res.filePaths[0]) return null;
+  return importers.readFile(res.filePaths[0]);
+});
+ipcMain.handle("imp:apply", async (_e, { token, picks, withPasswords, withQueries, workspaceId, newName }) => {
+  const r = importers.take(token, { picks, withPasswords, withQueries });
+  const out = await syncUtil.call("app/importConnections", {
+    workspaceId,
+    newName: newName || r.label,
+    connections: r.connections.map((c) => ({ ...c, password: c.password ? encryptSecret(c.password) : null })),
+    queries: r.queries,
+  });
+  sync.touch(out.workspaceId);
+  return out;
 });
 ipcMain.handle("ws:github", () => sync.state());
 ipcMain.handle("ws:githubLogin", () => sync.startDeviceLogin());

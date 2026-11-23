@@ -283,11 +283,21 @@ class GitHubSync extends EventEmitter {
   // --- sync --------------------------------------------------------------------------
 
   // One sync at a time per workspace; a second call waits for the first.
+  // Emits "syncing" so the UI shows background syncs too.
   sync(id) {
     const prev = this.locks.get(id) || Promise.resolve();
-    const run = prev.catch(() => {}).then(() => this.doSync(id));
+    const run = prev.catch(() => {}).then(() => {
+      this.emit("syncing", { id, on: true });
+      return this.doSync(id);
+    });
     this.locks.set(id, run);
-    run.finally(() => this.locks.get(id) === run && this.locks.delete(id)).catch(() => {});
+    run
+      .finally(() => {
+        if (this.locks.get(id) !== run) return;
+        this.locks.delete(id);
+        this.emit("syncing", { id, on: false });
+      })
+      .catch(() => {});
     return run;
   }
 

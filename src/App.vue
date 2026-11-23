@@ -13,6 +13,7 @@ import UpdateDialog from './components/UpdateDialog.vue'
 import { update, initUpdate } from './lib/update'
 import WorkspaceSync from './components/WorkspaceSync.vue'
 import SnippetsDialog from './components/SnippetsDialog.vue'
+import ImportToolsDialog from './components/ImportToolsDialog.vue'
 import { workspaces, initWorkspaces } from './lib/workspaces'
 
 let off
@@ -39,6 +40,7 @@ onBeforeUnmount(() => off?.())
   <UpdateDialog v-if="update.dialog" />
   <WorkspaceSync v-if="workspaces.dialog === 'github'" />
   <SnippetsDialog v-if="workspaces.dialog === 'snippets'" />
+  <ImportToolsDialog v-if="workspaces.dialog === 'tools'" />
 
   <div class="toasts">
     <TransitionGroup name="toast">

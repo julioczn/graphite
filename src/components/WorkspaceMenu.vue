@@ -5,6 +5,7 @@ import { ref, computed, nextTick } from 'vue'
 import Icon from './Icon.vue'
 import ContextMenu from './ContextMenu.vue'
 import Modal from './Modal.vue'
+import SyncStatus from './SyncStatus.vue'
 import { t } from '../lib/i18n'
 import { workspaces, activeWorkspace, setActive, saveWorkspace, deleteWorkspace, exportWorkspace, importWorkspace, syncNow } from '../lib/workspaces'
 
@@ -13,12 +14,6 @@ const naming = ref(null) // { id?, name }
 const nameInput = ref(null)
 const w = computed(() => activeWorkspace())
 const syncing = computed(() => !!workspaces.syncing[w.value?.id])
-const syncTitle = computed(() => {
-  const r = w.value?.remote
-  if (!r) return ''
-  if (r.lastError) return t('Erro na última sincronização: {error}', { error: r.lastError })
-  return r.lastSyncAt ? t('Sincronizado com {repo} às {time}', { repo: r.repo, time: new Date(r.lastSyncAt).toLocaleTimeString() }) : r.repo
-})
 
 function open(e) {
   const r = e.currentTarget.getBoundingClientRect()
@@ -37,11 +32,12 @@ function open(e) {
       { label: t('Novo workspace…'), icon: 'plus', run: () => askName({ name: '' }) },
       { label: t('Renomear…'), icon: 'settings', run: () => askName({ id: cur.id, name: cur.name }) },
       { sep: true },
-      { label: t('Sincronizar com o GitHub…'), icon: 'refresh', run: () => (workspaces.dialog = 'github') },
-      ...(cur?.remote ? [{ label: t('Sincronizar agora'), icon: 'refresh', hint: cur.remote.repo, disabled: syncing.value, run: () => syncNow(cur.id).catch(() => {}) }] : []),
+      { label: cur?.remote ? t('GitHub: {repo}', { repo: cur.remote.repo }) : t('Sincronizar com o GitHub…'), icon: 'github', run: () => (workspaces.dialog = 'github') },
+      ...(cur?.remote ? [{ label: t('Sincronizar agora'), icon: 'refresh', disabled: syncing.value, run: () => syncNow(cur.id).catch(() => {}) }] : []),
       { label: t('Exportar como YAML…'), icon: 'export', run: () => exportWorkspace(cur.id, 'yaml') },
       { label: t('Exportar como JSON…'), icon: 'export', run: () => exportWorkspace(cur.id, 'json') },
       { label: t('Importar arquivo…'), icon: 'upload', run: importWorkspace },
+      { label: t('Importar de outra ferramenta…'), icon: 'download', hint: 'DBeaver, DataGrip…', run: () => (workspaces.dialog = 'tools') },
       ...(workspaces.list.length > 1 ? [{ sep: true }, { label: t('Excluir workspace…'), icon: 'trash', danger: true, run: () => deleteWorkspace(cur.id) }] : []),
     ],
   }
@@ -67,9 +63,9 @@ async function submitName() {
     <button class="wsm-btn" :title="t('Workspace')" @click="open">
       <Icon name="layout" :size="14" />
       <span class="wsm-name">{{ w?.name || '…' }}</span>
-      <Icon v-if="w?.remote" :name="w.remote.lastError ? 'alert' : 'refresh'" :size="12" class="wsm-sync" :class="{ spin: syncing, err: w.remote.lastError }" :title="syncTitle" />
       <Icon name="chevron" :size="12" class="wsm-chev" />
     </button>
+    <SyncStatus variant="card" />
     <ContextMenu :menu="menu" @close="menu = null" />
     <Modal v-if="naming" :title="naming.id ? t('Renomear workspace') : t('Novo workspace')" width="400px" @close="naming = null">
       <form @submit.prevent="submitName">
@@ -94,11 +90,7 @@ async function submitName() {
 }
 .wsm-btn:hover { border-color: var(--fg-4); }
 .wsm-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wsm-sync { color: var(--fg-3); }
-.wsm-sync.err { color: var(--fg); }
 .wsm-chev { color: var(--fg-3); transform: rotate(90deg); }
-.spin { animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
 .hint { margin: 10px 0 0; color: var(--fg-3); font-size: 12px; line-height: 1.5; }
 .spacer { flex: 1; }
 </style>
