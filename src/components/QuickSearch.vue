@@ -4,6 +4,7 @@ import { call } from '../lib/api'
 import { store, openTableTab, newQueryTab, tableKey } from '../lib/store'
 import Icon from './Icon.vue'
 import { t } from '../lib/i18n'
+import { activeId } from '../lib/workspaces'
 
 const q = ref('')
 const idx = ref(0)
@@ -58,7 +59,7 @@ function onKey(e) {
 onMounted(async () => {
   await nextTick()
   input.value?.focus()
-  saved.value = await call('app/savedQueries')
+  saved.value = await call('app/savedQueries', { workspaceId: activeId() })
 })
 </script>
 

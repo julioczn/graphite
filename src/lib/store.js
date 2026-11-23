@@ -1,7 +1,8 @@
 // Global app state. Small enough that a reactive object beats a store library.
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue'
 import { call, bridge } from './api'
 import { t } from './i18n'
+import { touched } from './workspaces'
 
 let tabSeq = 0
 let toastSeq = 0
@@ -42,17 +43,67 @@ export function tableKey(t) {
   return isCurrentSchema(t.schema) ? t.name : `${t.schema}.${t.name}`
 }
 
-// Commit mode is remembered per saved connection (a viewer convenience).
+// Commit mode and the last database / schema are remembered per saved
+// connection, in its workspace (they travel with it). Older versions kept
+// them in localStorage: still read as a fallback.
 const modeKey = (saved) => `graphite.autoCommit.${saved?.id ?? 'adhoc'}`
-function rememberedMode(saved) {
+const schemaKey = (saved) => `graphite.schema.${saved?.id ?? 'adhoc'}`
+function legacy(key) {
   try {
-    return localStorage.getItem(modeKey(saved)) !== 'manual'
+    return localStorage.getItem(key)
   } catch {
-    return true
+    return null
   }
 }
+function rememberedMode(saved) {
+  if (typeof saved?.prefs?.autoCommit === 'boolean') return saved.prefs.autoCommit
+  return legacy(modeKey(saved)) !== 'manual'
+}
+function setPref(saved, prefs) {
+  if (!saved?.id) return
+  saved.prefs = { ...(saved.prefs || {}), ...prefs }
+  call('app/setConnPrefs', { id: saved.id, prefs }).then(() => touched()).catch(() => {})
+}
 
-const schemaKey = (saved) => `graphite.schema.${saved?.id ?? 'adhoc'}`
+// --- open tabs, saved per connection ------------------------------------------------
+let tabsOwner = null // saved connection id whose tabs are on screen
+let tabsTimer = null
+const tabState = (tab) =>
+  tab.type === 'query'
+    ? { type: 'query', title: tab.title, sql: tab.sql, savedId: tab.savedId ?? null, active: tab.id === store.activeTabId || undefined }
+    : tab.type === 'table'
+      ? { type: 'table', title: tab.title, table: tab.table, schema: tab.schema ?? null, kind: tab.kind, view: tab.view, active: tab.id === store.activeTabId || undefined }
+      : { type: 'er', title: tab.title, scope: tab.scope, active: tab.id === store.activeTabId || undefined }
+function flushTabs() {
+  clearTimeout(tabsTimer)
+  tabsTimer = null
+  const id = store.connection?.saved?.id
+  if (!id || id !== tabsOwner) return
+  const tabs = store.tabs.filter((x) => ['query', 'table', 'er'].includes(x.type)).map(tabState)
+  store.connection.saved.tabs = tabs
+  call('app/setConnTabs', { id, tabs }).catch(() => {})
+}
+watch(() => [store.tabs.map(tabState), store.activeTabId], () => {
+  if (!tabsOwner) return
+  clearTimeout(tabsTimer)
+  tabsTimer = setTimeout(flushTabs, 800)
+}, { deep: true })
+window.addEventListener('beforeunload', flushTabs)
+
+function restoreTabs(saved) {
+  const list = Array.isArray(saved?.tabs) ? saved.tabs : []
+  let active = null
+  for (const x of list) {
+    const tab =
+      x.type === 'query' ? addTab({ type: 'query', title: x.title, sql: x.sql || '', savedId: x.savedId ?? null, dirty: false })
+      : x.type === 'table' ? addTab({ type: 'table', title: x.title, table: x.table, schema: x.schema ?? null, kind: x.kind, view: x.view || 'data' })
+      : x.type === 'er' ? addTab({ type: 'er', title: x.title, scope: x.scope })
+      : null
+    if (tab && x.active) active = tab.id
+  }
+  if (active) store.activeTabId = active
+  return store.tabs.length > 0
+}
 
 // What the open connection's engine supports (shared/engines.mjs).
 export const caps = () => store.connection?.caps || {}
@@ -64,26 +115,28 @@ export async function openConnection(saved, config) {
   // AI agents may use this connection as "active" (in a session of their own).
   bridge.ai.setActive({ name: saved?.name || info.database || t('Conexão aberta'), type: config.type, config, savedId: saved?.id ?? null })
   // Reopen on the database / schema picked last time, if it still exists.
-  let last = null
-  try {
-    last = saved?.id ? localStorage.getItem(schemaKey(saved)) : null
-  } catch {}
+  const last = saved?.id ? saved.prefs?.schema || legacy(schemaKey(saved)) : null
   if (last && last !== info.schema && info.dialect !== 'sqlite') {
     await call('conn/useSchema', { sId: info.sId, schema: last })
       .then((r) => Object.assign(store.connection, r))
       .catch(() => {})
   }
+  tabsOwner = null
   store.tabs = []
   store.activeTabId = null
   store.sidebarPanel = 'entities'
   if (saved?.id) call('app/touchConnection', { id: saved.id })
   await refreshEntities()
-  newQueryTab()
+  // The tabs left open last time (on this or another machine), else a blank query.
+  if (!restoreTabs(saved)) newQueryTab()
+  tabsOwner = saved?.id ?? null
 }
 
 export async function closeConnection() {
   if (!store.connection) return
   if (store.tx.open && !(await settleTx(t('Desconectar com uma transação aberta?')))) return
+  flushTabs()
+  tabsOwner = null
   await call('conn/close', { sId: store.connection.sId }).catch(() => {})
   store.connection = null
   bridge.ai.setActive(null)
@@ -125,9 +178,7 @@ export async function setAutoCommit(on) {
   if (on === store.tx.autoCommit) return
   if (on && store.tx.open && !(await settleTx(t('Mudar para auto-commit?')))) return
   store.tx = await call('tx/setAutoCommit', { sId: store.connection.sId, on })
-  try {
-    localStorage.setItem(modeKey(store.connection.saved), on ? 'auto' : 'manual')
-  } catch {}
+  setPref(store.connection.saved, { autoCommit: on })
   toast(on ? t('Auto-commit ativado') : t('Modo manual: use Commit ou Rollback para encerrar a transação'))
 }
 
@@ -154,9 +205,7 @@ export async function useSchema(name) {
   if (c.dialect === 'postgres' && store.tx.open && !(await settleTx(t('Trocar de schema?')))) return
   const r = await call('conn/useSchema', { sId: c.sId, schema: name })
   Object.assign(c, r)
-  try {
-    if (c.saved?.id) localStorage.setItem(schemaKey(c.saved), r.schema)
-  } catch {}
+  if (r.schema) setPref(c.saved, { schema: r.schema })
   await refreshEntities()
 }
 

@@ -5,6 +5,24 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- **Workspaces**: named sets of saved connections, saved queries, snippets, open tabs and per-connection preferences
+  (commit mode, last schema), picked at the top of the connection screen. Existing data moves into the first one.
+- **Export / import** a workspace as YAML or JSON. Passwords and tokens are never written; URLs lose embedded
+  passwords.
+- **GitHub sync**: link a workspace to a folder in a private repository. Sign in with GitHub (device flow) or a
+  fine-grained personal token, stored encrypted by the OS keychain. Each sync is one commit of readable files
+  (`workspace.yml`, `queries/*.sql`). A three-way merge against the last sync means edits on both sides keep both
+  copies, deletions propagate, and other files in the folder are left alone. Syncs on open, every 10 minutes and
+  20 s after a change. Public repositories are refused.
+- **My snippets**: your own snippets per workspace (trigger, description, body with tab stops), offered in the editor's
+  autocomplete and at the top of the Snippets menu.
+- Tabs left open on a saved connection come back when you reconnect, on this machine or another.
+
+### Changed
+- Commit mode and last schema per connection moved from browser storage to the workspace (older values are still
+  read).
+
 ## [0.11.0] - 2026-11-23
 
 ### Added

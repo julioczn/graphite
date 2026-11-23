@@ -163,11 +163,27 @@ barra lateral e baixa e instala a versão nova para você: o arquivo é conferid
 Graphite reinicia já na versão nova (`.app` no macOS, AppImage ou `.deb` via `pkexec`). A verificação automática pode
 ser desligada no mesmo diálogo; ela é uma consulta simples à API do GitHub, sem nada sobre você ou seus bancos.
 
+### Workspaces e sincronização com o GitHub
+
+Um **workspace** reúne conexões salvas, consultas salvas, os seus próprios snippets, as abas deixadas abertas em cada
+conexão e as preferências por conexão (modo de commit, último schema). Escolha ou crie um no topo da tela de conexões;
+o que você já tinha está no primeiro.
+
+- **Exportar / importar** um workspace em YAML ou JSON, no mesmo menu. Importar cria um workspace novo.
+- **Sincronizar com o GitHub**: ligue um workspace a uma pasta num repositório *privado* seu, entrando com o GitHub ou
+  com um token "fine-grained" que só escreve no conteúdo desse repositório. O workspace vira arquivos legíveis
+  (`<pasta>/workspace.yml`, `<pasta>/queries/*.sql`, um commit por sincronização). O Graphite sincroniza ao abrir, a
+  cada 10 minutos e logo depois de uma mudança. Uma consulta editada em duas máquinas ao mesmo tempo mantém as duas
+  versões em vez de sobrescrever uma.
+- **Senhas e tokens nunca saem do seu computador**: ficam fora das exportações e do repositório. Em outra máquina você
+  digita cada senha uma vez. Repositórios públicos são recusados.
+
 ### Onde ficam os seus dados
 
 Conexões salvas, histórico e configurações ficam no seu computador: `~/Library/Application Support/Graphite` (macOS)
 ou `~/.config/Graphite` (Linux). O Graphite não tem telemetria; ele só conversa com os seus bancos, com o seu provedor
-de AI (se você configurar) e com o GitHub para verificar atualizações (dá para desligar).
+de AI (se você configurar) e com o GitHub para verificar atualizações (dá para desligar) e, se você ligar um
+workspace, para sincronizá-lo.
 
 ## Compilar a partir do código
 

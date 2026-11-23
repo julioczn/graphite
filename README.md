@@ -161,11 +161,26 @@ publishes for it, then Graphite restarts on the new version (macOS `.app`, AppIm
 automatic check off in the same dialog; the check is a plain request to the GitHub API with nothing about you or your
 databases.
 
+### Workspaces and GitHub sync
+
+A **workspace** groups saved connections, saved queries, your own snippets, the tabs left open on each connection and
+per-connection preferences (commit mode, last schema). Pick or create one at the top of the connection screen; what
+you had before is in the first one.
+
+- **Export / import** a workspace as YAML or JSON from the same menu. Importing creates a new workspace.
+- **Sync with GitHub**: link a workspace to a folder in a *private* repository of yours. Sign in with GitHub or a
+  fine-grained token that can only write that repository's contents. The workspace becomes readable files
+  (`<folder>/workspace.yml`, `<folder>/queries/*.sql`, one commit per sync). Graphite syncs when it opens, every 10
+  minutes and shortly after a change. A query edited on two machines at once keeps both versions instead of
+  overwriting one.
+- **Passwords and tokens never leave your machine**: they're stripped from exports and from the repository. On
+  another machine you type each password once. Public repositories are refused.
+
 ### Where your data lives
 
 Saved connections, history and settings stay on your machine: `~/Library/Application Support/Graphite` (macOS) or
 `~/.config/Graphite` (Linux). Graphite has no telemetry; it only talks to your databases, to your AI provider if you set one up, and to GitHub to
-check for updates (can be turned off).
+check for updates (can be turned off) and, if you link a workspace, to sync it.
 
 ## Build from source
 

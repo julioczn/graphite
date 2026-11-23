@@ -60,11 +60,13 @@ function startUtility() {
     stdio: "inherit",
     env: { ...process.env, GRAPHITE_USER_DATA: app.getPath("userData"), GRAPHITE_LOCALE: i18n.getLocale() },
   });
-  // The AI hub talks to the utility over a port of its own.
+  // The AI hub and GitHub sync talk to the utility over ports of their own.
   ai?.hub.attachUtil(util);
+  syncUtil?.attach(util);
   util.on("exit", (code) => {
     util = null;
     ai?.hub.detachUtil();
+    syncUtil?.detach();
     if (code) {
       console.error("[main] utility process died, restarting", code);
       startUtility();
@@ -287,6 +289,56 @@ ipcMain.handle("update:install", () => updater.installAndRestart());
 ipcMain.handle("update:setAuto", (_e, on) => updater.setAuto(on));
 ipcMain.handle("update:openPage", () => updater.openReleasePage());
 
+// --- workspaces: export / import files, GitHub sync -----------------------------
+let sync = null;
+let syncUtil = null;
+function setupSync() {
+  const { GitHubSync } = require("./github-sync.cjs");
+  const { UtilBridge } = require("./ai/hub.cjs");
+  syncUtil = new UtilBridge();
+  if (util) syncUtil.attach(util);
+  sync = new GitHubSync({ userData: app.getPath("userData"), safeStorage, util: syncUtil, openExternal: (u) => shell.openExternal(u) });
+  sync.on("state", (s) => broadcast("ws:github", s));
+  sync.on("error", (msg) => broadcast("ws:githubError", msg));
+  sync.on("changed", (d) => broadcast("ws:changed", d));
+  sync.start();
+}
+const W = require("./lib/workspace.cjs");
+ipcMain.handle("ws:export", async (e, { id, format }) => {
+  const doc = await syncUtil.call("app/workspaceDoc", { id });
+  const ext = format === "json" ? "json" : "yml";
+  const res = await dialog.showSaveDialog(BrowserWindow.fromWebContents(e.sender), {
+    defaultPath: path.join(app.getPath("downloads"), `${W.slug(doc.name)}.graphite.${ext}`),
+    filters: [{ name: format === "json" ? "JSON" : "YAML", extensions: [ext] }],
+  });
+  if (res.canceled || !res.filePath) return null;
+  await fs.writeFile(res.filePath, W.serialize(doc, format), "utf8");
+  return res.filePath;
+});
+ipcMain.handle("ws:import", async (e) => {
+  const res = await dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender), {
+    properties: ["openFile"],
+    filters: [{ name: t("Workspace do Graphite"), extensions: ["yml", "yaml", "json"] }],
+  });
+  if (res.canceled || !res.filePaths[0]) return null;
+  const doc = W.parseFile(await fs.readFile(res.filePaths[0], "utf8"));
+  return syncUtil.call("app/importWorkspace", { doc });
+});
+ipcMain.handle("ws:github", () => sync.state());
+ipcMain.handle("ws:githubLogin", () => sync.startDeviceLogin());
+ipcMain.handle("ws:githubCancel", () => sync.cancelDeviceLogin());
+ipcMain.handle("ws:githubToken", (_e, token) => sync.setToken(token));
+ipcMain.handle("ws:githubLogout", () => sync.logout());
+ipcMain.handle("ws:githubRepos", () => sync.repos());
+ipcMain.handle("ws:link", (_e, { id, repo, dir }) => sync.link(id, { repo, dir }));
+ipcMain.handle("ws:unlink", (_e, id) => sync.unlink(id));
+ipcMain.handle("ws:sync", (_e, id) => sync.sync(id));
+ipcMain.handle("ws:setAuto", (_e, { id, on }) => sync.setAuto(id, on));
+ipcMain.handle("ws:touched", (_e, id) => sync.touch(id));
+ipcMain.handle("ws:open", (_e, url) => {
+  if (/^https:\/\/github\.com\//.test(url) || url.startsWith(process.env.GRAPHITE_GITHUB_WEB || "\0")) shell.openExternal(url);
+});
+
 ipcMain.handle("app:info", () => ({
   version: app.getVersion(),
   platform: process.platform,
@@ -313,6 +365,7 @@ app.whenReady().then(() => {
   }
   setupAi();
   setupUpdater();
+  setupSync();
   startUtility();
   createWindow();
   app.on("activate", () => {

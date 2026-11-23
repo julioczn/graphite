@@ -539,4 +539,4 @@ function formatResults(r, dialect) {
   return parts.join('\n\n')
 }
 
-module.exports = { AiHub, keyId }
+module.exports = { AiHub, keyId, UtilBridge }
