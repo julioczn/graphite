@@ -22,11 +22,12 @@ const crypto = require("node:crypto");
 const W = require("./lib/workspace.cjs");
 const { t } = require("../shared/i18n.mjs");
 
-// The public GitHub App ("Graphite Sync"): its client id and URL name. Empty
-// until it is registered; then sign-in falls back to a personal token only.
+// The public GitHub App "Graphite Sync" (github.com/apps/graphite-sync): its
+// client id (public, used for the device flow; there is no client secret) and
+// URL name. The env vars point tests at another app.
 const GITHUB_APP = {
-  clientId: process.env.GRAPHITE_GITHUB_CLIENT_ID || "",
-  slug: process.env.GRAPHITE_GITHUB_APP || "",
+  clientId: process.env.GRAPHITE_GITHUB_CLIENT_ID ?? "Iv23liR1iBpjE7BN7kNL",
+  slug: process.env.GRAPHITE_GITHUB_APP ?? "graphite-sync",
 };
 const API = () => (process.env.GRAPHITE_GITHUB_API || "https://api.github.com").replace(/\/+$/, "");
 const WEB = () => (process.env.GRAPHITE_GITHUB_WEB || "https://github.com").replace(/\/+$/, "");
