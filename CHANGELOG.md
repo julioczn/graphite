@@ -5,6 +5,8 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-23
+
 ### Added
 - **Windows** (x64, Windows 10 and 11): a per-user installer (no admin rights, choice of folder, Start menu and desktop
   shortcuts) and a portable zip. In-app updates run the new installer silently and restart.
@@ -224,7 +226,8 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/julioczn/graphite/releases/tag/v0.14.0
 [0.13.0]: https://github.com/julioczn/graphite/releases/tag/v0.13.0
 [0.12.0]: https://github.com/julioczn/graphite/releases/tag/v0.12.0
 [0.11.0]: https://github.com/julioczn/graphite/releases/tag/v0.11.0
