@@ -136,15 +136,32 @@ xattr -dr com.apple.quarantine /Applications/Graphite.app
 
 On the Mac, shortcuts use `⌘` instead of `Ctrl` (the interface already shows `⌘`), and `⌫` in the grid works as `Del`.
 
+### Windows (x64, Windows 10 or 11)
+
+Run `Graphite-Setup-<version>.exe`. It installs for your user only (no admin rights), lets you pick the folder, adds
+Start menu and desktop shortcuts, and in-app updates reinstall silently in the same place. Or unzip the portable
+`Graphite-<version>-win-x64.zip` and run `Graphite.exe` (portable copies don't update themselves).
+
+The installer isn't code-signed yet, so SmartScreen may show "Windows protected your PC": click **More info → Run
+anyway**.
+
 ### Linux (x64)
 
 ```bash
-sudo apt install ./graphite_<version>_amd64.deb   # Debian/Ubuntu: installs to /opt/Graphite, adds the `graphite` command
-sudo apt remove graphite                          # uninstall
+sudo apt install ./graphite_<version>_amd64.deb        # Debian, Ubuntu, Mint, Pop!_OS
+sudo dnf install ./graphite-<version>.x86_64.rpm       # Fedora, RHEL, Rocky, AlmaLinux, CentOS Stream
+sudo pacman -U ./graphite-dbclient-<version>-x86_64.pacman   # Arch, Manjaro, EndeavourOS
 ```
 
-Or use the portable `Graphite-<version>.AppImage` (`chmod +x` and run). The `.deb` adds an AppArmor profile so
-Electron's sandbox works on Ubuntu 23.10+.
+The packages install to `/opt/Graphite` and add the `graphite` command and a menu entry; remove with
+`apt remove graphite`, `dnf remove graphite` or `pacman -R graphite-dbclient` (on Arch the name `graphite` belongs to
+the SIL Graphite font library). Each one updates itself through its own package
+manager (it asks for your password). Or use the portable `Graphite-<version>.AppImage` (`chmod +x` and run) on any
+distribution. On Ubuntu 23.10+ the `.deb` adds an AppArmor profile so Electron's sandbox works.
+
+Every release is smoke-tested before it's published: on macOS, on Windows (the portable build and the installer) and
+on Linux, where the `.rpm`, pacman and `.deb` packages are installed and started in clean Rocky Linux 9, Fedora, Arch
+and Ubuntu containers.
 
 ### TLS / SSL
 

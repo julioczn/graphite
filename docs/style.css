@@ -310,3 +310,6 @@ details p { margin: 10px 0; }
   .cmp th, .cmp td { padding: 10px; }
   .cmp tbody th { width: 118px; min-width: 118px; }
 }
+.dl-src { margin: 14px 0 0; color: var(--fg-3); font-size: 13.5px; overflow-wrap: anywhere; }
+.dl-src strong { color: var(--fg-2); }
+.dl .row .btn { white-space: nowrap; }

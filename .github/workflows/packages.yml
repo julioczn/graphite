@@ -1,0 +1,120 @@
+name: Packages
+
+# Builds the macOS, Windows and Linux packages and checks each one starts and
+# runs queries (scripts/smoke.mjs). The Linux packages are also installed and
+# started in clean Rocky Linux (RHEL/CentOS family), Fedora, Arch and Ubuntu
+# containers. Called by the release workflow; also runs on pull requests that
+# touch packaging, and by hand.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - build/**
+      - scripts/**
+      - electron/updater.cjs
+      - .github/workflows/packages.yml
+      - .github/workflows/release.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: --mac dmg zip --arm64 --x64
+            natives: darwin arm64 x64
+            app: release/mac-arm64/Graphite.app/Contents/MacOS/Graphite
+          - os: windows-latest
+            target: --win nsis zip --x64
+            natives: win32 x64
+            app: release/win-unpacked/Graphite.exe
+          - os: ubuntu-latest
+            target: --linux AppImage deb rpm pacman --x64
+            natives: linux x64
+            app: release/linux-unpacked/graphite
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # rpmbuild for .rpm, bsdtar for the pacman package
+      - name: Linux packaging tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -y -q rpm libarchive-tools
+      - run: npm ci
+      - run: npm run build
+      # DuckDB ships one native binding per platform; npm installs only the
+      # runner's, so fetch the other architectures being packaged.
+      - name: Native bindings for every target
+        run: node scripts/native-bindings.mjs ${{ matrix.natives }}
+      - name: Package
+        run: npx electron-builder ${{ matrix.target }} --publish never
+        env:
+          # macOS is ad-hoc signed (mac.identity "-") and Windows unsigned: don't look for certificates.
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Smoke test (macOS, Windows)
+        if: runner.os != 'Linux'
+        run: node scripts/smoke.mjs ${{ matrix.app }}
+      # The installer itself: silent per-user install (what in-app updates run),
+      # then the installed copy, with the uninstaller the updater looks for.
+      - name: Install with the Windows installer and smoke test it
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem release -Filter 'Graphite-Setup-*.exe' | Where-Object { $_.Name -notmatch 'uninstaller' } | Select-Object -First 1
+          Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait
+          $dir = Join-Path $env:LOCALAPPDATA 'Programs\Graphite'
+          if (-not (Test-Path (Join-Path $dir 'Uninstall Graphite.exe'))) { throw "not installed in $dir" }
+          node scripts/smoke.mjs (Join-Path $dir 'Graphite.exe')
+      - name: Smoke test (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/smoke.mjs ${{ matrix.app }} --no-sandbox
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ runner.os }}
+          path: |
+            release/*.dmg
+            release/*.zip
+            release/Graphite-Setup-*.exe
+            !release/*__uninstaller*
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
+            release/*.pacman
+          if-no-files-found: error
+
+  linux-distros:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [rocky, fedora, arch, ubuntu]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages-Linux
+          path: release
+      - name: Install and start in ${{ matrix.distro }}
+        run: scripts/ci/distro-test.sh ${{ matrix.distro }} release

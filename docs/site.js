@@ -27,7 +27,7 @@
       'hero.lead': 'SQL, NoSQL e data warehouses na nuvem, lado a lado num app desktop gratuito. Traga a sua própria AI — um assistente embutido e um servidor MCP para Claude Code, Cursor e companhia — e nada é gravado sem o seu OK.',
       'hero.download': 'Download',
       'hero.other': 'Todas as plataformas',
-      'hero.fine': 'macOS (Apple Silicon e Intel) · Linux (.deb, AppImage) · Grátis, sem conta, sem telemetria',
+      'hero.fine': "macOS · Windows · Linux (.deb, .rpm, Arch, AppImage) · Grátis, sem conta, sem telemetria",
       'features.title': 'Tudo o que você usa no dia a dia',
       'features.sub': 'Feito para ser rápido no teclado e cuidadoso com os seus dados.',
       'f1.t': '24 bancos, um app',
@@ -54,6 +54,11 @@
       'f11.d': 'Importe do DBeaver, DataGrip, TablePlus, Beekeeper Studio, pgAdmin, Navicat, MySQL Workbench, HeidiSQL e mais 5. As senhas salvas vêm junto quando a ferramenta as guarda nos próprios arquivos.',
       'f12.t': 'Continua de onde você parou',
       'f12.d': 'As abas voltam quando você reconecta, até em outro computador. Os seus próprios snippets expandem no editor. E o app se atualiza sozinho, conferido com o SHA-256 do GitHub.',
+      'dl.win': "Windows 10 ou 11, x64. O instalador não pede administrador e mantém o app atualizado; ou use o zip portátil.",
+      'dl.win.setup': "Instalador · .exe",
+      'dl.win.zip': "Portátil · .zip",
+      'dl.ss.t': "“O Windows protegeu o computador”?",
+      'dl.ss.d': "O instalador ainda não tem assinatura de código, então o SmartScreen pergunta antes. Clique em “Mais informações” e depois em “Executar assim mesmo”.",
       "cmp.yes": "Sim",
       "cmp.no": "Não",
       "cmp.r.price": "Preço",
@@ -130,9 +135,9 @@
       'dl.mac': 'Apple Silicon (M1 ou mais novo) ou Intel.',
       'dl.gk.t': '“Não é possível abrir o Graphite”?',
       'dl.gk.d': 'O app ainda não é notarizado pela Apple. Abra Ajustes do Sistema → Privacidade e Segurança e clique em “Abrir Mesmo Assim”, ou rode:',
-      'dl.linux': 'x64. O .deb cria o atalho no menu e o comando graphite.',
+      'dl.linux': "x64. Os pacotes criam o atalho no menu e o comando graphite; o AppImage roda em qualquer distribuição.",
       'dl.src.t': 'A partir do código',
-      'dl.src.d': 'Node.js 22+. Funciona no macOS e no Linux.',
+      'dl.src.d': "Node.js 22+:",
       'dl.upd.t': 'Instale uma vez e ele se mantém atualizado.',
       'dl.upd.d': 'O Graphite percebe quando sai uma versão nova, mostra o que mudou, baixa o pacote certo, confere com o SHA-256 do GitHub e reinicia já na versão nova. A partir da 0.9.0; dá para desligar a verificação.',
       'foot.license': 'licença MIT',
@@ -179,7 +184,7 @@
       'hero.lead': 'SQL, NoSQL y data warehouses en la nube, lado a lado en una app de escritorio gratuita. Trae tu propia IA — un asistente integrado y un servidor MCP para Claude Code, Cursor y compañía — y nada se escribe sin tu OK.',
       'hero.download': 'Descargar',
       'hero.other': 'Todas las plataformas',
-      'hero.fine': 'macOS (Apple Silicon e Intel) · Linux (.deb, AppImage) · Gratis, sin cuenta, sin telemetría',
+      'hero.fine': "macOS · Windows · Linux (.deb, .rpm, Arch, AppImage) · Gratis, sin cuenta, sin telemetría",
       'features.title': 'Todo lo que usas a diario',
       'features.sub': 'Hecho para ser rápido con el teclado y cuidadoso con tus datos.',
       'f1.t': '24 bases de datos, una app',
@@ -206,6 +211,11 @@
       'f11.d': 'Importa desde DBeaver, DataGrip, TablePlus, Beekeeper Studio, pgAdmin, Navicat, MySQL Workbench, HeidiSQL y 5 más. Las contraseñas guardadas vienen incluidas cuando la herramienta las guarda en sus propios archivos.',
       'f12.t': 'Sigue donde lo dejaste',
       'f12.d': 'Las pestañas vuelven al reconectar, incluso en otro equipo. Tus propios snippets se expanden en el editor. Y la app se actualiza sola, verificada con el SHA-256 de GitHub.',
+      'dl.win': "Windows 10 u 11, x64. El instalador no pide administrador y mantiene la app actualizada; o usa el zip portátil.",
+      'dl.win.setup': "Instalador · .exe",
+      'dl.win.zip': "Portátil · .zip",
+      'dl.ss.t': "“Windows protegió su PC”?",
+      'dl.ss.d': "El instalador aún no tiene firma de código, así que SmartScreen pregunta antes. Haz clic en “Más información” y luego en “Ejecutar de todas formas”.",
       "cmp.yes": "Sí",
       "cmp.no": "No",
       "cmp.r.price": "Precio",
@@ -282,9 +292,9 @@
       'dl.mac': 'Apple Silicon (M1 o más reciente) o Intel.',
       'dl.gk.t': '¿“No se puede abrir Graphite”?',
       'dl.gk.d': 'La app aún no está notarizada por Apple. Abre Configuración del Sistema → Privacidad y seguridad y haz clic en “Abrir de todos modos”, o ejecuta:',
-      'dl.linux': 'x64. El .deb crea la entrada del menú y el comando graphite.',
+      'dl.linux': "x64. Los paquetes crean la entrada del menú y el comando graphite; el AppImage funciona en cualquier distribución.",
       'dl.src.t': 'Desde el código',
-      'dl.src.d': 'Node.js 22+. Funciona en macOS y Linux.',
+      'dl.src.d': "Node.js 22+:",
       'dl.upd.t': 'Instálalo una vez y se mantiene actualizado.',
       'dl.upd.d': 'Graphite detecta cuando sale una versión nueva, muestra qué cambió, descarga el paquete correcto, lo verifica con el SHA-256 de GitHub y se reinicia en la versión nueva. Desde la 0.9.0; puedes desactivar la verificación.',
       'foot.license': 'licencia MIT',
@@ -354,15 +364,27 @@
     var p = ((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '').toLowerCase()
     var ua = navigator.userAgent.toLowerCase()
     if (p.indexOf('mac') >= 0 || ua.indexOf('mac os') >= 0) return 'mac'
+    if (p.indexOf('win') >= 0 || ua.indexOf('windows') >= 0) return 'win'
     if (p.indexOf('linux') >= 0 || ua.indexOf('linux') >= 0) return ua.indexOf('android') >= 0 ? null : 'linux'
     return null
+  }
+  var OS_NAME = { mac: 'macOS', win: 'Windows', linux: 'Linux' }
+  // The browser rarely says which distribution; Fedora's Firefox does.
+  var primaryFor = function (os) {
+    if (os === 'mac') return 'mac-arm64'
+    if (os === 'win') return 'win'
+    return navigator.userAgent.toLowerCase().indexOf('fedora') >= 0 ? 'rpm' : 'deb'
   }
 
   var MATCH = {
     'mac-arm64': /-arm64\.dmg$/,
     'mac-x64': /-x64\.dmg$/,
     deb: /_amd64\.deb$/,
+    rpm: /\.x86_64\.rpm$/,
+    pacman: /^graphite-dbclient-.*-x86_64\.pacman$/,
     appimage: /\.AppImage$/,
+    win: /^Graphite-Setup-[\d.]+\.exe$/,
+    'win-zip': /-win-x64\.zip$/,
   }
 
   function renderDownloads() {
@@ -370,8 +392,8 @@
     document.querySelectorAll('[data-dl="primary"]').forEach(function (primary) {
       var label = primary.querySelector('[data-dl-label]')
       if (os) {
-        primary.dataset.target = os === 'mac' ? 'mac-arm64' : 'deb'
-        label.textContent = tr('dl.for', { os: os === 'mac' ? 'macOS' : 'Linux' })
+        primary.dataset.target = primaryFor(os)
+        label.textContent = tr('dl.for', { os: OS_NAME[os] })
       } else {
         primary.dataset.target = ''
         primary.href = '#download'

@@ -1,7 +1,8 @@
 name: Release
 
-# Push a tag like v0.6.0 (matching package.json) to build the macOS and Linux
-# packages and attach them to a draft GitHub release.
+# Push a tag like v0.6.0 (matching package.json) to build the macOS, Windows
+# and Linux packages, check each one starts (see packages.yml) and attach them
+# to a draft GitHub release.
 on:
   push:
     tags: ["v*"]
@@ -18,52 +19,25 @@ env:
   TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-latest
-            target: --mac dmg zip --arm64 --x64
-            natives: darwin arm64 x64
-          - os: ubuntu-latest
-            target: --linux AppImage deb --x64
-            natives: linux x64
-    runs-on: ${{ matrix.os }}
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ env.TAG }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.TAG }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
       - name: Check the tag matches package.json
-        shell: bash
         run: test "v$(node -p "require('./package.json').version")" = "$TAG"
-      - run: npm ci
-      - run: npm run build
-      # DuckDB ships one native binding per platform; npm installs only the
-      # runner's, so fetch the other architectures being packaged.
-      - name: Native bindings for every target
-        run: node scripts/native-bindings.mjs ${{ matrix.natives }}
-      - name: Package
-        run: npx electron-builder ${{ matrix.target }} --publish never
-        env:
-          # The macOS build is ad-hoc signed (mac.identity "-"); don't look for certificates.
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: packages-${{ matrix.os }}
-          path: |
-            release/*.dmg
-            release/*.zip
-            release/*.AppImage
-            release/*.deb
-          if-no-files-found: error
+
+  packages:
+    needs: check
+    uses: ./.github/workflows/packages.yml
+    with:
+      ref: ${{ needs.check.outputs.tag }}
 
   release:
-    needs: build
+    needs: packages
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -71,6 +45,7 @@ jobs:
           ref: ${{ env.TAG }}
       - uses: actions/download-artifact@v4
         with:
+          pattern: packages-*
           path: packages
           merge-multiple: true
       - name: Release notes from CHANGELOG.md
@@ -85,7 +60,11 @@ jobs:
 
           ### Install
           - **macOS**: `-arm64.dmg` (Apple Silicon) or `-x64.dmg` (Intel). The app isn't notarized: use *System Settings → Privacy & Security → Open Anyway*, or run `xattr -dr com.apple.quarantine /Applications/Graphite.app`.
-          - **Linux**: `.deb` for Debian/Ubuntu (`sudo apt install ./graphite_*_amd64.deb`) or the portable `.AppImage`.
+          - **Windows** (x64, Windows 10 or 11): `Graphite-Setup-*.exe` installs for your user, no admin needed; or unzip the portable `-win-x64.zip`. The installer isn't code-signed yet: if SmartScreen stops it, click *More info → Run anyway*.
+          - **Debian / Ubuntu**: `sudo apt install ./graphite_*_amd64.deb`
+          - **Fedora / RHEL / Rocky / Alma / CentOS Stream**: `sudo dnf install ./graphite-*.x86_64.rpm`
+          - **Arch / Manjaro / EndeavourOS**: `sudo pacman -U ./graphite-dbclient-*-x86_64.pacman`
+          - **Any Linux**: the portable `.AppImage`.
           NOTES
       - name: Create or update the draft release
         env:
