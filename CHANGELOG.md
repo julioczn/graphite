@@ -5,6 +5,8 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-23
+
 ### Added
 - **Import from URL** on the connection form: paste a connection string and the form fills itself in, engine
   included. Understands `postgres://`, `mysql://`, `mariadb://`, `sqlserver://`, `oracle://`, `redis(s)://`,
@@ -171,7 +173,8 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.10.2...HEAD
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/julioczn/graphite/releases/tag/v0.11.0
 [0.10.2]: https://github.com/julioczn/graphite/releases/tag/v0.10.2
 [0.10.0]: https://github.com/julioczn/graphite/releases/tag/v0.10.0
 [0.9.0]: https://github.com/julioczn/graphite/releases/tag/v0.9.0
