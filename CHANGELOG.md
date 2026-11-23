@@ -15,6 +15,11 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
   and TiDB Cloud hosts pick their engine. Credentials move to the encrypted password field, never into a stored
   URL, and parameters without a matching field are listed. Pasting a URL into the Host field does the same.
 
+### Changed
+- Graphite now presents itself as a database client, not a SQL client: the sidebar subtitle, the package
+  descriptions (.deb, npm) and the instructions the MCP server gives agents, which now list the non-SQL engines and
+  their query languages.
+
 ## [0.10.2] - 2026-11-22
 
 0.10.1 was built but never published; its changes ship here.

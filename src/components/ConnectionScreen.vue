@@ -279,7 +279,7 @@ onMounted(load)
         </svg>
         <div>
           <div class="brand-name">Graphite</div>
-          <div class="brand-sub">{{ t('cliente SQL') }}</div>
+          <div class="brand-sub">{{ t('cliente de bancos de dados') }}</div>
         </div>
       </div>
 

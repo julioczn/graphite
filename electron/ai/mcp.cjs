@@ -18,11 +18,11 @@ const { t } = require('../../shared/i18n.mjs')
 const MAX_BODY = 4 * 1024 * 1024
 
 const INSTRUCTIONS = [
-  'Graphite is a SQL client (PostgreSQL, MySQL/MariaDB, SQLite) open on the user\'s computer.',
+  'Graphite is a database client (SQL databases, MongoDB, Redis, Cassandra, DynamoDB, SurrealDB, cloud warehouses…) open on the user\'s computer.',
   'Start with list_connections; then get_schema or describe_table before writing SQL.',
   'run_query runs reads directly (read-only mode enforced by the database, 30 s timeout).',
   'Any write (INSERT/UPDATE/DELETE/DDL) is shown to the user to approve in Graphite; if they reject it, don\'t insist.',
-  'Use the connection\'s SQL dialect (given in the responses).',
+  'Use the connection\'s query language and dialect (given in the responses): SQL, MongoDB shell, Redis commands, CQL, PartiQL or SurrealQL.',
 ].join(' ')
 
 // JSON Schema (hub's tool definitions) → zod raw shape for the MCP SDK.
