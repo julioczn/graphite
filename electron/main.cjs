@@ -303,6 +303,7 @@ function setupSync() {
   sync.on("error", (msg) => broadcast("ws:githubError", msg));
   sync.on("changed", (d) => broadcast("ws:changed", d));
   sync.on("syncing", (d) => broadcast("ws:syncing", d));
+  sync.on("remote", (list) => broadcast("ws:remote", list));
   sync.start();
 }
 const W = require("./lib/workspace.cjs");
@@ -354,6 +355,9 @@ ipcMain.handle("ws:githubCancel", () => sync.cancelDeviceLogin());
 ipcMain.handle("ws:githubToken", (_e, token) => sync.setToken(token));
 ipcMain.handle("ws:githubLogout", () => sync.logout());
 ipcMain.handle("ws:githubRepos", () => sync.repos());
+ipcMain.handle("ws:remoteList", (_e, repo) => (repo ? sync.remoteWorkspaces({ repo }) : sync.remote));
+ipcMain.handle("ws:remoteScan", () => sync.remoteWorkspaces());
+ipcMain.handle("ws:openRemote", (_e, { repo, dir }) => sync.openRemote({ repo, dir }));
 ipcMain.handle("ws:link", (_e, { id, repo, dir }) => sync.link(id, { repo, dir }));
 ipcMain.handle("ws:unlink", (_e, id) => sync.unlink(id));
 ipcMain.handle("ws:sync", (_e, id) => sync.sync(id));

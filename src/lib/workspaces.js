@@ -17,6 +17,7 @@ export const workspaces = reactive({
   version: 0, // bumped when the active workspace's contents change elsewhere (sync, import)
   github: { login: null, method: null, deviceFlow: false, installUrl: null, pending: null },
   syncing: {}, // id → true while a sync runs
+  remote: [], // workspaces in the linked / reachable GitHub repositories: { repo, dir, name, connections, queries, localId }
   dialog: null, // 'github' | 'snippets' | { type: 'name', id?, name }
   snippetDraft: null, // body to prefill a new snippet with
 })
@@ -117,12 +118,29 @@ export async function syncNow(id = activeId(), { quiet = false } = {}) {
   }
 }
 
+// Workspaces in the repository that aren't on this machine yet (pushed from another one).
+export const remoteOnly = () => workspaces.remote.filter((r) => !r.localId)
+
+export async function openRemote(r) {
+  try {
+    const { id, existed } = await api().openRemote(r.repo, r.dir)
+    await loadWorkspaces()
+    setActive(id)
+    if (!existed) toast(t('Workspace "{name}" trazido do GitHub. Informe as senhas ao conectar.', { name: activeWorkspace()?.name || r.name }), 'success', 6000)
+    return id
+  } catch (e) {
+    toast(clean(e), 'error', 8000)
+  }
+}
+
 export const github = {
   login: () => api().githubLogin().catch((e) => toast(clean(e), 'error', 8000)),
   cancel: () => api().githubCancel(),
   token: (tok) => api().githubToken(tok),
   logout: () => api().githubLogout(),
   repos: () => api().repos(),
+  remoteIn: (repo) => api().remoteList(repo),
+  scan: () => api().remoteScan().then((list) => (workspaces.remote = list)),
   link: (id, repo, dir) => api().link(id, repo, dir),
   unlink: (id) => api().unlink(id),
   setAuto: (id, on) => api().setAuto(id, on),
@@ -135,6 +153,17 @@ export async function initWorkspaces() {
   workspaces.github = await api().github()
   api().on('github', (s) => (workspaces.github = s))
   api().on('error', (msg) => toast(msg, 'error', 8000))
+  workspaces.remote = await api().remoteList()
+  let told = false
+  api().on('remote', (list) => {
+    workspaces.remote = list
+    const n = remoteOnly().length
+    // Tell once per session: the list sits in the workspace menu.
+    if (n && !told) {
+      told = true
+      toast(t('{n} workspace no GitHub ainda não está nesta máquina. Abra pelo menu de workspaces.|{n} workspaces no GitHub ainda não estão nesta máquina. Abra pelo menu de workspaces.', { n }), 'info', 8000)
+    }
+  })
   api().on('syncing', ({ id, on }) => {
     if (on) workspaces.syncing[id] = true
     else delete workspaces.syncing[id]
