@@ -77,6 +77,8 @@ class OracleDriver {
       // only the host name match depends on the mode.
       connectString: `${c.ssl ? 'tcps://' : ''}${c.host || 'localhost'}:${Number(c.port) || 1521}/${c.database || 'FREEPDB1'}`,
       ...(c.ssl && oracleTls(c)),
+      // SSH tunnel with TLS: the local HTTPS proxy of lib/tunnel.cjs.
+      ...(c.httpsProxy && { httpsProxy: c.httpsProxy, httpsProxyPort: Number(c.httpsProxyPort) }),
       connectTimeout: 15,
     })
     await this.conn.execute(

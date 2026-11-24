@@ -76,6 +76,9 @@ const portOf = (v) => {
 
 // Builds a Graphite connection from loose fields. `type` is a Graphite engine
 // id; anything Graphite can't use goes to `notes` (shown in the preview).
+// `ssh`: true (the tool used a tunnel, details unknown) or { host, port, user,
+// auth: 'password' | 'key' | 'agent', keyFile, secret } → config.ssh, with the
+// secret kept apart like the password (`sshSecret`).
 function makeConn(f) {
   const type = f.type;
   const e = engineOf(type);
@@ -109,9 +112,20 @@ function makeConn(f) {
     };
     if (f.ssl) Object.assign(config, { sslMode: f.sslMode || "require", sslCa: str(f.sslCa), sslCert: str(f.sslCert), sslKey: str(f.sslKey) });
   }
-  if (f.ssh) notes.push(t("Usa túnel SSH, que o Graphite ainda não suporta: conecte por uma VPN ou um túnel aberto à parte."));
+  let sshSecret = "";
+  if (f.ssh) {
+    const s = typeof f.ssh === "object" ? f.ssh : null;
+    if (!e.caps.ssh) notes.push(t("Usava túnel SSH, que o Graphite não oferece para {engine}.", { engine: e.label }));
+    else if (s && str(s.host)) {
+      const auth = ["password", "key", "agent"].includes(s.auth) ? s.auth : str(s.keyFile) ? "key" : "password";
+      config.ssh = { host: str(s.host), port: Number(portOf(s.port)) || 22, user: str(s.user), auth };
+      if (auth === "key" && str(s.keyFile)) config.ssh.keyFile = str(s.keyFile);
+      sshSecret = s.secret ? String(s.secret) : "";
+      if (auth === "password" && !sshSecret) notes.push(t("Túnel SSH por {host}: a senha SSH não veio junto, informe ao conectar.", { host: config.ssh.host }));
+    } else notes.push(t("Usa túnel SSH: marque \"Conectar por um túnel SSH\" na conexão e informe o servidor."));
+  }
   if (f.socket) notes.push(t("Usava socket local; importada como TCP em {host}.", { host: config.host || "localhost" }));
-  return { name, type, config, password, folder: str(f.folder), notes, passwordElsewhere: !password && !!f.passwordElsewhere && e.fields !== "file" };
+  return { name, type, config, password, sshSecret, folder: str(f.folder), notes, passwordElsewhere: !password && !!f.passwordElsewhere && e.fields !== "file" };
 }
 
 // A JDBC / driver URL → a connection, with the tool's own name and user.

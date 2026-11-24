@@ -80,6 +80,8 @@ class MssqlDriver {
         port: Number(c.port) || 1433,
         database: c.database || undefined,
         encrypt: !!c.ssl,
+        // Through an SSH tunnel the server is 127.0.0.1: check the certificate against the real name.
+        ...(c.tunnelHost && { serverName: c.tunnelHost }),
         // 'require' accepts any certificate (self-signed ones are common on
         // internal servers); the verify modes check it against the CA.
         trustServerCertificate: !c.ssl || modeOf(c) === 'require',

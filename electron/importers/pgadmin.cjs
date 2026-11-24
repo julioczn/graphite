@@ -32,7 +32,14 @@ function server(s, group) {
     sslCa: p.sslrootcert || s.SSLRootCert || s.sslrootcert,
     sslCert: p.sslcert || s.SSLCert || s.sslcert,
     sslKey: p.sslkey || s.SSLKey || s.sslkey,
-    ssh: !!(s.UseSSHTunnel || s.use_ssh_tunnel),
+    // TunnelAuthentication: 0 password, 1 identity file
+    ssh: s.UseSSHTunnel || s.use_ssh_tunnel
+      ? {
+          host: s.TunnelHost || s.tunnel_host, port: s.TunnelPort || s.tunnel_port, user: s.TunnelUsername || s.tunnel_username,
+          auth: Number(s.TunnelAuthentication ?? s.tunnel_authentication) === 1 ? "key" : "password",
+          keyFile: s.TunnelIdentityFile || s.tunnel_identity_file,
+        }
+      : false,
     passwordElsewhere: true,
     notes: s.Service || s.service ? [t("Usa um serviço do pg_service.conf ({name}); confira host e porta.", { name: s.Service || s.service })] : [],
   });

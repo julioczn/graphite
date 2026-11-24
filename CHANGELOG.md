@@ -5,6 +5,17 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- **SSH tunnel.** "Connect through an SSH tunnel" in the connection form: SSH server, user, and a private key (with
+  its passphrase), a password or the SSH agent. Works for every engine reached at a host and port, and MongoDB with a
+  `mongodb://` URL. TLS still checks the certificate against the real host name, the SSH server's key is recorded on
+  first use and a changed key is refused, and connections and background jobs share one SSH session. The password or
+  passphrase is saved encrypted and never synced to GitHub. Importing from DBeaver, Beekeeper Studio, DbGate, pgAdmin,
+  HeidiSQL, Sequel Ace, MySQL Workbench, MongoDB Compass and VS Code (SQLTools) brings the tunnel settings along.
+
+### Fixed
+- Dropdowns had their arrow pressed against the right border.
+
 ## [0.14.1] - 2026-11-24
 
 ### Fixed

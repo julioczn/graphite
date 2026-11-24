@@ -43,6 +43,8 @@ const MAX_ROWS = 5000;
 const userData =
   process.env.GRAPHITE_USER_DATA || path.join(process.cwd(), ".graphite");
 const db = appdb.open(userData);
+const tunnel = require("./lib/tunnel.cjs");
+tunnel.setStore(userData);
 const sessions = new Map(); // sId -> Session
 let nextSession = 1;
 
@@ -54,6 +56,11 @@ function makeDriver(config) {
   const d = new Driver(config);
   d.engine = engine.id;
   d.caps = { ...engine.caps };
+  // Through an SSH tunnel: connect() opens it first (lib/tunnel.cjs).
+  if (tunnel.wants(config)) {
+    if (!engine.caps.ssh) throw new Error(t("{engine} não suporta túnel SSH.", { engine: engine.label }));
+    tunnel.wrap(d, config, engine);
+  }
   return d;
 }
 
@@ -69,7 +76,7 @@ const driver = (sId) => session(sId).driver;
 // backup or restore neither blocks the editor nor mixes with its transaction.
 async function jobDriver(sId) {
   const s = session(sId);
-  const d = makeDriver(s.driver.config);
+  const d = makeDriver(s.driver.sourceConfig || s.driver.config);
   await d.connect();
   try {
     const schema = await s.driver.currentSchema();
@@ -151,7 +158,11 @@ const handlers = {
     const d = makeDriver(config);
     await d.connect();
     try {
-      return await d.version();
+      const version = await d.version();
+      const via = d.tunnelInfo?.();
+      if (!via) return version;
+      const key = via.hostKey?.isNew ? " " + t("(chave do servidor registrada: {fingerprint})", { fingerprint: via.hostKey.fingerprint }) : "";
+      return `${version} · ${t("via túnel SSH {via}", { via: via.via })}${key}`;
     } finally {
       await d.disconnect();
     }

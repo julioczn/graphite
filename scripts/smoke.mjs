@@ -104,6 +104,12 @@ const run = (config) =>
      return JSON.stringify(r) })()`
 await check('SQLite query', run({ type: 'sqlite', file: path.join(dbDir, 'smoke.db') }), (v) => /42/.test(v))
 await check('DuckDB query (native module)', run({ type: 'duckdb', file: path.join(dbDir, 'smoke.duckdb') }), (v) => /42/.test(v))
+// The SSH tunnel library loads in the package: a closed SSH port gives the tunnel's own error.
+await check(
+  'SSH tunnel module',
+  `graphite.call('conn/test', { config: ${JSON.stringify({ type: 'postgres', host: 'localhost', port: '5432', ssh: { host: '127.0.0.1', port: 1, user: 'smoke', auth: 'password', secret: 'x' } })} }).then(() => 'connected?', (e) => String(e.message))`,
+  (v) => /SSH/.test(v) && !/Cannot find module|not a valid Win32|ERR_DLOPEN/i.test(v),
+)
 
 done = true
 ws.close()

@@ -25,7 +25,7 @@ function fromInfo(info) {
     url = u.toString();
   } catch {}
   const notes = [];
-  if (opts.sshTunnel) notes.push(t("Usa túnel SSH, que o Graphite ainda não suporta: conecte por uma VPN ou um túnel aberto à parte."));
+  const tun = opts.sshTunnel;
   return makeConn({
     name: info.favorite?.name || info.name || url.replace(/^mongodb(\+srv)?:\/\//, "").split(/[/?]/)[0],
     type: "mongodb",
@@ -35,6 +35,8 @@ function fromInfo(info) {
     database,
     folder: info.favorite?.group || "",
     passwordElsewhere: !password && !!info.connectionSecrets,
+    // The tunnel's password and passphrase stay in Compass's encrypted secrets.
+    ssh: tun ? (tun.host ? { host: tun.host, port: tun.port, user: tun.username, auth: tun.identityKeyFile ? "key" : "password", keyFile: tun.identityKeyFile } : true) : false,
     notes,
   });
 }

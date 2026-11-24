@@ -175,6 +175,16 @@ autoridades confiáveis do sistema) e, para TLS mútuo, o **certificado e a chav
 guarda só os caminhos). O Firebird criptografa o próprio protocolo; o MongoDB recebe as opções de TLS na URL de
 conexão (`tls=true&tlsCAFile=…`).
 
+### Túnel SSH
+
+Para um banco atrás de um bastion, marque **Conectar por um túnel SSH** e informe o servidor SSH, o usuário e como
+entrar: **chave privada** (vazio = `~/.ssh/id_ed25519`, `id_ecdsa` ou `id_rsa`; a passphrase, se tiver), **senha** ou
+o **agente SSH**. O host e a porta do banco passam a ser os vistos a partir do servidor SSH (`localhost` se o banco
+roda nele). O TLS continua conferindo o certificado pelo nome real do host. A chave do servidor SSH é registrada na
+primeira conexão e uma chave diferente é recusada. Funciona com todo banco acessado por host e porta, e com o MongoDB
+numa URL `mongodb://` (um host). A senha ou passphrase é salva cifrada como a senha do banco e nunca vai para o GitHub;
+a importação de outras ferramentas traz os dados do túnel junto.
+
 ### Atualizações
 
 O Graphite consulta as releases deste repositório ao abrir e a cada 6 horas, mostra **Atualização disponível** na

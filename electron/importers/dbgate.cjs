@@ -57,7 +57,13 @@ module.exports = {
         file: c.databaseFile, url: c.databaseUrl,
         ssl: !!c.useSsl, sslMode: c.useSsl ? (c.sslRejectUnauthorized ? "verify-full" : "require") : undefined,
         sslCa: c.sslCaFile, sslCert: c.sslCertFile, sslKey: c.sslKeyFile,
-        ssh: !!c.useSshTunnel,
+        ssh: c.useSshTunnel
+          ? {
+              host: c.sshHost, port: c.sshPort, user: c.sshLogin,
+              auth: { userPassword: "password", keyFile: "key", agent: "agent" }[c.sshMode],
+              keyFile: c.sshKeyfile, secret: c.sshMode === "keyFile" ? secret(c.sshKeyfilePassword) : secret(c.sshPassword),
+            }
+          : false,
       });
     });
     return { connections, queries: [] };

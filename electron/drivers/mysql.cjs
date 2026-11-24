@@ -47,7 +47,7 @@ class MysqlDriver {
     // then compares against "localhost"), so verify-full checks it here.
     if (c.ssl && modeOf(c) === 'verify-full') {
       const cert = this.conn.connection.stream?.getPeerCertificate?.()
-      const err = cert && require('node:tls').checkServerIdentity(c.host || 'localhost', cert)
+      const err = cert && require('node:tls').checkServerIdentity(c.tunnelHost || c.host || 'localhost', cert)
       if (err) {
         await this.disconnect()
         throw err

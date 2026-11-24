@@ -299,7 +299,9 @@ class AiHub extends EventEmitter {
     const c = (await this.util.call('app/connections')).find((x) => x.id === n)
     if (!c) throw new Error(t('Conexão salva não encontrada'))
     // Without a saved password the connection only works if the server needs none.
-    return { ...c.config, type: c.type, ...(c.type !== 'sqlite' && { password: c.password ? this.decrypt(c.password) : '' }) }
+    const ssh = c.config.ssh && { ...c.config.ssh, secret: c.config.ssh.secretEnc ? this.decrypt(c.config.ssh.secretEnc) : '' }
+    if (ssh) delete ssh.secretEnc
+    return { ...c.config, type: c.type, ...(c.type !== 'sqlite' && { password: c.password ? this.decrypt(c.password) : '' }), ...(ssh && { ssh }) }
   }
 
   async session(conn) {

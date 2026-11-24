@@ -119,7 +119,11 @@ function applyWorkspaceDoc(db, id, raw) {
       // The config keeps local-only values the document can't carry (a URL's password).
       if (cur) {
         const local = json(cur.config, {});
-        const config = ws.same(ws.publicConfig(local), c.config) ? local : c.config;
+        let config = ws.same(ws.publicConfig(local), c.config) ? local : c.config;
+        // Same SSH server and user: keep this machine's key file and saved secret.
+        if (config !== local && config.ssh && local.ssh && config.ssh.host === local.ssh.host && config.ssh.user === local.ssh.user) {
+          config = { ...config, ssh: { ...config.ssh, ...(local.ssh.keyFile && { keyFile: local.ssh.keyFile }), ...(local.ssh.secretEnc && { secretEnc: local.ssh.secretEnc }) } };
+        }
         const prefs = ws.same(ws.cleanPrefs(json(cur.prefs, {})), c.prefs) ? json(cur.prefs, {}) : c.prefs;
         const tabs = ws.same(ws.cleanTabs(json(cur.tabs, [])), c.tabs) ? json(cur.tabs, []) : c.tabs;
         db.prepare("update connections set name = ?, type = ?, config = ?, prefs = ?, tabs = ? where id = ?")
