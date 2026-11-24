@@ -5,6 +5,8 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-11-24
+
 ### Fixed
 - **Workspaces from another machine now show up.** Signed in to GitHub, Graphite finds the workspaces already in your
   repositories (one per folder) and lists the ones not on this machine in the workspace menu, as "Name (on GitHub)":
@@ -234,7 +236,8 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.14.1...HEAD
+[0.14.1]: https://github.com/julioczn/graphite/releases/tag/v0.14.1
 [0.14.0]: https://github.com/julioczn/graphite/releases/tag/v0.14.0
 [0.13.0]: https://github.com/julioczn/graphite/releases/tag/v0.13.0
 [0.12.0]: https://github.com/julioczn/graphite/releases/tag/v0.12.0
