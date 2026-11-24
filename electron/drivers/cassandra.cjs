@@ -62,7 +62,12 @@ class CassandraDriver {
       protocolOptions: { port },
       keyspace: c.database || undefined,
       // Round robin needs no local data center name; fine for a desktop client.
-      policies: { loadBalancing: new cassandra.policies.loadBalancing.RoundRobinPolicy() },
+      // Through an SSH tunnel only the tunnel's end is reachable, not the other nodes.
+      policies: {
+        loadBalancing: c.tunnelHost
+          ? new cassandra.policies.loadBalancing.AllowListPolicy(new cassandra.policies.loadBalancing.RoundRobinPolicy(), [`${c.host}:${port}`])
+          : new cassandra.policies.loadBalancing.RoundRobinPolicy(),
+      },
       ...(c.user && { credentials: { username: c.user, password: c.password || '' } }),
       ...(c.ssl && { sslOptions: tlsOptions(c) }),
       socketOptions: { connectTimeout: 10000, readTimeout: 120000 },

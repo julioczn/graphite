@@ -36,7 +36,10 @@ module.exports = {
         sslCa: f.sslCACertFileLocationEnabled ? f.sslCACertFileLocation : "",
         sslCert: f.sslCertificateFileLocationEnabled ? f.sslCertificateFileLocation : "",
         sslKey: f.sslKeyFileLocationEnabled ? f.sslKeyFileLocation : "",
-        ssh: type === 2, socket: type === 1,
+        ssh: type === 2
+          ? { host: f.sshHost, port: f.sshPort, user: f.sshUser, auth: f.sshKeyLocationEnabled && f.sshKeyLocation ? "key" : "password", keyFile: f.sshKeyLocationEnabled ? f.sshKeyLocation : "" }
+          : false,
+        socket: type === 1,
         passwordElsewhere: true,
       });
     });

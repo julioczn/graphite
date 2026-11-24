@@ -130,7 +130,17 @@ async function readSources(file) {
       const user = str(cred.user ?? cfg.user);
       const password = cred.password ?? cfg.password ?? "";
       const handlers = cfg.handlers || {};
-      const ssh = Object.entries(handlers).some(([k, h]) => /ssh|proxy/i.test(k) && h?.enabled);
+      // SSH tunnel: handlers.ssh_tunnel (properties) + credentials "network/ssh_tunnel".
+      const tun = handlers.ssh_tunnel?.enabled ? handlers.ssh_tunnel : null;
+      const tunCred = creds?.[id]?.["network/ssh_tunnel"] || {};
+      const tp = tun?.properties || {};
+      const ssh = tun
+        ? {
+            host: tp.host, port: tp.port, user: tunCred.user ?? tun.user,
+            auth: { PASSWORD: "password", PUBLIC_KEY: "key", AGENT: "agent" }[tp.authType] || undefined,
+            keyFile: tp.keyPath, secret: tunCred.password ?? tun.password ?? "",
+          }
+        : Object.entries(handlers).some(([k, h]) => /ssh|proxy/i.test(k) && h?.enabled);
       const folder = c.folder || "";
       const type = typeOf(c.provider, c.driver);
       if ((cfg.configurationType === "URL" || !(cfg.host || cfg.database)) && cfg.url) {

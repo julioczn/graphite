@@ -40,7 +40,13 @@ function blank(type = 'postgres') {
     ssl: e.ssl, readOnly: false, savePassword: true,
     // New connections verify the certificate and host name by default.
     sslMode: 'verify-full', sslCa: '', sslCert: '', sslKey: '',
+    ssh: blankSsh(),
   }
+}
+
+// SSH tunnel (electron/lib/tunnel.cjs). `secret` is the password or the key's passphrase.
+function blankSsh() {
+  return { on: false, host: '', port: '22', user: '', auth: 'key', keyFile: '', secret: '' }
 }
 
 const current = computed(() => engine(form.type))
@@ -110,12 +116,26 @@ async function pick(c) {
     savePassword: !!c.password || engine(c.type).fields === 'file',
     // Saved before TLS modes existed: keep their behaviour (encrypt, don't verify).
     sslMode: c.config.sslMode || 'require',
+    ssh: await sshOf(c.config.ssh),
     extra: Object.fromEntries((engine(c.type).form || []).filter((f) => f.type !== 'secret').map((f) => [f.key, c.config[f.key] ?? ''])),
   })
 }
 
+async function sshOf(saved) {
+  if (!saved?.host) return blankSsh()
+  const { secretEnc, ...rest } = saved
+  return { ...blankSsh(), ...rest, port: String(saved.port || 22), on: true, secret: secretEnc ? await bridge.decrypt(secretEnc) : '' }
+}
+
+const usesSsh = computed(() => current.value.caps.ssh && form.ssh.on)
+
 function config() {
   const c = { type: form.type }
+  if (usesSsh.value) {
+    const s = form.ssh
+    c.ssh = { host: s.host.trim(), port: Number(s.port) || 22, user: s.user.trim(), auth: s.auth, secret: s.auth === 'agent' ? '' : s.secret }
+    if (s.auth === 'key' && s.keyFile.trim()) c.ssh.keyFile = s.keyFile.trim()
+  }
   if (isSqlite.value) Object.assign(c, { file: form.file, readOnly: form.readOnly })
   // The URL engines' auth token travels (and is stored encrypted) as the password.
   else if (isUrl.value) Object.assign(c, { url: form.url.trim(), password: form.password })
@@ -186,6 +206,11 @@ const TLS_FILES = computed(() => [
   { key: 'sslKey', label: t('Chave do cliente (PEM)'), placeholder: 'client-key.pem' },
 ])
 
+async function browseSshKey() {
+  const file = await bridge.openFile({ sshKey: true })
+  if (file) form.ssh.keyFile = file
+}
+
 async function browsePem(key) {
   const file = await bridge.openFile({ filters: [{ name: 'PEM', extensions: ['pem', 'crt', 'cer', 'key'] }, { name: t('Todos os arquivos'), extensions: ['*'] }] })
   if (file) form[key] = file
@@ -224,6 +249,11 @@ const test = () => run('test', async () => {
 
 const save = () => run('save', async () => {
   const { password, ...cfg } = config()
+  // The SSH password / passphrase is saved encrypted, like the database password.
+  if (cfg.ssh) {
+    const { secret, ...ssh } = cfg.ssh
+    cfg.ssh = { ...ssh, ...(form.savePassword && secret && { secretEnc: await bridge.encrypt(secret) }) }
+  }
   const conn = {
     id: form.id,
     name: form.name.trim() || defaultName(),
@@ -273,7 +303,8 @@ function subtitle(c) {
   if (fields === 'file') return c.config.file
   if (fields === 'url') return c.config.url
   if (engine(c.type).form) return [c.config.user, c.config.account || c.config.project, c.config.database].filter(Boolean).join(' · ')
-  return `${c.config.user ? c.config.user + '@' : ''}${c.config.host}:${c.config.port}${c.config.database ? '/' + c.config.database : ''}`
+  const via = c.config.ssh?.host ? ` ⇢ ssh ${c.config.ssh.host}` : ''
+  return `${c.config.user ? c.config.user + '@' : ''}${c.config.host}:${c.config.port}${c.config.database ? '/' + c.config.database : ''}${via}`
 }
 
 const typeLabel = (type) => engineOf(type)?.label || type
@@ -442,6 +473,55 @@ onMounted(load)
               </div>
             </div>
           </template>
+
+          <template v-if="current.caps.ssh">
+            <label class="check span-2"><input v-model="form.ssh.on" type="checkbox" /> {{ t('Conectar por um túnel SSH') }}</label>
+            <div v-if="form.ssh.on" class="tls ssh span-2">
+              <div class="ssh-row">
+                <div class="field">
+                  <label for="f-ssh-host">{{ t('Servidor SSH') }}</label>
+                  <input id="f-ssh-host" v-model="form.ssh.host" class="input" placeholder="bastion.example.com" spellcheck="false" autocomplete="off" />
+                </div>
+                <div class="field port">
+                  <label for="f-ssh-port">{{ t('Porta') }}</label>
+                  <input id="f-ssh-port" v-model="form.ssh.port" class="input" inputmode="numeric" />
+                </div>
+              </div>
+              <div class="ssh-row even">
+                <div class="field">
+                  <label for="f-ssh-user">{{ t('Usuário SSH') }}</label>
+                  <input id="f-ssh-user" v-model="form.ssh.user" class="input" placeholder="ubuntu" spellcheck="false" autocomplete="off" />
+                </div>
+                <div class="field">
+                  <label for="f-ssh-auth">{{ t('Autenticação') }}</label>
+                  <select id="f-ssh-auth" v-model="form.ssh.auth" class="input">
+                    <option value="key">{{ t('Chave privada') }}</option>
+                    <option value="password">{{ t('Senha') }}</option>
+                    <option value="agent">{{ t('Agente SSH (ssh-agent)') }}</option>
+                  </select>
+                </div>
+              </div>
+              <template v-if="form.ssh.auth === 'key'">
+                <div class="field">
+                  <label for="f-ssh-key">{{ t('Arquivo da chave') }} <span class="muted">({{ t('opcional') }})</span></label>
+                  <div class="row">
+                    <input id="f-ssh-key" v-model="form.ssh.keyFile" class="input mono" placeholder="~/.ssh/id_ed25519" spellcheck="false" />
+                    <button type="button" class="btn" :title="t('Procurar')" @click="browseSshKey"><Icon name="folder" :size="14" /></button>
+                  </div>
+                  <div class="hint">{{ t('Vazio: tenta ~/.ssh/id_ed25519, id_ecdsa e id_rsa.') }}</div>
+                </div>
+                <div class="field">
+                  <label for="f-ssh-secret">{{ t('Senha da chave (passphrase)') }} <span class="muted">({{ t('opcional') }})</span></label>
+                  <input id="f-ssh-secret" v-model="form.ssh.secret" class="input" type="password" autocomplete="off" />
+                </div>
+              </template>
+              <div v-else-if="form.ssh.auth === 'password'" class="field">
+                <label for="f-ssh-pass">{{ t('Senha SSH') }}</label>
+                <input id="f-ssh-pass" v-model="form.ssh.secret" class="input" type="password" autocomplete="off" />
+              </div>
+              <div class="hint">{{ t('O host e a porta do banco são vistos a partir do servidor SSH: se o banco roda nele, use localhost. A chave do servidor SSH é registrada na primeira conexão e conferida nas próximas.') }}</div>
+            </div>
+          </template>
         </div>
 
         <div v-if="message" class="message" :class="message.kind">
@@ -550,6 +630,10 @@ onMounted(load)
 .url-import .input { flex: 1; min-width: 0; }
 
 .tls { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-1); }
+.ssh .hint { margin-top: 0; }
+.ssh-row { display: grid; grid-template-columns: 1fr 88px; gap: 12px; }
+.ssh-row.even { grid-template-columns: 1fr 1fr; }
+.ssh .row .input { flex: 1; min-width: 0; }
 .hint { margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--fg-4); }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 14px; }

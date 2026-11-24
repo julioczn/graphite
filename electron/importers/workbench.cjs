@@ -40,7 +40,11 @@ module.exports = {
         sslCa: params.sslCA,
         sslCert: params.sslCert,
         sslKey: params.sslKey,
-        ssh: /sshtun/.test(driver) || !!params.sshHost,
+        ssh: /sshtun/.test(driver) || params.sshHost
+          ? params.sshHost
+            ? { host: String(params.sshHost).split(":")[0], port: String(params.sshHost).split(":")[1], user: params.sshUserName, auth: params.sshKeyFile ? "key" : "password", keyFile: params.sshKeyFile }
+            : true
+          : false,
         socket: /socket/.test(driver),
         passwordElsewhere: true,
       });

@@ -125,7 +125,7 @@ function take(token, { picks, withPasswords, withQueries }) {
     label: r.label,
     connections: r.connections
       .filter((c, i) => chosen.has(i) && !c.skip)
-      .map((c) => ({ name: c.name, type: c.type, config: c.config, password: withPasswords ? c.password || "" : "" })),
+      .map((c) => ({ name: c.name, type: c.type, config: c.config, password: withPasswords ? c.password || "" : "", sshSecret: withPasswords ? c.sshSecret || "" : "" })),
     queries: withQueries ? r.queries : [],
   };
 }

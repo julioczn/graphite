@@ -170,6 +170,16 @@ host name* (the default for new connections). Point to a **CA certificate** (els
 and, for mutual TLS, a **client certificate and key** (PEM files; Graphite stores only their paths). Firebird encrypts
 its own protocol instead; MongoDB takes its TLS options in the connection URL (`tls=true&tlsCAFile=…`).
 
+### SSH tunnel
+
+For a database behind a bastion, tick **Connect through an SSH tunnel** and enter the SSH server, user and how to log
+in: a **private key** (empty = `~/.ssh/id_ed25519`, `id_ecdsa` or `id_rsa`; a passphrase if it has one), a
+**password**, or the **SSH agent**. The database's host and port are then as seen from the SSH server (`localhost` if
+the database runs on it). TLS still checks the certificate against the real host name. The SSH server's key is
+recorded on the first connection and a changed key is refused. Works for every engine reached at a host and port, and
+for MongoDB with a `mongodb://` URL (one host). The password or passphrase is saved encrypted like the database
+password and never goes to GitHub; the import from other tools brings the tunnel settings along.
+
 ### Updates
 
 Graphite checks this repository's releases when it opens and every 6 hours, shows **Update available** in the

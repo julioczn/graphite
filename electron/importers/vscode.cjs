@@ -16,7 +16,8 @@ const ADS = { mssql: "sqlserver", "mssql-cms": "sqlserver", pgsql: "postgres", m
 function sqltools(c) {
   const driver = String(c.driver || "").toLowerCase().replace(/\s+/g, "");
   const type = SQLTOOLS[driver];
-  const ssh = c.ssh === "Enabled";
+  const o = c.sshOptions || {};
+  const ssh = c.ssh === "Enabled" ? (o.host ? { host: o.host, port: o.port, user: o.username, auth: o.privateKeyPath ? "key" : "password", keyFile: o.privateKeyPath, secret: o.privateKeyPath ? o.passphrase : o.password } : true) : false;
   if (c.connectString) {
     const conn = fromUrl(c.name, c.connectString, { user: c.username, folder: c.group || "", ssh });
     if (type && conn.config && conn.type !== type) return makeConn({ ...conn.config, name: c.name, type, folder: c.group || "", ssh, password: conn.password, notes: conn.notes });

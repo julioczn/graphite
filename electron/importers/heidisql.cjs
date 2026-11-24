@@ -66,7 +66,14 @@ module.exports = {
           // SSL_Verification: 0 encrypt only, 1 verify CA, 2 verify identity
           ssl: s.SSL_Active === "1", sslMode: { 1: "verify-ca", 2: "verify-full" }[s.SSL_Verification] || "require",
           sslCa: s.SSL_CA, sslCert: s.SSL_Cert, sslKey: s.SSL_Key,
-          ssh: s.SSHtunnelActive === "1" || (how === "ssh" && s.SSHtunnelActive !== "0"), socket: how === "socket",
+          ssh: s.SSHtunnelActive === "1" || (how === "ssh" && s.SSHtunnelActive !== "0")
+            ? {
+                host: s.SSHtunnelHost, port: s.SSHtunnelHostPort, user: s.SSHtunnelUser,
+                auth: s.SSHtunnelPrivateKey ? "key" : "password", keyFile: s.SSHtunnelPrivateKey,
+                secret: s.SSHtunnelPassword ? decodePassword(s.SSHtunnelPassword) : "",
+              }
+            : false,
+          socket: how === "socket",
         }),
       );
     }

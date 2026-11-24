@@ -118,11 +118,18 @@ function createWindow() {
 
 ipcMain.handle("dialog:openFile", async (e, opts = {}) => {
   const win = BrowserWindow.fromWebContents(e.sender);
+  // opts.sshKey: start in ~/.ssh (hidden files shown) and answer with a ~/… path,
+  // which stays valid on the user's other machines when the workspace syncs.
+  const home = require("node:os").homedir();
   const res = await dialog.showOpenDialog(win, {
-    properties: ["openFile", ...(opts.create ? ["promptToCreate"] : [])],
+    properties: ["openFile", ...(opts.create ? ["promptToCreate"] : []), ...(opts.sshKey ? ["showHiddenFiles"] : [])],
     filters: opts.filters,
+    ...(opts.sshKey && { defaultPath: path.join(home, ".ssh") }),
   });
-  return res.canceled ? null : res.filePaths[0];
+  if (res.canceled) return null;
+  const file = res.filePaths[0];
+  if (opts.sshKey && file.startsWith(home + path.sep)) return "~/" + path.relative(home, file).split(path.sep).join("/");
+  return file;
 });
 
 ipcMain.handle(
@@ -343,7 +350,12 @@ ipcMain.handle("imp:apply", async (_e, { token, picks, withPasswords, withQuerie
   const out = await syncUtil.call("app/importConnections", {
     workspaceId,
     newName: newName || r.label,
-    connections: r.connections.map((c) => ({ ...c, password: c.password ? encryptSecret(c.password) : null })),
+    connections: r.connections.map(({ sshSecret, ...c }) => ({
+      ...c,
+      password: c.password ? encryptSecret(c.password) : null,
+      // The tunnel's password / key passphrase, encrypted inside config.ssh.
+      ...(sshSecret && c.config?.ssh && { config: { ...c.config, ssh: { ...c.config.ssh, secretEnc: encryptSecret(sshSecret) } } }),
+    })),
     queries: r.queries,
   });
   sync.touch(out.workspaceId);

@@ -19,6 +19,7 @@
 //                 without SQL transactions apply edits through driver.applyChanges
 //   editKeys      key columns can be edited in the grid (false: MongoDB _id, CQL
 //                 and DynamoDB keys, SurrealDB id — they identify the row for good)
+//   ssh           can connect through an SSH tunnel (electron/lib/tunnel.cjs)
 //   sql           the query language is SQL (false: MongoDB, Redis, CQL…):
 //                 SQL generation, snippets and SQL INSERT export are hidden
 //
@@ -48,18 +49,24 @@ const BASE = {
   cursors: false,
 }
 
-const engine = (id, label, family, extra = {}) => ({
-  id,
-  label,
-  family,
-  fields: 'server',
-  port: '',
-  user: '',
-  ssl: false,
-  status: 'stable',
-  ...extra,
-  caps: { ...BASE, ...(extra.caps || {}) },
-})
+const engine = (id, label, family, extra = {}) => {
+  const e = {
+    id,
+    label,
+    family,
+    fields: 'server',
+    port: '',
+    user: '',
+    ssl: false,
+    status: 'stable',
+    ...extra,
+    caps: { ...BASE, ...(extra.caps || {}) },
+  }
+  // SSH tunnel: engines reached at a host and port (and MongoDB's URL); not
+  // files, nor the cloud APIs (Snowflake, BigQuery, DynamoDB) and URL engines.
+  e.caps.ssh ??= (e.fields === 'server' && !e.form) || family === 'mongo'
+  return e
+}
 
 const PG = { schemas: 'schema', savepoints: true, backup: true, cursors: true }
 const NOSQL = { sql: false, transactions: false, manualMode: false, aiReadOnly: false, er: false, restore: false }

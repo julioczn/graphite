@@ -34,6 +34,14 @@ const same = (a, b) => stable(a) === stable(b);
 function publicConfig(config) {
   const c = { ...(isObj(config) ? config : {}) };
   delete c.password;
+  // SSH tunnel: where and who, never the password or key passphrase. The key
+  // file goes only as a path under ~ (an absolute one is this machine's).
+  if (isObj(c.ssh)) {
+    const { secret, secretEnc, keyFile, ...ssh } = c.ssh;
+    if (typeof keyFile === "string" && keyFile.startsWith("~/")) ssh.keyFile = keyFile;
+    c.ssh = Object.fromEntries(Object.entries(ssh).filter(([, v]) => v !== "" && v != null));
+    if (!c.ssh.host) delete c.ssh;
+  }
   if (typeof c.url === "string") {
     try {
       const u = new URL(c.url);

@@ -68,7 +68,14 @@ module.exports = {
         const f = {
           name: c.name, type, engineLabel: c.connectionType, folder: folders.get(c.connectionFolderId) || "",
           host: c.host, port: c.port, user: c.username, database: c.defaultDatabase,
-          password: secret(c.password), ssh: !!c.sshEnabled, socket: !!c.socketPathEnabled,
+          password: secret(c.password), socket: !!c.socketPathEnabled,
+          ssh: c.sshEnabled
+            ? {
+                host: c.sshHost, port: c.sshPort, user: c.sshUsername,
+                auth: { keyfile: "key", agent: "agent", userpass: "password" }[c.sshMode],
+                keyFile: c.sshKeyfile, secret: c.sshMode === "keyfile" ? secret(c.sshKeyfilePassword) : secret(c.sshPassword),
+              }
+            : false,
           ssl: !!c.ssl, sslMode: c.ssl ? (c.sslRejectUnauthorized ? "verify-full" : "require") : undefined,
           sslCa: c.sslCaFile, sslCert: c.sslCertFile, sslKey: c.sslKeyFile,
           file: c.path || c.defaultDatabase, url: secret(c.url),

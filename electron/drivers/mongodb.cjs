@@ -115,6 +115,8 @@ class MongoDriver {
       appName: 'Graphite',
       serverSelectionTimeoutMS: 10000,
       ...(c.user && { auth: { username: c.user, password: c.password || '' } }),
+      // Through an SSH tunnel (127.0.0.1): TLS checks the real host name.
+      ...(c.tunnelHost && { ...(!require('node:net').isIP(c.tunnelHost) && { servername: c.tunnelHost }), checkServerIdentity: (_h, cert) => require('node:tls').checkServerIdentity(c.tunnelHost, cert) }),
     })
     await this.client.connect()
     const fromUrl = /^mongodb(?:\+srv)?:\/\/[^/]+\/([^?]+)/.exec(url)?.[1]
