@@ -313,3 +313,18 @@ details p { margin: 10px 0; }
 .dl-src { margin: 14px 0 0; color: var(--fg-3); font-size: 13.5px; overflow-wrap: anywhere; }
 .dl-src strong { color: var(--fg-2); }
 .dl .row .btn { white-space: nowrap; }
+
+/* FAQ */
+.faq { max-width: 860px; margin: 40px 0 0; border-top: 1px solid var(--line); }
+.faq-item { border-bottom: 1px solid var(--line); }
+.faq-item summary {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 4px;
+  cursor: pointer; list-style: none; font-size: 17px; font-weight: 600; color: var(--fg);
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after { content: "+"; flex: none; color: var(--fg-3); font-size: 22px; font-weight: 400; transition: transform 0.2s; }
+.faq-item[open] summary::after { transform: rotate(45deg); }
+.faq-item summary:hover { color: var(--fg); }
+.faq-item summary:focus-visible { outline: 2px solid var(--fg-2); outline-offset: 2px; border-radius: 6px; }
+.faq-item p { margin: 0; padding: 0 4px 22px; color: var(--fg-2); font-size: 15.5px; line-height: 1.65; }
+@media (max-width: 560px) { .faq-item summary { font-size: 16px; padding: 16px 2px; } }

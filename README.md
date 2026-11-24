@@ -5,15 +5,15 @@
 <h1 align="center">Graphite</h1>
 
 <p align="center">
-  A fast, keyboard-friendly desktop client for <b>24 databases</b>: SQL, NoSQL and cloud warehouses<br>
-  with an AI assistant and an MCP server for your own agents.
+  A free, open-source and keyboard-friendly database client (GUI) for <b>24 databases</b>: SQL, NoSQL and cloud warehouses<br>
+  on macOS, Windows and Linux, with an AI assistant and an MCP server for your own agents.
 </p>
 
 <p align="center">
   <a href="https://github.com/julioczn/graphite/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/julioczn/graphite?label=release&color=555"></a>
   <a href="https://github.com/julioczn/graphite/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/julioczn/graphite/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-555"></a>
-  <img alt="macOS and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-555">
+  <img alt="macOS, Windows and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-555">
 </p>
 
 <p align="center">

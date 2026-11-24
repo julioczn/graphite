@@ -166,6 +166,22 @@
       'alt.table': 'Editando as linhas de uma tabela na grade',
       'final.t': 'Chega de pular entre clientes de banco.',
       'final.d': 'Postgres de manhã, Mongo depois do almoço, aquela tabela do DynamoDB às 2 da manhã — um app, um atalho, um lugar para todas as suas conexões.',
+      'meta.title': 'Graphite — Cliente de banco de dados gratuito para PostgreSQL, MySQL, MongoDB e mais 21',
+      'meta.desc': 'Cliente de banco de dados gratuito e open source para macOS, Windows e Linux. Consulte e edite PostgreSQL, MySQL, SQL Server, Oracle, MongoDB, Redis, DynamoDB, ClickHouse e mais 16, com assistente de IA e servidor MCP.',
+      'faq.title': 'Perguntas frequentes',
+      'faq.q1': 'O Graphite é gratuito?',
+      'faq.a1': 'Sim. O Graphite é gratuito e open source, com licença MIT: sem conta, sem anúncios, sem telemetria e sem versão paga.',
+      'faq.q2': 'Quais bancos de dados o Graphite suporta?',
+      'faq.a2': '24: PostgreSQL, MySQL, MariaDB, SQLite, SQL Server, Oracle, CockroachDB, TiDB, Firebird, GreengageDB, libSQL / Turso, ClickHouse, DuckDB, Trino, StarRocks, Snowflake, BigQuery, Amazon Redshift, MongoDB, Redis / Valkey, Apache Cassandra, ScyllaDB, Amazon DynamoDB e SurrealDB.',
+      'faq.q3': 'Funciona no Windows, no macOS e no Linux?',
+      'faq.a3': 'Sim. macOS em Apple Silicon e Intel; Windows 10 e 11, com instalador ou zip portátil; e Linux, com pacotes para Debian e Ubuntu (.deb), Fedora, RHEL e Rocky (.rpm), Arch e um AppImage portátil.',
+      'faq.q4': 'O Graphite é uma alternativa ao DBeaver, TablePlus, DataGrip ou Beekeeper Studio?',
+      'faq.a4': 'Ele cobre o mesmo trabalho do dia a dia (navegar, consultar, editar linhas na grade, diagramas ER, backup e exportação) para bancos SQL e NoSQL num app só. E importa suas conexões salvas de 13 ferramentas, entre elas DBeaver, DataGrip, Beekeeper Studio, TablePlus, Navicat, pgAdmin, MySQL Workbench e HeidiSQL.',
+      'faq.q5': 'Dá para usar IA com os meus bancos?',
+      'faq.a5': 'Sim, com a sua própria chave. O assistente embutido funciona com a API da Anthropic ou qualquer provedor compatível com a OpenAI, inclusive modelos locais com Ollama ou LM Studio. Claude Code, Cursor, VS Code e Claude Desktop podem usar suas conexões pelo servidor MCP embutido. Toda escrita espera a sua aprovação.',
+      'faq.q6': 'Onde ficam as minhas senhas?',
+      'faq.a6': 'Só no seu computador, cifradas pelo chaveiro do sistema operacional. Quando você sincroniza um workspace com o seu repositório no GitHub, as senhas ficam de fora.',
+      'foot.faq': 'Perguntas frequentes',
     },
     es: {
       'nav.features': 'Funciones',
@@ -323,6 +339,22 @@
       'alt.table': 'Editando las filas de una tabla',
       'final.t': 'Deja de saltar entre clientes de bases de datos.',
       'final.d': 'Postgres por la mañana, Mongo después del almuerzo, esa tabla de DynamoDB a las 2 de la madrugada — una app, un atajo, un lugar para todas tus conexiones.',
+      'meta.title': 'Graphite — Cliente de bases de datos gratuito para PostgreSQL, MySQL, MongoDB y 21 más',
+      'meta.desc': 'Cliente de bases de datos gratuito y de código abierto para macOS, Windows y Linux. Consulta y edita PostgreSQL, MySQL, SQL Server, Oracle, MongoDB, Redis, DynamoDB, ClickHouse y 16 más, con asistente de IA y servidor MCP.',
+      'faq.title': 'Preguntas frecuentes',
+      'faq.q1': '¿Graphite es gratis?',
+      'faq.a1': 'Sí. Graphite es gratuito y de código abierto, con licencia MIT: sin cuenta, sin anuncios, sin telemetría y sin versión de pago.',
+      'faq.q2': '¿Qué bases de datos soporta Graphite?',
+      'faq.a2': '24: PostgreSQL, MySQL, MariaDB, SQLite, SQL Server, Oracle, CockroachDB, TiDB, Firebird, GreengageDB, libSQL / Turso, ClickHouse, DuckDB, Trino, StarRocks, Snowflake, BigQuery, Amazon Redshift, MongoDB, Redis / Valkey, Apache Cassandra, ScyllaDB, Amazon DynamoDB y SurrealDB.',
+      'faq.q3': '¿Funciona en Windows, macOS y Linux?',
+      'faq.a3': 'Sí. macOS en Apple Silicon e Intel; Windows 10 y 11, con instalador o zip portátil; y Linux, con paquetes para Debian y Ubuntu (.deb), Fedora, RHEL y Rocky (.rpm), Arch y un AppImage portátil.',
+      'faq.q4': '¿Graphite es una alternativa a DBeaver, TablePlus, DataGrip o Beekeeper Studio?',
+      'faq.a4': 'Cubre el mismo trabajo diario (navegar, consultar, editar filas en la grilla, diagramas ER, backup y exportación) para bases SQL y NoSQL en una sola app. Además importa tus conexiones guardadas de 13 herramientas, entre ellas DBeaver, DataGrip, Beekeeper Studio, TablePlus, Navicat, pgAdmin, MySQL Workbench y HeidiSQL.',
+      'faq.q5': '¿Puedo usar IA con mis bases de datos?',
+      'faq.a5': 'Sí, con tu propia clave. El asistente integrado funciona con la API de Anthropic o cualquier proveedor compatible con OpenAI, incluidos modelos locales con Ollama o LM Studio. Claude Code, Cursor, VS Code y Claude Desktop pueden usar tus conexiones a través del servidor MCP integrado. Toda escritura espera tu aprobación.',
+      'faq.q6': '¿Dónde se guardan mis contraseñas?',
+      'faq.a6': 'Solo en tu computadora, cifradas con el llavero del sistema operativo. Cuando sincronizas un workspace con tu repositorio de GitHub, las contraseñas se quedan fuera.',
+      'foot.faq': 'Preguntas frecuentes',
     },
   }
   var EN_EXTRA = { 'dl.for': 'Download for {os}', 'dl.version': 'Current version: {v}.' }
@@ -342,9 +374,28 @@
     return s
   }
 
+  // Search engines index each language at its own URL (?lang=pt, ?lang=es; see
+  // the hreflang links): title, description and canonical follow the language.
+  var BASE = 'https://julioczn.github.io/graphite/'
+  var head = {
+    title: document.title,
+    desc: document.querySelector('meta[name="description"]').content,
+  }
+  function applyHead() {
+    document.title = lang === 'en' ? head.title : tr('meta.title')
+    document.querySelector('meta[name="description"]').content = lang === 'en' ? head.desc : tr('meta.desc')
+    var canonical = document.querySelector('link[data-canonical]')
+    if (canonical) canonical.href = lang === 'en' ? BASE : BASE + '?lang=' + lang
+  }
+  function urlLang() {
+    var m = /[?&]lang=(en|pt|es)\b/.exec(location.search)
+    return m ? m[1] : null
+  }
+
   function apply(next) {
     lang = T[next] ? next : 'en'
     document.documentElement.lang = { en: 'en', pt: 'pt-BR', es: 'es' }[lang]
+    applyHead()
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
       // Only our own static strings are inserted (some contain <code>).
       el.innerHTML = lang === 'en' ? original[el.dataset.i18n] : tr(el.dataset.i18n)
@@ -442,6 +493,13 @@
   document.getElementById('lang').addEventListener('change', function (e) {
     try { localStorage.setItem('graphite-site-lang', e.target.value) } catch (err) {}
     apply(e.target.value)
+    // Keep the language in the address, so a shared link opens in it.
+    try {
+      var u = new URL(location.href)
+      if (lang === 'en') u.searchParams.delete('lang')
+      else u.searchParams.set('lang', lang)
+      history.replaceState(null, '', u.pathname + u.search + u.hash)
+    } catch (err) {}
   })
 
   // --- hero: typed database names ---------------------------------------------
@@ -527,6 +585,6 @@
     items.forEach(function (el) { el.classList.add('in') })
   }
 
-  apply(storedLang() || browserLang())
+  apply(urlLang() || storedLang() || browserLang())
   loadRelease()
 })()
