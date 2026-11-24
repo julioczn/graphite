@@ -5,6 +5,8 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-24
+
 ### Added
 - **SSH tunnel.** "Connect through an SSH tunnel" in the connection form: SSH server, user, and a private key (with
   its passphrase), a password or the SSH agent. Works for every engine reached at a host and port, and MongoDB with a
@@ -247,7 +249,8 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.14.1...HEAD
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/julioczn/graphite/releases/tag/v0.15.0
 [0.14.1]: https://github.com/julioczn/graphite/releases/tag/v0.14.1
 [0.14.0]: https://github.com/julioczn/graphite/releases/tag/v0.14.0
 [0.13.0]: https://github.com/julioczn/graphite/releases/tag/v0.13.0
