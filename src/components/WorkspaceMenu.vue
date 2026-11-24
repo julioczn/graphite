@@ -7,7 +7,7 @@ import ContextMenu from './ContextMenu.vue'
 import Modal from './Modal.vue'
 import SyncStatus from './SyncStatus.vue'
 import { t } from '../lib/i18n'
-import { workspaces, activeWorkspace, setActive, saveWorkspace, deleteWorkspace, exportWorkspace, importWorkspace, syncNow } from '../lib/workspaces'
+import { workspaces, activeWorkspace, setActive, saveWorkspace, deleteWorkspace, exportWorkspace, importWorkspace, syncNow, remoteOnly, openRemote } from '../lib/workspaces'
 
 const menu = ref(null)
 const naming = ref(null) // { id?, name }
@@ -27,6 +27,13 @@ function open(e) {
         icon: x.id === cur?.id ? 'check' : x.remote ? 'link' : undefined,
         hint: t('{n} conexão|{n} conexões', { n: x.connections }),
         run: () => setActive(x.id),
+      })),
+      // In the GitHub repository but not here yet (pushed from another machine).
+      ...remoteOnly().map((r) => ({
+        label: t('{name} (no GitHub)', { name: r.name }),
+        icon: 'github',
+        hint: `${r.repo.split('/')[1]}/${r.dir}`,
+        run: () => openRemote(r),
       })),
       { sep: true },
       { label: t('Novo workspace…'), icon: 'plus', run: () => askName({ name: '' }) },

@@ -5,6 +5,14 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Fixed
+- **Workspaces from another machine now show up.** Signed in to GitHub, Graphite finds the workspaces already in your
+  repositories (one per folder) and lists the ones not on this machine in the workspace menu, as "Name (on GitHub)":
+  one click brings the workspace over, linked and syncing. The GitHub dialog lists them too, per repository, and warns
+  before linking to a folder that already holds another workspace. A fresh install's empty default workspace is reused
+  instead of left behind. Before, each machine only synced the workspaces linked on it, so the other machine's never
+  appeared.
+
 ## [0.14.0] - 2026-11-23
 
 ### Added

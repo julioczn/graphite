@@ -6,7 +6,7 @@ import Modal from './Modal.vue'
 import Icon from './Icon.vue'
 import { t } from '../lib/i18n'
 import { toast } from '../lib/store'
-import { workspaces, activeWorkspace, loadWorkspaces, syncNow, github, cleanError } from '../lib/workspaces'
+import { workspaces, activeWorkspace, loadWorkspaces, setActive, syncNow, github, openRemote, cleanError } from '../lib/workspaces'
 
 const w = computed(() => activeWorkspace())
 const gh = computed(() => workspaces.github)
@@ -74,6 +74,34 @@ const unlink = () => run('unlink', async () => {
   await loadWorkspaces()
 })
 
+// Workspaces already in the repository (from another machine): open one here
+// instead of linking this one.
+const inRepo = ref([])
+const scanning = ref(false)
+let scanFor = ''
+async function scanRepo() {
+  const full = w.value?.remote?.repo || repo.value.trim()
+  if (!gh.value.login || !/^[\w.-]+\/[\w.-]+$/.test(full)) return (inRepo.value = [])
+  scanFor = full
+  scanning.value = true
+  try {
+    const list = await github.remoteIn(full)
+    if (scanFor === full) inRepo.value = list
+  } catch {
+    if (scanFor === full) inRepo.value = []
+  } finally {
+    if (scanFor === full) scanning.value = false
+  }
+}
+const others = computed(() => inRepo.value.filter((r) => r.localId !== w.value?.id))
+const dirTaken = computed(() => !w.value?.remote && inRepo.value.find((r) => r.dir === (dir.value.trim() || slug(w.value?.name))))
+const openHere = (r) => run('open:' + r.dir, async () => {
+  if (r.localId) setActive(r.localId)
+  else await openRemote(r)
+  workspaces.dialog = null
+})
+watch(() => [repo.value, w.value?.remote?.repo, gh.value.login], scanRepo)
+
 const sync = () => run('sync', () => syncNow(w.value.id))
 const setAuto = (on) => github.setAuto(w.value.id, on).then(loadWorkspaces)
 const logout = () => run('logout', github.logout)
@@ -87,6 +115,7 @@ const install = () => github.open(gh.value.installUrl)
 watch(() => gh.value.login, () => loadRepos())
 onMounted(() => {
   loadRepos()
+  scanRepo()
   window.addEventListener('focus', onFocus)
 })
 onBeforeUnmount(() => window.removeEventListener('focus', onFocus))
@@ -182,9 +211,27 @@ onBeforeUnmount(() => window.removeEventListener('focus', onFocus))
         <div class="field">
           <label>{{ t('Pasta no repositório') }}</label>
           <input v-model="dir" class="input mono" :placeholder="slug(w?.name) || 'workspace'" spellcheck="false" />
-          <div class="hint">{{ t('Um repositório pode guardar vários workspaces, um por pasta. Se a pasta já tiver um workspace, os dois são combinados.') }}</div>
+          <div v-if="dirTaken" class="hint warn">{{ t('A pasta {dir} já tem o workspace "{name}": ligar este a ela combina os dois.', { dir: dirTaken.dir, name: dirTaken.name }) }}</div>
+          <div v-else class="hint">{{ t('Um repositório pode guardar vários workspaces, um por pasta. Se a pasta já tiver um workspace, os dois são combinados.') }}</div>
         </div>
       </template>
+      <div v-if="gh.login && (others.length || scanning)" class="remote">
+        <div class="remote-head">
+          {{ t('Workspaces neste repositório') }}
+          <span v-if="scanning" class="muted small">· {{ t('procurando…') }}</span>
+        </div>
+        <div v-for="r in others" :key="r.dir" class="remote-row">
+          <Icon name="github" :size="13" />
+          <span class="remote-name">{{ r.name }}</span>
+          <span class="muted small mono">{{ r.dir }}/</span>
+          <span class="muted small">{{ t('{n} conexão|{n} conexões', { n: r.connections }) }}</span>
+          <span class="spacer" />
+          <button class="btn sm" :class="{ primary: !r.localId }" :disabled="!!busy" @click="openHere(r)">
+            {{ r.localId ? t('Ir para ele') : busy === 'open:' + r.dir ? t('Trazendo…') : t('Abrir nesta máquina') }}
+          </button>
+        </div>
+        <p v-if="!w?.remote && others.some((r) => !r.localId)" class="hint">{{ t('Já usou o Graphite em outra máquina? Abra o workspace daqui em vez de ligar este.') }}</p>
+      </div>
       <p v-else class="muted small">{{ t('Entre no GitHub primeiro.') }}</p>
     </section>
 
@@ -227,6 +274,14 @@ a { color: var(--fg-2); }
 .access { padding: 12px 14px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-2); font-size: 13px; line-height: 1.5; }
 .access p { margin: 0 0 8px; }
 .access ol { margin: 0 0 12px; padding-left: 18px; color: var(--fg-2); }
+.hint.warn { color: var(--fg-2); }
+.remote { margin-top: 14px; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface-2); }
+.remote-head { margin-bottom: 6px; color: var(--fg-3); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.remote-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
+.remote-row + .remote-row { border-top: 1px solid var(--line-2); }
+.remote-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mono { font-family: var(--mono); }
+.remote .hint { margin: 6px 0 0; }
 .linked { display: grid; gap: 6px; font-size: 13px; }
 .linked > div:first-child { display: flex; align-items: center; gap: 6px; }
 .check { display: flex; align-items: center; gap: 8px; margin-top: 4px; color: var(--fg-2); }

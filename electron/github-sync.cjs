@@ -13,6 +13,8 @@
 //      keep both copies;
 //   3. apply the result locally, then commit the changed files in one commit
 //      (Git Data API) and move the branch; a race retries once.
+// Workspaces already in those repositories (pushed from another machine) are
+// listed by remoteWorkspaces() and brought over with openRemote().
 // Only private repositories are accepted: a workspace holds host names and
 // user names (never passwords).
 const { EventEmitter } = require("node:events");
@@ -55,6 +57,7 @@ class GitHubSync extends EventEmitter {
     this.login = null; // device flow in progress: { userCode, uri, expiresAt }
     this.locks = new Map();
     this.timers = new Map();
+    this.remote = []; // last remoteWorkspaces() result
   }
 
   // --- auth ----------------------------------------------------------------------
@@ -75,10 +78,13 @@ class GitHubSync extends EventEmitter {
     fs.writeFileSync(this.file, JSON.stringify(stored, null, 2), { mode: 0o600 });
     this.auth = auth;
     this.emitState();
+    this.remoteWorkspaces().catch(() => {});
   }
 
   logout() {
     this.auth = null;
+    this.remote = [];
+    this.emit("remote", []);
     try {
       fs.unlinkSync(this.file);
     } catch {}
@@ -242,7 +248,9 @@ class GitHubSync extends EventEmitter {
     const folder = W.slug(dir || w.name);
     await this.util.call("app/setWorkspaceRemote", { id, remote: { repo: info.full_name, branch: info.default_branch, dir: folder, auto: true } });
     this.dropBase(w.uid);
-    return this.sync(id);
+    const r = await this.sync(id);
+    this.remoteWorkspaces().catch(() => {});
+    return r;
   }
 
   async unlink(id) {
@@ -250,6 +258,7 @@ class GitHubSync extends EventEmitter {
     await this.util.call("app/setWorkspaceRemote", { id, remote: null });
     this.dropBase(w.uid);
     this.emit("changed", { id, remoteOnly: true });
+    this.remoteWorkspaces().catch(() => {});
   }
 
   async setAuto(id, on) {
@@ -278,6 +287,104 @@ class GitHubSync extends EventEmitter {
     try {
       fs.unlinkSync(this.baseFile(uid));
     } catch {}
+  }
+
+  // --- workspaces already in the repositories -----------------------------------------
+
+  // Workspace folders (<dir>/workspace.yml) in the repositories this machine
+  // can see: the ones local workspaces are linked to, plus those the GitHub
+  // App is installed on (or `repo`, when given). Each says whether a local
+  // workspace is already linked to it (`localId`). Emits "remote" with the list.
+  async remoteWorkspaces({ repo } = {}) {
+    if (!this.auth) return [];
+    const local = await this.util.call("app/workspaces");
+    const key = (r) => String(r).toLowerCase();
+    const targets = new Map(); // repo → branch (null: default)
+    if (repo) targets.set(key(repo), { full: repo, branch: null });
+    else {
+      for (const w of local) if (w.remote) targets.set(key(w.remote.repo), { full: w.remote.repo, branch: w.remote.branch || null });
+      if (this.auth.method === "app") {
+        const list = await this.repos().catch(() => []);
+        for (const r of list.slice(0, 20)) if (!targets.has(key(r.fullName))) targets.set(key(r.fullName), { full: r.fullName, branch: null });
+      }
+    }
+    const out = [];
+    for (const { full, branch } of targets.values()) {
+      let found;
+      try {
+        found = await this.scanRepo(full, branch);
+      } catch (e) {
+        if (repo) throw e;
+        continue; // a linked repository gone or no longer reachable: its workspace shows the error
+      }
+      for (const f of found) {
+        const w = local.find((x) => x.remote && key(x.remote.repo) === key(f.repo) && x.remote.dir === f.dir);
+        out.push({ ...f, localId: w?.id ?? null });
+      }
+    }
+    if (!repo) {
+      this.remote = out;
+      this.emit("remote", out);
+    }
+    return out;
+  }
+
+  async scanRepo(full, branchWanted) {
+    const info = await this.checkRepo(full);
+    const R = `/repos/${info.full_name}`;
+    const branch = branchWanted || info.default_branch;
+    const head = await this.headOf(R, branch);
+    if (!head) return [];
+    const treeSha = (await this.api("GET", `${R}/git/commits/${head}`)).tree.sha;
+    const tree = await this.api("GET", `${R}/git/trees/${treeSha}?recursive=1`);
+    const out = [];
+    for (const e of tree.tree || []) {
+      const m = e.type === "blob" && /^([^/]+)\/workspace\.yml$/.exec(e.path);
+      if (!m) continue;
+      const dir = m[1];
+      let doc = null;
+      try {
+        const blob = await this.api("GET", `${R}/git/blobs/${e.sha}`);
+        doc = W.fromFiles({ "workspace.yml": Buffer.from(blob.content, blob.encoding === "base64" ? "base64" : "utf8").toString("utf8") });
+      } catch {
+        continue; // not a valid workspace file
+      }
+      const queries = tree.tree.filter((x) => x.type === "blob" && x.path.startsWith(dir + "/queries/") && x.path.endsWith(".sql")).length;
+      out.push({ repo: info.full_name, branch, dir, name: doc.name, connections: doc.connections.length, queries });
+    }
+    return out;
+  }
+
+  // Brings a workspace from the repository to this machine, linked to it. An
+  // empty, unlinked local workspace is reused instead of making a second one:
+  // one with the same name, or the only workspace of a fresh install (its
+  // "Default" may carry another language's name).
+  async openRemote({ repo, dir }) {
+    const key = (r) => String(r).toLowerCase();
+    const local = await this.util.call("app/workspaces");
+    const linked = local.find((w) => w.remote && key(w.remote.repo) === key(repo) && w.remote.dir === dir);
+    if (linked) return { id: linked.id, existed: true };
+    const found = (await this.scanRepo(repo, null)).find((f) => f.dir === dir);
+    if (!found) throw new Error(t("Não achei o workspace {dir} em {repo}.", { dir, repo }));
+    const isEmpty = (w) => !w.remote && !w.connections && !w.queries && !(w.snippets || []).length;
+    const empty = local.find((w) => isEmpty(w) && w.name === found.name) || (local.length === 1 && isEmpty(local[0]) ? local[0] : null);
+    const id = empty ? empty.id : await this.util.call("app/saveWorkspace", { workspace: { name: found.name } });
+    if (empty && empty.name !== found.name) await this.util.call("app/saveWorkspace", { workspace: { id, name: found.name } });
+    await this.util.call("app/setWorkspaceRemote", { id, remote: { repo: found.repo, branch: found.branch, dir, auto: true } });
+    const w = await this.workspace(id);
+    this.dropBase(w.uid);
+    try {
+      await this.sync(id);
+    } catch (e) {
+      if (!empty) await this.util.call("app/deleteWorkspace", { id }).catch(() => {});
+      else {
+        await this.util.call("app/setWorkspaceRemote", { id, remote: null }).catch(() => {});
+        await this.util.call("app/saveWorkspace", { workspace: { id, name: empty.name } }).catch(() => {});
+      }
+      throw e;
+    }
+    this.remoteWorkspaces().catch(() => {});
+    return { id, existed: false };
   }
 
   // --- sync --------------------------------------------------------------------------
@@ -415,6 +522,7 @@ class GitHubSync extends EventEmitter {
       return;
     }
     for (const w of list) if (w.remote && w.remote.auto !== false) await this.sync(w.id).catch(() => {});
+    await this.remoteWorkspaces().catch(() => {});
   }
 
   // A local change: sync a little later, once edits settle.

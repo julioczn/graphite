@@ -92,6 +92,9 @@ contextBridge.exposeInMainWorld('graphite', {
     githubToken: (token) => ipcRenderer.invoke('ws:githubToken', token),
     githubLogout: () => ipcRenderer.invoke('ws:githubLogout'),
     repos: () => ipcRenderer.invoke('ws:githubRepos'),
+    remoteList: (repo) => ipcRenderer.invoke('ws:remoteList', repo),
+    remoteScan: () => ipcRenderer.invoke('ws:remoteScan'),
+    openRemote: (repo, dir) => ipcRenderer.invoke('ws:openRemote', { repo, dir }),
     link: (id, repo, dir) => ipcRenderer.invoke('ws:link', { id, repo, dir }),
     unlink: (id) => ipcRenderer.invoke('ws:unlink', id),
     sync: (id) => ipcRenderer.invoke('ws:sync', id),
@@ -102,7 +105,7 @@ contextBridge.exposeInMainWorld('graphite', {
     toolFile: () => ipcRenderer.invoke('imp:file'),
     importTool: (opts) => ipcRenderer.invoke('imp:apply', opts),
     on(event, fn) {
-      const channel = { github: 'ws:github', error: 'ws:githubError', changed: 'ws:changed', syncing: 'ws:syncing' }[event]
+      const channel = { github: 'ws:github', error: 'ws:githubError', changed: 'ws:changed', syncing: 'ws:syncing', remote: 'ws:remote' }[event]
       const listener = (_e, d) => fn(d)
       ipcRenderer.on(channel, listener)
       return () => ipcRenderer.removeListener(channel, listener)
