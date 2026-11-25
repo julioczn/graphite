@@ -96,6 +96,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
         <UpdateButton compact />
         <LanguageMenu compact />
         <button class="act" :title="t('Busca rápida ({key})', { key: shortcut('mod', 'p') })" @click="sess.quickSearch = true"><Icon name="search" :size="18" /></button>
+        <button class="act" :title="t('Atalhos de teclado ({key})', { key: shortcut('mod', 'shift', '?') })" @click="store.shortcuts = true"><Icon name="keyboard" :size="18" /></button>
         <button class="act" :title="t('Desconectar')" @click="closeConnection(sess)"><Icon name="power" :size="18" /></button>
       </nav>
 

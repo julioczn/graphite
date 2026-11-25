@@ -8,6 +8,7 @@ import UpdateButton from './UpdateButton.vue'
 import WorkspaceMenu from './WorkspaceMenu.vue'
 import { workspaces, activeId, touched, loadWorkspaces } from '../lib/workspaces'
 import { t } from '../lib/i18n'
+import { shortcut } from '../lib/keys'
 import { ai } from '../lib/ai'
 import { ENGINES, engineOf } from '../../shared/engines.mjs'
 import { parseConnectionUrl } from '../../shared/connurl.mjs'
@@ -367,7 +368,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onEsc))
           <button class="btn ghost icon sm del" :title="t('Remover')" @click.stop="remove(c)"><Icon name="trash" :size="13" /></button>
         </div>
       </div>
-      <div class="side-foot"><UpdateButton /><LanguageMenu /></div>
+      <div class="side-foot">
+        <UpdateButton /><LanguageMenu />
+        <button class="btn ghost" :title="shortcut('mod', 'shift', '?')" @click="store.shortcuts = true"><Icon name="keyboard" :size="14" /> {{ t('Atalhos de teclado') }}</button>
+      </div>
     </aside>
 
     <main class="main">

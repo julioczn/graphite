@@ -28,6 +28,7 @@ export const store = reactive({
   savedVersion: 0,
   jobs: [], // backup / restore / export progress, see JobsPanel
   rowLimit: storedLimit(), // rows a query shows, see setRowLimit
+  shortcuts: false, // ShortcutsDialog open
   get session() {
     return this.sessions.find((s) => s.key === this.panes[this.focus]) || null
   },

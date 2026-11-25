@@ -10,6 +10,8 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
   a tab on top (with `+` to open another) and keeps its own query tabs, results and transaction. **Side by side**
   (`⌘/Ctrl+\`, or right-click a connection tab) shows two connections next to each other, each with its own sidebar
   and status bar; `⌘/Ctrl+Alt+←/→` moves between them. The AI assistant works on the pane you're in.
+- **Keyboard shortcuts list.** A keyboard button in the activity bar (and on the connection screen), or
+  `⌘/Ctrl+Shift+/`, lists every shortcut by area, with a filter.
 - **Row limit in the status bar.** Query results show 100 rows by default (was 5,000); pick 100 to 50,000 in the
   status bar, remembered on this machine. Raising it runs a cut-off read again, and the notice under a cut-off result
   has a "Show up to …" button.

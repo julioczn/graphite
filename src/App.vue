@@ -14,10 +14,20 @@ import { update, initUpdate } from './lib/update'
 import WorkspaceSync from './components/WorkspaceSync.vue'
 import SnippetsDialog from './components/SnippetsDialog.vue'
 import ImportToolsDialog from './components/ImportToolsDialog.vue'
+import ShortcutsDialog from './components/ShortcutsDialog.vue'
 import { workspaces, initWorkspaces } from './lib/workspaces'
+
+// Mod+Shift+/ ("Mod+?") lists every shortcut. Mod+/ alone comments lines in the editor.
+function onKey(e) {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === '?' || e.key === '/' || e.code === 'Slash')) {
+    e.preventDefault()
+    store.shortcuts = !store.shortcuts
+  }
+}
 
 let off
 onMounted(() => {
+  window.addEventListener('keydown', onKey)
   initAi().catch((e) => console.error('AI init', e))
   initUpdate().catch((e) => console.error('update init', e))
   initWorkspaces().catch((e) => console.error('workspaces init', e))
@@ -28,7 +38,10 @@ onMounted(() => {
     }
   })
 })
-onBeforeUnmount(() => off?.())
+onBeforeUnmount(() => {
+  off?.()
+  window.removeEventListener('keydown', onKey)
+})
 </script>
 
 <template>
@@ -41,6 +54,7 @@ onBeforeUnmount(() => off?.())
   <WorkspaceSync v-if="workspaces.dialog === 'github'" />
   <SnippetsDialog v-if="workspaces.dialog === 'snippets'" />
   <ImportToolsDialog v-if="workspaces.dialog === 'tools'" />
+  <ShortcutsDialog v-if="store.shortcuts" />
 
   <div class="toasts">
     <TransitionGroup name="toast">

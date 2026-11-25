@@ -43,7 +43,8 @@
 - **ER diagram** with automatic layout, inferred relations, search, keys-only mode and SVG/PNG export.
 - **Backup and restore** in `.sql` / `.sql.gz` without `pg_dump` or `mysqldump`, streamed, with progress and cancel.
 - **Export** tables or full query results to CSV, JSON, JSON Lines or SQL `INSERT`s, with no row limit.
-- History per connection, saved queries, quick search (`⌘/Ctrl+P`), tabs.
+- History per connection, saved queries, quick search (`⌘/Ctrl+P`), tabs, and the full list of keyboard shortcuts
+  (`⌘/Ctrl+Shift+/` or the keyboard button).
 - **English, Português (Brasil) and Español**: follows the system language, switch any time from the globe icon.
 
 <details>

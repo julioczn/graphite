@@ -3,10 +3,10 @@
 export const isMac = /mac|iphone|ipad/i.test(navigator.userAgentData?.platform || navigator.platform || navigator.userAgent)
 
 const LABELS = isMac
-  ? { mod: '⌘', shift: '⇧', enter: '↩', del: '⌫' }
-  : { mod: 'Ctrl', shift: 'Shift', enter: 'Enter', del: 'Del' }
+  ? { mod: '⌘', shift: '⇧', enter: '↩', del: '⌫', alt: '⌥', ctrl: '⌃' }
+  : { mod: 'Ctrl', shift: 'Shift', enter: 'Enter', del: 'Del', alt: 'Alt', ctrl: 'Ctrl' }
 
-export const key = (k) => LABELS[k] ?? k.toUpperCase()
+export const key = (k) => LABELS[k] ?? (k.length === 1 ? k.toUpperCase() : k)
 
 // shortcut('mod', 'shift', 'enter') → "⌘⇧↩" on macOS, "Ctrl+Shift+Enter" elsewhere.
 export const shortcut = (...keys) => keys.map(key).join(isMac ? '' : '+')

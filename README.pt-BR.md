@@ -44,7 +44,8 @@
 - **Diagrama ER** com layout automático, relações inferidas, busca, modo "só chaves" e exportação SVG/PNG.
 - **Backup e restore** em `.sql` / `.sql.gz` sem `pg_dump` nem `mysqldump`, em streaming, com progresso e cancelamento.
 - **Exportar** tabelas ou o resultado completo de uma consulta em CSV, JSON, JSON Lines ou `INSERT`s, sem limite de linhas.
-- Histórico por conexão, consultas salvas, busca rápida (`⌘/Ctrl+P`), abas.
+- Histórico por conexão, consultas salvas, busca rápida (`⌘/Ctrl+P`), abas e a lista de todos os atalhos de teclado
+  (`⌘/Ctrl+Shift+/` ou o botão de teclado).
 - **Português (Brasil), English e Español**: segue o idioma do sistema; troque quando quiser pelo ícone de globo.
 
 <details>
