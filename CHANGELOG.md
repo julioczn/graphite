@@ -5,6 +5,8 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-11-25
+
 ### Added
 - **Several connections at once.** Opening a connection no longer closes the current one: each open connection gets
   a tab on top (with `+` to open another) and keeps its own query tabs, results and transaction. **Side by side**
@@ -260,7 +262,8 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/julioczn/graphite/releases/tag/v0.16.0
 [0.15.0]: https://github.com/julioczn/graphite/releases/tag/v0.15.0
 [0.14.1]: https://github.com/julioczn/graphite/releases/tag/v0.14.1
 [0.14.0]: https://github.com/julioczn/graphite/releases/tag/v0.14.0
