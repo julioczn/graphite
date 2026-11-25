@@ -38,7 +38,11 @@ const DRIVERS = {
   partiql: () => require("./drivers/dynamodb.cjs"),
   surql: () => require("./drivers/surrealdb.cjs"),
 };
-const MAX_ROWS = 5000;
+// Rows a query result carries back to the window (the renderer picks the
+// limit, see ROW_LIMITS in src/lib/store.js); the rest is only counted.
+const DEFAULT_ROWS = 100;
+const MAX_ROWS = 50000;
+const rowLimit = (n) => Math.min(MAX_ROWS, Math.max(1, Math.floor(Number(n)) || DEFAULT_ROWS));
 
 const userData =
   process.env.GRAPHITE_USER_DATA || path.join(process.cwd(), ".graphite");
@@ -242,8 +246,9 @@ const handlers = {
 
   // Run a script: every statement in order, stop at the first error.
   // Result sets that map back to a table carry `edit` (see Session.editInfo).
-  "query/run": ({ sId, sql }) => {
+  "query/run": ({ sId, sql, limit }) => {
     const s = session(sId);
+    const max = rowLimit(limit);
     return s.lock(async () => {
       const statements = splitStatements(sql, s.driver.dialect);
       const results = [];
@@ -253,7 +258,7 @@ const handlers = {
           const r = await s.run(st.text);
           const durationMs = Math.round(performance.now() - t0);
           if (r.fields) {
-            const truncated = r.rows.length > MAX_ROWS;
+            const truncated = r.rows.length > max;
             const edit = await s
               .editInfo(r.fields, r.origins)
               .catch(() => null);
@@ -269,7 +274,7 @@ const handlers = {
               sql: st.text,
               command: commandOf(st.text),
               fields: r.fields,
-              rows: truncated ? r.rows.slice(0, MAX_ROWS) : r.rows,
+              rows: truncated ? r.rows.slice(0, max) : r.rows,
               rowCount: r.rows.length,
               truncated,
               durationMs,

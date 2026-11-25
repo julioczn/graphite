@@ -1,10 +1,10 @@
 <script setup>
 import { onMounted, onBeforeUnmount } from 'vue'
-import { store, toast } from './lib/store'
+import { store, toast, dropAllSessions } from './lib/store'
 import { bridge } from './lib/api'
 import { t } from './lib/i18n'
 import ConnectionScreen from './components/ConnectionScreen.vue'
-import Workspace from './components/Workspace.vue'
+import Sessions from './components/Sessions.vue'
 import Icon from './components/Icon.vue'
 import AiApproval from './components/AiApproval.vue'
 import AiSettings from './components/AiSettings.vue'
@@ -23,8 +23,7 @@ onMounted(() => {
   initWorkspaces().catch((e) => console.error('workspaces init', e))
   off = bridge.onEvent((ev) => {
     if (ev === 'util-restarted') {
-      store.connection = null
-      bridge.ai.setActive(null)
+      dropAllSessions()
       toast(t('O processo de banco reiniciou. Reconecte-se.'), 'error', 6000)
     }
   })
@@ -33,8 +32,9 @@ onBeforeUnmount(() => off?.())
 </script>
 
 <template>
-  <Workspace v-if="store.connection" />
-  <ConnectionScreen v-else />
+  <Sessions v-if="store.sessions.length" />
+  <!-- Over the open connections (kept mounted) when opening another one. -->
+  <ConnectionScreen v-if="!store.panes.length || store.picker" :class="{ over: store.sessions.length }" />
   <AiSettings v-if="ai.showSettings" />
   <AiApproval />
   <UpdateDialog v-if="update.dialog" />
@@ -54,6 +54,7 @@ onBeforeUnmount(() => off?.())
 </template>
 
 <style>
+.screen.over { position: fixed; inset: 0; z-index: 900; background: var(--bg); }
 .toasts {
   position: fixed;
   right: 16px;

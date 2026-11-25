@@ -1,15 +1,17 @@
 <script setup>
-import { store } from '../lib/store'
+import { useSession } from '../lib/store'
 import { t } from '../lib/i18n'
 
-const answer = (choice) => store.txPrompt.resolve(choice)
+const sess = useSession()
+
+const answer = (choice) => sess.txPrompt.resolve(choice)
 </script>
 
 <template>
   <div class="modal" @mousedown.self="answer(null)">
     <div class="dialog" tabindex="-1" @keydown.esc="answer(null)">
-      <h3>{{ store.txPrompt.title }}</h3>
-      <p>{{ store.txPrompt.message }} {{ t('Escolha o que fazer com ela antes de continuar.') }}</p>
+      <h3>{{ sess.txPrompt.title }}</h3>
+      <p>{{ sess.txPrompt.message }} {{ t('Escolha o que fazer com ela antes de continuar.') }}</p>
       <div class="actions">
         <button class="btn" @click="answer(null)">{{ t('Cancelar') }}</button>
         <span class="grow" />

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { call } from '../lib/api'
-import { store, toast, refreshEntities, tableKey, caps } from '../lib/store'
+import { store, toast, refreshEntities, tableKey, caps, useSession, isFocused, setRowLimit, ROW_LIMITS } from '../lib/store'
 import { t, i18n } from '../lib/i18n'
 import { exportRows } from '../lib/export'
 import Icon from './Icon.vue'
@@ -15,6 +15,7 @@ import { activeId, touched } from '../lib/workspaces'
 
 const props = defineProps({ tab: Object, active: Boolean })
 const tab = props.tab
+const sess = useSession()
 
 // --- snippets ------------------------------------------------------------------
 const snippetAnchor = ref(null) // DOMRect of the toolbar button while the picker is open
@@ -27,7 +28,7 @@ function insertSnippet(s) {
 }
 // SQL sent from the assistant panel ("Inserir") lands in the active query tab.
 watch(() => ai.insert, (ins) => {
-  if (!ins || !props.active) return
+  if (!ins || !props.active || !isFocused(sess)) return
   ai.insert = null
   editor.value?.insertText(ins.sql)
 })
@@ -58,6 +59,8 @@ let savedSql = tab.sql
 
 const result = computed(() => results.value[current.value])
 const DDL = new Set(['CREATE', 'DROP', 'ALTER', 'RENAME', 'TRUNCATE'])
+const READS = new Set(['SELECT', 'WITH', 'VALUES', 'TABLE', 'SHOW', 'EXPLAIN', 'DESCRIBE', 'DESC', 'PRAGMA'])
+let lastSql = '' // what produced `results`
 const applying = ref(false)
 // Re-running for a full export is only safe for plain reads.
 const canExportAll = computed(() => result.value?.kind === 'rows' && ['SELECT', 'WITH', 'VALUES', 'TABLE'].includes(result.value.command)
@@ -67,8 +70,8 @@ const canExportAll = computed(() => result.value?.kind === 'rows' && ['SELECT', 
 // The utility tells us which result columns come straight from a table whose
 // primary key is also in the result (`result.edit`). Those cells can be edited
 // in place and written back with UPDATE / DELETE by primary key.
-const readOnly = computed(() => !!store.connection.saved?.config?.readOnly)
-const edit = computed(() => (result.value?.kind === 'rows' && !readOnly.value && caps().transactions !== false ? result.value.edit : null))
+const readOnly = computed(() => !!sess.connection.saved?.config?.readOnly)
+const edit = computed(() => (result.value?.kind === 'rows' && !readOnly.value && caps(sess).transactions !== false ? result.value.edit : null))
 const colEditable = computed(() => edit.value?.columns.map(Boolean) ?? null)
 const pkFields = computed(() => {
   if (!edit.value) return []
@@ -83,7 +86,7 @@ const pendingCount = computed(() => {
 const pendingAll = computed(() => results.value.some((r) => r.kind === 'rows' && (Object.keys(r.edits).length || Object.keys(r.deleted).length)))
 const editTargets = computed(() => {
   if (!edit.value) return ''
-  return edit.value.tables.map((t) => tableKey({ name: t.table, schema: t.schema })).join(', ')
+  return edit.value.tables.map((t) => tableKey({ name: t.table, schema: t.schema }, sess)).join(', ')
 })
 
 function pkOf(r, t) {
@@ -150,8 +153,8 @@ async function apply() {
 
   applying.value = true
   try {
-    const { affected, tx } = await call('query/apply', { sId: store.connection.sId, changes })
-    store.tx = tx
+    const { affected, tx } = await call('query/apply', { sId: sess.key, changes })
+    sess.tx = tx
     // Reflect the write in the grid instead of re-running the script.
     for (const [k, value] of Object.entries(res.edits)) {
       const [r, c] = k.split(':').map(Number)
@@ -196,8 +199,9 @@ async function execute(sql) {
   running.value = true
   const t0 = performance.now()
   try {
-    const { results: res, tx } = await call('query/run', { sId: store.connection.sId, sql })
-    store.tx = tx
+    const { results: res, tx } = await call('query/run', { sId: sess.key, sql, limit: store.rowLimit })
+    sess.tx = tx
+    lastSql = sql
     for (const r of res) if (r.kind === 'rows') Object.assign(r, { edits: {}, deleted: {} })
     results.value = res
     ranAt.value = new Date()
@@ -208,11 +212,11 @@ async function execute(sql) {
     const rowCount = res.reduce((n, r) => n + (r.rowCount || r.affected || 0), 0)
     call('app/addHistory', {
       entry: {
-        connectionId: store.connection.saved?.id ?? null, sql: sql.trim(),
+        connectionId: sess.connection.saved?.id ?? null, sql: sql.trim(),
         durationMs: Math.round(performance.now() - t0), rowCount, ok: err < 0,
       },
     }).then(() => store.historyVersion++)
-    if (res.some((r) => r.kind !== 'error' && DDL.has(r.command))) refreshEntities().catch(() => {})
+    if (res.some((r) => r.kind !== 'error' && DDL.has(r.command))) refreshEntities(sess).catch(() => {})
   } catch (e) {
     results.value = [{ kind: 'error', message: e.message, sql, durationMs: 0 }]
     current.value = 0
@@ -222,6 +226,22 @@ async function execute(sql) {
 }
 
 const runAll = () => execute(editor.value.textForRun())
+
+// The row limit (status bar) changed while this tab is on screen: a smaller
+// one trims the grid; a bigger one runs a truncated read again.
+const rerunnable = () => results.value.length && results.value.every((r) => r.kind === 'rows' && READS.has(r.command)
+  && !(r.command === 'WITH' && /\b(insert|update|delete|merge)\b/i.test(r.sql)))
+watch(() => store.rowLimit, (n, old) => {
+  if (!props.active || !isFocused(sess) || running.value || pendingAll.value) return
+  if (n < old) {
+    for (const r of results.value) if (r.kind === 'rows' && r.rows.length > n) Object.assign(r, { rows: r.rows.slice(0, n), truncated: true })
+    results.value = [...results.value]
+  } else if (results.value.some((r) => r.truncated) && rerunnable()) execute(lastSql)
+})
+function moreRows() {
+  const next = ROW_LIMITS.find((n) => n > store.rowLimit)
+  if (next) setRowLimit(next)
+}
 const runCurrent = () => execute(editor.value.currentStatement())
 
 async function save() {
@@ -276,7 +296,7 @@ function label(r, i) {
 <template>
   <div ref="body" class="qt">
     <div class="ed" :style="{ height: split + '%' }">
-      <SqlEditor ref="editor" v-model="tab.sql" :dialect="store.connection.dialect" :schema="store.schemaMap"
+      <SqlEditor ref="editor" v-model="tab.sql" :dialect="sess.connection.dialect" :schema="sess.schemaMap"
                  @run="runAll" @run-current="runCurrent" @save="save" />
     </div>
 
@@ -291,11 +311,11 @@ function label(r, i) {
       <button class="btn ghost sm" :title="`${tab.savedId ? t('Salvar') : t('Salvar como…')} (${shortcut('mod', 's')})`" @click="save">
         <Icon name="save" :size="13" /> {{ t('Salvar') }}
       </button>
-      <button v-if="caps().sql !== false" class="btn ghost sm snip-btn" :class="{ on: snippetAnchor }" data-snippet-toggle
+      <button v-if="caps(sess).sql !== false" class="btn ghost sm snip-btn" :class="{ on: snippetAnchor }" data-snippet-toggle
               :title="t('Inserir snippet de SQL (ou digite o atalho no editor, ex.: sel, ins, lj)')" @click="toggleSnippets">
         <Icon name="bolt" :size="13" /> {{ t('Snippets') }}
       </button>
-      <SnippetPicker v-if="snippetAnchor" :anchor="snippetAnchor" :dialect="store.connection.dialect"
+      <SnippetPicker v-if="snippetAnchor" :anchor="snippetAnchor" :dialect="sess.connection.dialect"
                      @pick="insertSnippet" @close="snippetAnchor = null" />
       <span class="sep" />
       <TxControls />
@@ -314,8 +334,8 @@ function label(r, i) {
         <button class="btn ghost sm" :title="t('Exportar JSON')" @click="exportRows(result.fields, result.rows, 'json', tab.title)">
           JSON
         </button>
-        <button v-if="canExportAll" class="btn ghost sm" :title="t('Executa a consulta de novo e exporta todas as linhas (sem o limite de {limit})', { limit: 5000 })"
-                @click="store.dialog = { type: 'export', props: { query: result.sql, name: tab.title } }">
+        <button v-if="canExportAll" class="btn ghost sm" :title="t('Executa a consulta de novo e exporta todas as linhas (sem o limite de {limit})', { limit: store.rowLimit })"
+                @click="sess.dialog = { type: 'export', props: { query: result.sql, name: tab.title } }">
           <Icon name="export" :size="13" /> {{ t('Tudo…') }}
         </button>
       </template>
@@ -360,14 +380,17 @@ function label(r, i) {
         </div>
 
         <div v-if="result.truncated" class="trunc">
-          {{ t('Mostrando as primeiras {shown} de {total} linhas. Use LIMIT para refinar.', { shown: result.rows.length, total: result.rowCount }) }}
+          <span>{{ t('Mostrando as primeiras {shown} de {total} linhas (limite no rodapé). Use LIMIT para refinar.', { shown: result.rows.length, total: result.rowCount }) }}</span>
+          <button v-if="store.rowLimit < ROW_LIMITS.at(-1) && rerunnable()" class="btn ghost sm" @click="moreRows">
+            {{ t('Mostrar até {n}', { n: ROW_LIMITS.find((n) => n > store.rowLimit).toLocaleString(i18n.locale) }) }}
+          </button>
         </div>
 
         <div v-if="result.kind === 'rows'" class="foot" :class="{ pending: pendingCount }">
           <template v-if="pendingCount">
             <span class="pending-label"><Icon name="info" :size="13" /> {{ t('{n} alteração pendente em {tables}|{n} alterações pendentes em {tables}', { n: pendingCount, tables: editTargets }) }}</span>
             <span class="grow" />
-            <span v-if="!store.tx.autoCommit" class="hint">{{ t('Modo manual: fica na transação até o Commit') }}</span>
+            <span v-if="!sess.tx.autoCommit" class="hint">{{ t('Modo manual: fica na transação até o Commit') }}</span>
             <button class="btn sm" :disabled="applying" @click="discard"><Icon name="undo" :size="12" /> {{ t('Descartar') }}</button>
             <button class="btn primary sm" :disabled="applying" :title="t('Gravar as alterações no banco')" @click="apply">
               <Icon name="check" :size="12" /> {{ applying ? t('Aplicando…') : t('Aplicar') }}
@@ -453,7 +476,7 @@ function label(r, i) {
 .foot .hint { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pending-label { display: inline-flex; align-items: center; gap: 6px; color: var(--fg); font-weight: 600; white-space: nowrap; }
 .grow { flex: 1; }
-.trunc { flex: none; padding: 6px 12px; border-top: 1px solid var(--line-2); background: var(--surface-3); color: var(--fg-2); font-size: 12px; }
+.trunc { flex: none; display: flex; align-items: center; gap: 10px; padding: 4px 12px; min-height: 30px; border-top: 1px solid var(--line-2); background: var(--surface-3); color: var(--fg-2); font-size: 12px; }
 
 .modal { position: fixed; inset: 0; z-index: 950; display: grid; place-items: center; background: rgba(0, 0, 0, 0.6); }
 .dialog { width: min(420px, 90vw); padding: 22px; border: 1px solid var(--line-3); border-radius: 10px; background: var(--surface-3); box-shadow: 0 24px 80px rgba(0,0,0,.7); }

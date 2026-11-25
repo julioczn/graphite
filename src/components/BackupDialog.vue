@@ -1,13 +1,15 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { bridge, call } from '../lib/api'
-import { store, startJob, toast } from '../lib/store'
+import { startJob, toast, useSession } from '../lib/store'
 import Icon from './Icon.vue'
 import Modal from './Modal.vue'
 import { t } from '../lib/i18n'
 
+const sess = useSession()
+
 const emit = defineEmits(['close'])
-const c = store.connection
+const c = sess.connection
 const isPg = c.dialect === 'postgres'
 const scopeName = c.dialect === 'sqlite' ? c.database.replace(/\.\w+$/, '') : c.schema || c.database || t('banco')
 
@@ -38,7 +40,7 @@ const shown = computed(() => {
 const canStart = computed(() => form.file && !busy.value && (form.allTables || form.tables.length) && (!isPg || form.schemas.length))
 
 onMounted(async () => {
-  tables.value = store.tables.filter((t) => t.type === 'table')
+  tables.value = sess.tables.filter((t) => t.type === 'table')
   if (isPg) schemas.value = (await call('conn/listSchemas', { sId: c.sId })).filter((s) => !s.system)
 })
 
@@ -76,7 +78,7 @@ function setAllShown(on) {
 async function start() {
   busy.value = true
   try {
-    await startJob('backup/start', {
+    await startJob(sess, 'backup/start', {
       file: form.file,
       gzip: form.gzip,
       structure: form.content !== 'data',

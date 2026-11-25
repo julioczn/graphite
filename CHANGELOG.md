@@ -5,6 +5,15 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- **Several connections at once.** Opening a connection no longer closes the current one: each open connection gets
+  a tab on top (with `+` to open another) and keeps its own query tabs, results and transaction. **Side by side**
+  (`⌘/Ctrl+\`, or right-click a connection tab) shows two connections next to each other, each with its own sidebar
+  and status bar; `⌘/Ctrl+Alt+←/→` moves between them. The AI assistant works on the pane you're in.
+- **Row limit in the status bar.** Query results show 100 rows by default (was 5,000); pick 100 to 50,000 in the
+  status bar, remembered on this machine. Raising it runs a cut-off read again, and the notice under a cut-off result
+  has a "Show up to …" button.
+
 ## [0.15.0] - 2026-11-24
 
 ### Added

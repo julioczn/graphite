@@ -5,11 +5,13 @@
 import { ref, reactive, computed, watch, nextTick } from 'vue'
 import dagre from '@dagrejs/dagre'
 import { call, bridge } from '../lib/api'
-import { store, toast, openTableTab } from '../lib/store'
+import { toast, openTableTab, useSession } from '../lib/store'
 import Icon from './Icon.vue'
 import ErNode from './ErNode.vue'
 import { C, FONT, HEAD, ROW, trunc } from '../lib/erTheme'
 import { t, i18n } from '../lib/i18n'
+
+const sess = useSession()
 
 const props = defineProps({ tab: Object, active: Boolean })
 const tab = props.tab
@@ -191,7 +193,7 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    model.value = await call('er/model', { sId: store.connection.sId })
+    model.value = await call('er/model', { sId: sess.connection.sId })
     // No declared FKs at all: show the guessed ones right away.
     inferOn.value = !model.value.relations.length && inferred.value.length > 0
     for (const k of Object.keys(pos)) delete pos[k]
@@ -313,8 +315,8 @@ function onWheel(e) {
 }
 
 function openTable(n) {
-  const t = store.tables.find((x) => x.name === n.name && (x.schema ?? null) === (n.schema ?? x.schema ?? null))
-  openTableTab(t || { name: n.name, schema: n.schema, type: n.type })
+  const t = sess.tables.find((x) => x.name === n.name && (x.schema ?? null) === (n.schema ?? x.schema ?? null))
+  openTableTab(sess, t || { name: n.name, schema: n.schema, type: n.type })
 }
 
 // --- export --------------------------------------------------------------------------
@@ -414,7 +416,7 @@ watch([() => model.value.tables.length, relations, () => props.active, () => i18
     <div class="canvas">
       <div v-if="loading" class="state"><span class="spinner" /> {{ t('Lendo estrutura…') }}</div>
       <div v-else-if="error" class="state err"><Icon name="alert" :size="18" /> {{ error }}</div>
-      <div v-else-if="!nodes.length" class="state">{{ store.connection.dialect === 'postgres' ? t('Nenhuma tabela neste schema') : t('Nenhuma tabela neste banco') }}</div>
+      <div v-else-if="!nodes.length" class="state">{{ sess.connection.dialect === 'postgres' ? t('Nenhuma tabela neste schema') : t('Nenhuma tabela neste banco') }}</div>
       <div v-if="!loading && nodes.length && !declared.length" class="banner">
         <Icon name="info" :size="13" />
         {{ t('Nenhuma chave estrangeira declarada.') }}<template v-if="inferred.length"> {{ t('Linhas tracejadas são relações inferidas pelo nome das colunas.') }}</template>

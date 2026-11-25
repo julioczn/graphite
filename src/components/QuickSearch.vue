@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { call } from '../lib/api'
-import { store, openTableTab, newQueryTab, tableKey } from '../lib/store'
+import { openTableTab, newQueryTab, tableKey, useSession } from '../lib/store'
 import Icon from './Icon.vue'
 import { t } from '../lib/i18n'
 import { activeId } from '../lib/workspaces'
+
+const sess = useSession()
 
 const q = ref('')
 const idx = ref(0)
@@ -28,7 +30,7 @@ function score(text, query) {
 
 const results = computed(() => {
   const items = [
-    ...store.tables.map((t) => ({ kind: t.type, label: tableKey(t), t })),
+    ...sess.tables.map((t) => ({ kind: t.type, label: tableKey(t, sess), t })),
     ...saved.value.map((s) => ({ kind: 'saved', label: s.title, s })),
   ]
   return items
@@ -39,13 +41,13 @@ const results = computed(() => {
 })
 
 function close() {
-  store.quickSearch = false
+  sess.quickSearch = false
 }
 
 function choose(it) {
   if (!it) return
-  if (it.kind === 'saved') newQueryTab(it.s.sql, it.s.title, it.s.id)
-  else openTableTab(it.t)
+  if (it.kind === 'saved') newQueryTab(sess, it.s.sql, it.s.title, it.s.id)
+  else openTableTab(sess, it.t)
   close()
 }
 

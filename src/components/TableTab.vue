@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { call } from '../lib/api'
-import { store, toast, newQueryTab, selectSql, caps } from '../lib/store'
+import { toast, newQueryTab, selectSql, caps, useSession } from '../lib/store'
 import { engineOf } from '../../shared/engines.mjs'
 import { t, i18n } from '../lib/i18n'
 import { exportRows } from '../lib/export'
@@ -12,9 +12,11 @@ import ResultGrid from './ResultGrid.vue'
 import StructureView from './StructureView.vue'
 import TxControls from './TxControls.vue'
 
+const sess = useSession()
+
 const props = defineProps({ tab: Object, active: Boolean })
 const tab = props.tab
-const ident = { sId: store.connection.sId, table: tab.table, schema: tab.schema }
+const ident = { sId: sess.connection.sId, table: tab.table, schema: tab.schema }
 
 const loaded = ref(false)
 const loading = ref(false)
@@ -37,13 +39,13 @@ const deleted = ref({})
 const applying = ref(false)
 
 const pk = computed(() => columns.value.filter((c) => c.primary).map((c) => c.name))
-const readOnly = computed(() => !!store.connection.saved?.config?.readOnly)
+const readOnly = computed(() => !!sess.connection.saved?.config?.readOnly)
 // Edits are applied in one transaction, so engines without transactions are read-only here.
-const canEdit = computed(() => (caps().edit ?? caps().transactions) !== false)
+const canEdit = computed(() => (caps(sess).edit ?? caps(sess).transactions) !== false)
 const editable = computed(() => tab.kind !== 'view' && pk.value.length > 0 && !readOnly.value && canEdit.value)
 // Byte columns, and key columns where the engine can't change a row's key.
 const colEditable = computed(() => {
-  const keysLocked = caps().editKeys === false
+  const keysLocked = caps(sess).editKeys === false
   if (!binary.value.length && !keysLocked) return null
   return fields.value.map((f, i) => !binary.value.includes(i) && !(keysLocked && pk.value.includes(f)))
 })
@@ -53,8 +55,8 @@ const pendingCount = computed(() => Object.keys(edits.value).length + Object.key
 const unknownTotal = computed(() => total.value === null || total.value === undefined)
 const from = computed(() => (total.value || (unknownTotal.value && rows.value.length) ? offset.value + 1 : 0))
 const hasNext = computed(() => (unknownTotal.value ? rows.value.length >= limit.value : to.value < total.value))
-const filterLabel = computed(() => engineOf(store.connection.engine)?.filter?.label || 'WHERE')
-const filterPlaceholder = computed(() => engineOf(store.connection.engine)?.filter?.placeholder)
+const filterLabel = computed(() => engineOf(sess.connection.engine)?.filter?.label || 'WHERE')
+const filterPlaceholder = computed(() => engineOf(sess.connection.engine)?.filter?.placeholder)
 const to = computed(() => offset.value + rows.value.length)
 
 async function loadMeta() {
@@ -102,7 +104,7 @@ async function init() {
 
 watch(() => props.active, (a) => { if (a && !loaded.value) init() }, { immediate: true })
 // After commit / rollback the page may show values that no longer exist.
-watch(() => store.txVersion, () => { if (loaded.value && !pendingCount.value) loadPage() })
+watch(() => sess.txVersion, () => { if (loaded.value && !pendingCount.value) loadPage() })
 
 watch([from, to, total, durationMs, pendingCount, () => tab.view, () => i18n.locale], () => {
   if (tab.view === 'structure') {
@@ -203,7 +205,7 @@ async function apply() {
   applying.value = true
   try {
     const { affected, tx } = await call('table/apply', { ...ident, changes })
-    store.tx = tx
+    sess.tx = tx
     const msg = `${t('{n} alteração aplicada|{n} alterações aplicadas', { n: changes.length })} (${t('{n} linha|{n} linhas', { n: affected })})`
     toast(tx.autoCommit ? msg : t('{msg} na transação — use Commit para gravar', { msg }), 'success', tx.autoCommit ? 3200 : 5000)
     await loadPage()
@@ -220,7 +222,7 @@ function discard() {
 }
 
 function openSql() {
-  newQueryTab(selectSql({ name: tab.table, schema: tab.schema }), tab.table)
+  newQueryTab(sess, selectSql(sess, { name: tab.table, schema: tab.schema }), tab.table)
 }
 </script>
 
@@ -244,7 +246,7 @@ function openSql() {
       <button class="btn ghost icon sm" :title="t('Recarregar')" @click="refresh"><Icon name="refresh" :size="14" /></button>
       <button class="btn ghost icon sm" :title="t('Abrir como consulta')" @click="openSql"><Icon name="code" :size="14" /></button>
       <button class="btn ghost sm" :title="t('Exportar a tabela inteira (respeita o filtro WHERE)')"
-              @click="store.dialog = { type: 'export', props: { tables: [{ name: tab.table, schema: tab.schema }], where } }"><Icon name="export" :size="13" /> {{ t('Exportar') }}</button>
+              @click="sess.dialog = { type: 'export', props: { tables: [{ name: tab.table, schema: tab.schema }], where } }"><Icon name="export" :size="13" /> {{ t('Exportar') }}</button>
       <span class="sep" />
       <TxControls />
     </div>
