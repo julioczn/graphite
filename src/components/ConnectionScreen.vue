@@ -1,13 +1,14 @@
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { call, bridge } from '../lib/api'
-import { openConnection, toast } from '../lib/store'
+import { store, openConnection, toast } from '../lib/store'
 import Icon from './Icon.vue'
 import LanguageMenu from './LanguageMenu.vue'
 import UpdateButton from './UpdateButton.vue'
 import WorkspaceMenu from './WorkspaceMenu.vue'
 import { workspaces, activeId, touched, loadWorkspaces } from '../lib/workspaces'
 import { t } from '../lib/i18n'
+import { shortcut } from '../lib/keys'
 import { ai } from '../lib/ai'
 import { ENGINES, engineOf } from '../../shared/engines.mjs'
 import { parseConnectionUrl } from '../../shared/connurl.mjs'
@@ -310,7 +311,17 @@ function subtitle(c) {
 const typeLabel = (type) => engineOf(type)?.label || type
 const iconOf = (type) => (engine(type).fields === 'file' ? 'file' : 'server')
 
-onMounted(load)
+// Opened over the connections already open: back to them with the button or Esc.
+const over = computed(() => store.sessions.length > 0)
+const back = () => (store.picker = null)
+const onEsc = (e) => {
+  if (e.key === 'Escape' && over.value && !e.defaultPrevented && !document.querySelector('.modal')) back()
+}
+onMounted(() => {
+  load()
+  window.addEventListener('keydown', onEsc)
+})
+onBeforeUnmount(() => window.removeEventListener('keydown', onEsc))
 </script>
 
 <template>
@@ -325,6 +336,9 @@ onMounted(load)
           <div class="brand-name">Graphite</div>
           <div class="brand-sub">{{ t('cliente de bancos de dados') }}</div>
         </div>
+        <button v-if="over" class="btn ghost sm back" :title="t('Voltar às conexões abertas (Esc)')" @click="back">
+          <Icon name="left" :size="13" /> {{ t('Voltar') }}
+        </button>
       </div>
 
       <WorkspaceMenu />
@@ -354,7 +368,10 @@ onMounted(load)
           <button class="btn ghost icon sm del" :title="t('Remover')" @click.stop="remove(c)"><Icon name="trash" :size="13" /></button>
         </div>
       </div>
-      <div class="side-foot"><UpdateButton /><LanguageMenu /></div>
+      <div class="side-foot">
+        <UpdateButton /><LanguageMenu />
+        <button class="btn ghost" :title="shortcut('mod', 'shift', '?')" @click="store.shortcuts = true"><Icon name="keyboard" :size="14" /> {{ t('Atalhos de teclado') }}</button>
+      </div>
     </aside>
 
     <main class="main">
@@ -556,6 +573,7 @@ onMounted(load)
   border-right: 1px solid var(--line);
 }
 .brand { display: flex; align-items: center; gap: 12px; padding: 22px 20px 18px; }
+.brand .back { margin-left: auto; }
 .logo { width: 34px; height: 34px; }
 .brand-name { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 .brand-sub { font-size: 11px; color: var(--fg-3); letter-spacing: 0.08em; text-transform: uppercase; }

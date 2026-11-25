@@ -2,9 +2,11 @@
 // Database (MySQL) / schema (PostgreSQL) switcher shown above the entity filter.
 import { ref, computed, nextTick, onBeforeUnmount } from 'vue'
 import { call } from '../lib/api'
-import { store, useSchema, toast } from '../lib/store'
+import { useSchema, toast, useSession } from '../lib/store'
 import Icon from './Icon.vue'
 import { t } from '../lib/i18n'
+
+const sess = useSession()
 
 const open = ref(false)
 const loading = ref(false)
@@ -17,7 +19,7 @@ const input = ref(null)
 const list = ref(null)
 
 // "Schema" engines (PostgreSQL, Oracle) vs "database" ones (MySQL, SQL Server).
-const isPg = computed(() => store.connection.caps?.schemas === 'schema')
+const isPg = computed(() => sess.connection.caps?.schemas === 'schema')
 
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
@@ -38,8 +40,8 @@ async function toggle() {
   window.addEventListener('mousedown', onOutside)
   nextTick(() => input.value?.focus())
   try {
-    items.value = await call('conn/listSchemas', { sId: store.connection.sId })
-    active.value = Math.max(0, flat.value.findIndex((s) => s.name === store.connection.schema))
+    items.value = await call('conn/listSchemas', { sId: sess.connection.sId })
+    active.value = Math.max(0, flat.value.findIndex((s) => s.name === sess.connection.schema))
     nextTick(scrollActive)
   } catch (e) {
     toast(e.message, 'error')
@@ -60,10 +62,10 @@ function onOutside(e) {
 
 async function pick(s) {
   close()
-  if (s.name === store.connection.schema) return
+  if (s.name === sess.connection.schema) return
   switching.value = true
   try {
-    await useSchema(s.name)
+    await useSchema(sess, s.name)
   } catch (e) {
     toast(t('Não foi possível trocar para {name}: {error}', { name: s.name, error: e.message }), 'error', 6000)
   } finally {
@@ -91,8 +93,8 @@ onBeforeUnmount(close)
     <button class="trigger" :class="{ open }" :disabled="switching" :title="isPg ? t('Trocar de schema') : t('Trocar de banco')" @click="toggle">
       <Icon name="database" :size="13" class="ico" />
       <span class="kind">{{ isPg ? t('Schema') : t('Banco') }}</span>
-      <span class="value" :class="{ none: !store.connection.schema }">
-        {{ switching ? t('trocando…') : store.connection.schema || (isPg ? t('selecione um schema') : t('selecione um banco')) }}
+      <span class="value" :class="{ none: !sess.connection.schema }">
+        {{ switching ? t('trocando…') : sess.connection.schema || (isPg ? t('selecione um schema') : t('selecione um banco')) }}
       </span>
       <Icon name="chevron" :size="12" class="chev" />
     </button>
@@ -108,10 +110,10 @@ onBeforeUnmount(close)
         <template v-for="g in sections" :key="g.label">
           <div class="sect">{{ g.label }}</div>
           <button v-for="s in g.items" :key="s.name" class="opt"
-                  :class="{ active: flat[active] === s, current: s.name === store.connection.schema }"
+                  :class="{ active: flat[active] === s, current: s.name === sess.connection.schema }"
                   @mouseenter="active = flat.indexOf(s)" @click="pick(s)">
             <span class="opt-name">{{ s.name }}</span>
-            <Icon v-if="s.name === store.connection.schema" name="check" :size="12" />
+            <Icon v-if="s.name === sess.connection.schema" name="check" :size="12" />
           </button>
         </template>
       </div>

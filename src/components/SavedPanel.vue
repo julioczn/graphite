@@ -1,11 +1,13 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { call } from '../lib/api'
-import { store, newQueryTab } from '../lib/store'
+import { newQueryTab, store, useSession } from '../lib/store'
 import Icon from './Icon.vue'
 import { key } from '../lib/keys'
 import { t } from '../lib/i18n'
 import { workspaces, activeId, touched } from '../lib/workspaces'
+
+const sess = useSession()
 
 const items = ref([])
 
@@ -14,16 +16,16 @@ async function load() {
 }
 
 function open(q) {
-  const existing = store.tabs.find((t) => t.savedId === q.id)
-  if (existing) store.activeTabId = existing.id
-  else newQueryTab(q.sql, q.title, q.id)
+  const existing = sess.tabs.find((t) => t.savedId === q.id)
+  if (existing) sess.activeTabId = existing.id
+  else newQueryTab(sess, q.sql, q.title, q.id)
 }
 
 async function remove(q) {
   if (!confirm(t('Excluir a consulta "{title}"?', { title: q.title }))) return
   await call('app/deleteQuery', { id: q.id })
   touched()
-  for (const tab of store.tabs) if (tab.savedId === q.id) tab.savedId = null
+  for (const tab of sess.tabs) if (tab.savedId === q.id) tab.savedId = null
   load()
 }
 

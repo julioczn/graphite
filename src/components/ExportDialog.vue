@@ -2,10 +2,12 @@
 // Export whole tables (one file each) or the full result of a query.
 import { reactive, ref, computed, watch } from 'vue'
 import { bridge } from '../lib/api'
-import { store, startJob, toast, tableKey } from '../lib/store'
+import { startJob, toast, tableKey, useSession } from '../lib/store'
 import Icon from './Icon.vue'
 import Modal from './Modal.vue'
 import { t } from '../lib/i18n'
+
+const sess = useSession()
 
 const props = defineProps({
   tables: { type: Array, default: () => [] }, // preselected [{ name, schema }]
@@ -20,9 +22,9 @@ const FORMATS = [
   { id: 'json', label: 'JSON', ext: 'json' },
   { id: 'jsonl', label: 'JSON Lines', ext: 'jsonl' },
   // INSERT statements only make sense for SQL databases.
-  ...(store.connection?.caps?.sql === false ? [] : [{ id: 'sql', label: 'SQL INSERT', ext: 'sql' }]),
+  ...(sess.connection?.caps?.sql === false ? [] : [{ id: 'sql', label: 'SQL INSERT', ext: 'sql' }]),
 ]
-const all = store.tables.filter((t) => t.type === 'table' || t.type === 'view')
+const all = sess.tables.filter((t) => t.type === 'table' || t.type === 'view')
 const key = (t) => `${t.schema ?? ''}.${t.name}`
 
 const form = reactive({
@@ -45,7 +47,7 @@ const many = computed(() => !isQuery.value && chosen.value.length > 1)
 const fmt = computed(() => FORMATS.find((f) => f.id === form.format))
 const shown = computed(() => {
   const q = filter.value.trim().toLowerCase()
-  return all.filter((t) => !q || tableKey(t).toLowerCase().includes(q))
+  return all.filter((t) => !q || tableKey(t, sess).toLowerCase().includes(q))
 })
 const canStart = computed(() => form.target && !form.busy && (isQuery.value || chosen.value.length))
 
@@ -64,7 +66,7 @@ async function start() {
   form.busy = true
   try {
     const csv = { delimiter: form.delimiter, header: form.header, bom: form.bom, nullAs: form.nullAs }
-    await startJob('export/start', {
+    await startJob(sess, 'export/start', {
       format: form.format, csv,
       ...(isQuery.value
         ? { query: props.query, file: form.target, sqlTable: form.sqlTable }
@@ -138,7 +140,7 @@ function setAllShown(on) {
           <div class="list">
             <label v-for="tbl in shown" :key="key(tbl)" class="check item">
               <input v-model="form.selected" type="checkbox" :value="key(tbl)" />
-              <Icon :name="tbl.type === 'view' ? 'view' : 'table'" :size="12" /> {{ tableKey(tbl) }}
+              <Icon :name="tbl.type === 'view' ? 'view' : 'table'" :size="12" /> {{ tableKey(tbl, sess) }}
             </label>
           </div>
         </div>

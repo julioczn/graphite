@@ -2,9 +2,11 @@
 // Commit mode switch plus Commit / Rollback while a transaction is open.
 // The transaction belongs to the connection, so every tab shows the same state.
 import { ref } from 'vue'
-import { store, setAutoCommit, commit, rollback, caps } from '../lib/store'
+import { setAutoCommit, commit, rollback, caps, useSession } from '../lib/store'
 import { t } from '../lib/i18n'
 import Icon from './Icon.vue'
+
+const sess = useSession()
 
 const busy = ref(false)
 
@@ -23,17 +25,17 @@ async function act(fn) {
 <template>
   <div class="txc">
     <div class="seg" :title="t('Modo de commit da conexão')">
-      <button :class="{ on: store.tx.autoCommit }" :disabled="busy" @click="act(() => setAutoCommit(true))">{{ t('Auto-commit') }}</button>
-      <button v-if="caps().manualMode" :class="{ on: !store.tx.autoCommit }" :disabled="busy" @click="act(() => setAutoCommit(false))">{{ t('Manual') }}</button>
+      <button :class="{ on: sess.tx.autoCommit }" :disabled="busy" @click="act(() => setAutoCommit(sess, true))">{{ t('Auto-commit') }}</button>
+      <button v-if="caps(sess).manualMode" :class="{ on: !sess.tx.autoCommit }" :disabled="busy" @click="act(() => setAutoCommit(sess, false))">{{ t('Manual') }}</button>
     </div>
-    <template v-if="store.tx.open">
-      <span class="open" :title="t('{n} alteração sem commit|{n} alterações sem commit', { n: store.tx.statements })">
-        <span class="dot" /> {{ store.tx.statements }}
+    <template v-if="sess.tx.open">
+      <span class="open" :title="t('{n} alteração sem commit|{n} alterações sem commit', { n: sess.tx.statements })">
+        <span class="dot" /> {{ sess.tx.statements }}
       </span>
-      <button class="btn primary sm" :disabled="busy" :title="t('Gravar a transação')" @click="act(commit)">
+      <button class="btn primary sm" :disabled="busy" :title="t('Gravar a transação')" @click="act(() => commit(sess))">
         <Icon name="check" :size="12" /> {{ t('Commit') }}
       </button>
-      <button class="btn sm" :disabled="busy" :title="t('Desfazer a transação')" @click="act(rollback)">
+      <button class="btn sm" :disabled="busy" :title="t('Desfazer a transação')" @click="act(() => rollback(sess))">
         <Icon name="undo" :size="12" /> {{ t('Rollback') }}
       </button>
     </template>

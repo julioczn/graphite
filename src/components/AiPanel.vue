@@ -19,7 +19,7 @@ const configured = computed(() => {
   return !!a.value.baseUrl
 })
 const modelLabel = computed(() => a.value?.model || '')
-const tab = computed(() => store.tabs.find((x) => x.id === store.activeTabId))
+const tab = computed(() => store.session?.tabs.find((x) => x.id === store.session.activeTabId))
 const hasEditorSql = computed(() => tab.value?.type === 'query' && !!tab.value.sql?.trim())
 
 const suggestions = computed(() => [

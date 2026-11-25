@@ -1,12 +1,14 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { call } from '../lib/api'
-import { store, newQueryTab } from '../lib/store'
+import { newQueryTab, store, useSession } from '../lib/store'
 import { t, intl } from '../lib/i18n'
 import Icon from './Icon.vue'
 
+const sess = useSession()
+
 const items = ref([])
-const connectionId = () => store.connection.saved?.id ?? null
+const connectionId = () => sess.connection.saved?.id ?? null
 
 async function load() {
   items.value = await call('app/history', { connectionId: connectionId() })
@@ -43,7 +45,7 @@ onMounted(load)
         {{ t('Consultas executadas aparecem aqui.') }}
       </div>
       <button v-for="h in items" :key="h.id" class="entry" :class="{ failed: !h.ok }" :title="t('Abrir em nova aba')"
-              @click="newQueryTab(h.sql)">
+              @click="newQueryTab(sess, h.sql)">
         <code>{{ h.sql }}</code>
         <span class="meta">
           <Icon v-if="!h.ok" name="alert" :size="11" />

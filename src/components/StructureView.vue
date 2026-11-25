@@ -1,7 +1,9 @@
 <script setup>
-import { newQueryTab, toast } from '../lib/store'
+import { newQueryTab, toast, useSession } from '../lib/store'
 import Icon from './Icon.vue'
 import { t } from '../lib/i18n'
+
+const sess = useSession()
 
 const props = defineProps({ table: String, columns: Array, indexes: Array, ddl: String })
 
@@ -52,7 +54,7 @@ async function copyDdl() {
         DDL
         <span class="grow" />
         <button class="btn ghost sm" @click="copyDdl"><Icon name="copy" :size="13" /> {{ t('Copiar') }}</button>
-        <button class="btn ghost sm" @click="newQueryTab(ddl, `DDL ${table}`)"><Icon name="code" :size="13" /> {{ t('Abrir') }}</button>
+        <button class="btn ghost sm" @click="newQueryTab(sess, ddl, `DDL ${table}`)"><Icon name="code" :size="13" /> {{ t('Abrir') }}</button>
       </h3>
       <pre>{{ ddl }}</pre>
     </section>

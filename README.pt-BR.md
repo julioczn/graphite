@@ -29,8 +29,10 @@
 - **SQLite, PostgreSQL, MySQL, MariaDB, TiDB, CockroachDB, GreengageDB e LibSQL/Turso** ([lista completa](#bancos-suportados)) com conexões salvas (senhas cifradas pelo chaveiro do sistema), botão
   **Testar**, **Importar de URL** (cole `postgres://…`, `mysql://…`, `mongodb+srv://…`, JDBC, `DATABASE_URL=…`, strings
   libpq ou ADO.NET e o formulário se preenche sozinho) e um banco **demo** pronto.
+- **Várias conexões ao mesmo tempo**: cada conexão aberta ganha uma aba no topo e mantém as próprias abas, resultados
+  e transação. **Lado a lado** (`⌘/Ctrl+\`) mostra duas delas uma ao lado da outra, para comparar bancos.
 - **Editor SQL** (CodeMirror 6): autocomplete de tabelas e colunas, destaque da instrução atual, vários resultados por
-  execução, erros inline. `⌘/Ctrl+Enter` executa tudo ou a seleção; `⌘/Ctrl+Shift+Enter`, a instrução sob o cursor.
+  execução, erros inline, resultados limitados a 100 linhas por padrão (mude na barra de status). `⌘/Ctrl+Enter` executa tudo ou a seleção; `⌘/Ctrl+Shift+Enter`, a instrução sob o cursor.
 - **Snippets de SQL**: digite um atalho (`sel`, `ij`, `ups`, `ct`…) e escolha no autocomplete; os modelos mudam por banco.
 - **Navegação de tabelas**: paginação, ordenação, filtro `WHERE`, aba de estrutura (colunas, índices, DDL).
 - **Edição inline** de tabelas e de resultados de consulta (quando a chave primária está no resultado), gravada numa
@@ -42,7 +44,8 @@
 - **Diagrama ER** com layout automático, relações inferidas, busca, modo "só chaves" e exportação SVG/PNG.
 - **Backup e restore** em `.sql` / `.sql.gz` sem `pg_dump` nem `mysqldump`, em streaming, com progresso e cancelamento.
 - **Exportar** tabelas ou o resultado completo de uma consulta em CSV, JSON, JSON Lines ou `INSERT`s, sem limite de linhas.
-- Histórico por conexão, consultas salvas, busca rápida (`⌘/Ctrl+P`), abas.
+- Histórico por conexão, consultas salvas, busca rápida (`⌘/Ctrl+P`), abas e a lista de todos os atalhos de teclado
+  (`⌘/Ctrl+Shift+/` ou o botão de teclado).
 - **Português (Brasil), English e Español**: segue o idioma do sistema; troque quando quiser pelo ícone de globo.
 
 <details>

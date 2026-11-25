@@ -114,7 +114,7 @@ function onChatEvent(ev) {
 // What the assistant should know about the window, added to each message.
 function context(extra = {}) {
   const c = store.connection
-  const tab = store.tabs.find((x) => x.id === store.activeTabId)
+  const tab = store.session?.tabs.find((x) => x.id === store.session.activeTabId)
   return {
     connection: c ? `${c.saved?.name || c.database || 'open'} (${c.dialect}${c.schema ? `, schema ${c.schema}` : ''}) — use connection "active"` : null,
     sql: extra.sql ?? (tab?.type === 'query' ? tab.sql : ''),
@@ -148,13 +148,13 @@ export function resetChat() {
 // --- SQL from the chat into the editor ---------------------------------------------
 
 export function insertIntoEditor(sql) {
-  const tab = store.tabs.find((x) => x.id === store.activeTabId)
+  const tab = store.session?.tabs.find((x) => x.id === store.session.activeTabId)
   if (tab?.type !== 'query') return openInNewTab(sql)
   ai.insert = { sql, nonce: Math.random() }
 }
 
 export function openInNewTab(sql) {
-  newQueryTab(sql.endsWith('\n') ? sql : sql + '\n', 'AI')
+  if (store.session) newQueryTab(store.session, sql.endsWith('\n') ? sql : sql + '\n', 'AI')
 }
 
 export function copyText(text) {

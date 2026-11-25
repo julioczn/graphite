@@ -1,13 +1,15 @@
 <script setup>
 import { reactive, computed } from 'vue'
 import { bridge } from '../lib/api'
-import { store, startJob, toast } from '../lib/store'
+import { startJob, toast, useSession } from '../lib/store'
 import Icon from './Icon.vue'
 import Modal from './Modal.vue'
 import { t } from '../lib/i18n'
 
+const sess = useSession()
+
 const emit = defineEmits(['close'])
-const c = store.connection
+const c = sess.connection
 const isMysql = c.dialect === 'mysql'
 const target = c.dialect === 'postgres' ? t('{database} · schema {schema}', { database: c.database, schema: c.schema }) : c.schema || c.database
 
@@ -32,7 +34,7 @@ async function chooseFile() {
 async function start() {
   form.busy = true
   try {
-    await startJob('restore/start', {
+    await startJob(sess, 'restore/start', {
       file: form.file,
       transaction: form.transaction,
       stopOnError: form.transaction || form.stopOnError,
@@ -74,7 +76,7 @@ async function start() {
         {{ t('O script será executado em') }} <b>{{ target || '—' }}</b>{{ t(', numa conexão separada.') }}
         {{ t('Backups com') }} <code>DROP … IF EXISTS</code> {{ t('substituem as tabelas existentes com o mesmo nome.') }}
         <template v-if="c.dialect === 'postgres'"> {{ t('Objetos com schema no nome (como os backups do Graphite) voltam para o schema original.') }}</template>
-        <template v-if="store.tx.open"><br /><b>{{ t('Há uma transação aberta nesta conexão') }}</b>{{ t(': os locks dela podem travar o restore.') }}</template>
+        <template v-if="sess.tx.open"><br /><b>{{ t('Há uma transação aberta nesta conexão') }}</b>{{ t(': os locks dela podem travar o restore.') }}</template>
       </div>
     </div>
     <div v-if="isMysql && !c.schema" class="warn"><Icon name="info" :size="15" /> {{ t('Escolha um banco no seletor da barra lateral antes de restaurar.') }}</div>
