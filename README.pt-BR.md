@@ -31,7 +31,7 @@
   libpq ou ADO.NET e o formulário se preenche sozinho) e um banco **demo** pronto.
 - **Várias conexões ao mesmo tempo**: cada conexão aberta ganha uma aba no topo e mantém as próprias abas, resultados
   e transação. **Lado a lado** (`⌘/Ctrl+\`) mostra duas delas uma ao lado da outra, para comparar bancos.
-- **Editor SQL** (CodeMirror 6): autocomplete de tabelas e colunas, destaque da instrução atual, vários resultados por
+- **Editor SQL** (CodeMirror 6): autocomplete de tabelas e colunas (tabelas escolhidas depois de `FROM`/`JOIN` ganham alias), destaque da instrução atual, vários resultados por
   execução, erros inline, resultados limitados a 100 linhas por padrão (mude na barra de status). `⌘/Ctrl+Enter` executa tudo ou a seleção; `⌘/Ctrl+Shift+Enter`, a instrução sob o cursor.
 - **Snippets de SQL**: digite um atalho (`sel`, `ij`, `ups`, `ct`…) e escolha no autocomplete; os modelos mudam por banco.
 - **Navegação de tabelas**: paginação, ordenação, filtro `WHERE`, aba de estrutura (colunas, índices, DDL).

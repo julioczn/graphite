@@ -6,7 +6,7 @@ import {
 } from '@codemirror/view'
 import { EditorState, Compartment, Prec, RangeSetBuilder } from '@codemirror/state'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { sql, PostgreSQL, MySQL, SQLite, MSSQL, PLSQL } from '@codemirror/lang-sql'
+import { sql, schemaCompletionSource, PostgreSQL, MySQL, SQLite, MSSQL, PLSQL } from '@codemirror/lang-sql'
 import { syntaxHighlighting, syntaxTree, HighlightStyle, bracketMatching, indentOnInput } from '@codemirror/language'
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap, snippet, snippetCompletion } from '@codemirror/autocomplete'
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
@@ -14,6 +14,7 @@ import { tags } from '@lezer/highlight'
 import { splitStatements } from '../../shared/sql.mjs'
 import { shortcut } from '../lib/keys'
 import { snippetsFor, plain } from '../lib/snippets'
+import { withTableAliases } from '../lib/sqlAlias'
 import { activeWorkspace } from '../lib/workspaces'
 import { t, i18n } from '../lib/i18n'
 
@@ -138,8 +139,15 @@ function placeholderText() {
 }
 
 function language() {
-  const support = sql({ dialect: DIALECTS[props.dialect] || PostgreSQL, schema: props.schema || {}, upperCaseKeywords: false })
-  return [support, support.language.data.of({ autocomplete: snippetSource(props.dialect) })]
+  const dialect = DIALECTS[props.dialect] || PostgreSQL
+  const schema = props.schema || {}
+  // Schema completion goes in separately so table picks in FROM / JOIN can add an alias.
+  const support = sql({ dialect, upperCaseKeywords: false })
+  return [
+    support,
+    support.language.data.of({ autocomplete: withTableAliases(schemaCompletionSource({ dialect, schema }), schema, props.dialect) }),
+    support.language.data.of({ autocomplete: snippetSource(props.dialect) }),
+  ]
 }
 
 onMounted(() => {

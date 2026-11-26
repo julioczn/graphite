@@ -5,6 +5,12 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+### Added
+- **Table aliases from autocomplete.** Picking a table after `FROM` or `JOIN` writes an alias with it
+  (`order_items oi`, `customers c`; `c2` when `c` is taken), so its columns come right up with `oi.`. Tables that
+  already have an alias, `DELETE`, and engines without table aliases (Cassandra, DynamoDB, SurrealDB) are left as
+  they are.
+
 ## [0.16.0] - 2026-11-25
 
 ### Added
