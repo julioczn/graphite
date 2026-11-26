@@ -5,6 +5,8 @@ All notable changes to Graphite are listed here. Versions before 0.5.0 predate t
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-26
+
 ### Added
 - **Table aliases from autocomplete.** Picking a table after `FROM` or `JOIN` writes an alias with it
   (`order_items oi`, `customers c`; `c2` when `c` is taken), so its columns come right up with `oi.`. Tables that
@@ -268,7 +270,8 @@ First packaged release for Linux (AppImage and `.deb`): saved connections for SQ
 SQL editor with autocomplete, editable grid, manual transactions, schema/database picker, ER diagram, backup and
 restore, data export, history and saved queries.
 
-[Unreleased]: https://github.com/julioczn/graphite/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/julioczn/graphite/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/julioczn/graphite/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/julioczn/graphite/releases/tag/v0.16.0
 [0.15.0]: https://github.com/julioczn/graphite/releases/tag/v0.15.0
 [0.14.1]: https://github.com/julioczn/graphite/releases/tag/v0.14.1
